@@ -70,9 +70,35 @@ function start() {
   const vars = { PORTAL_CONFIG: JSON.stringify(CONFIG), PORTAL_TOKENS: JSON.stringify({ Zeus: ZEUS, Hera: HERA }), PORTAL_FORGET_EVERY_MS: '1000', PORTAL_LLM_API_KEY: 'stand-in-key' };
   const args = [...pre, 'dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', state, '--log-level', 'error', '--show-interactive-dev-session=false'];
   for (const [name, value] of Object.entries(vars)) args.push('--var', `${name}:${value}`);
-  const child = spawn(command, args, { cwd: here, stdio: ['ignore', 'pipe', 'pipe'] });
+  // its own process group, so that stopping it stops what `npx` started under it too (on Linux the SIGINT that reached only `npx` left the rest running)
+  const child = spawn(command, args, { cwd: here, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   child.stderr.on('data', (d) => process.stderr.write(d));
   return child;
+}
+
+/** Stops `wrangler dev` and everything under it, and never waits for ever: asked politely, then, after five seconds, not. */
+function stop(child) {
+  return new Promise((resolve) => {
+    if (child.exitCode !== null || child.signalCode !== null) return resolve();
+    const signal = (name) => {
+      try {
+        process.kill(-child.pid, name); // the group
+      } catch {
+        try {
+          child.kill(name);
+        } catch {}
+      }
+    };
+    const giveUp = setTimeout(() => {
+      signal('SIGKILL');
+      setTimeout(resolve, 1000);
+    }, 5000);
+    child.once('exit', () => {
+      clearTimeout(giveUp);
+      resolve();
+    });
+    signal('SIGTERM');
+  });
 }
 
 async function ready() {
@@ -193,8 +219,7 @@ try {
   failures += 1;
   console.error(err);
 } finally {
-  dev.kill('SIGINT');
-  await new Promise((r) => dev.once('exit', r));
+  await stop(dev);
   model.close();
   if (before) writeFileSync(bundle, before);
   else rmSync(bundle, { force: true });
