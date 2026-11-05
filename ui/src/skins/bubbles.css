@@ -1,0 +1,682 @@
+/*
+ * 🫧 the skin the portal starts in: a light sky (the warm family of its first field turned by +164°, from yellow to blue), glass that is almost not there, and bubbles of oxygen that rise behind it.
+ *
+ * A skin is one stylesheet that answers the parts of the page. The page says what each thing IS (`data-part="message"`,
+ * `data-part="side"`, ...) and in what state (`data-here`, `data-from="companion"`, `data-connection="live"`); it
+ * says nothing about how it looks or where it sits. So another stylesheet can lay the same page out in another way, as
+ * CSS Zen Garden did with one HTML and many CSS. The values are named for what they are for (`--ink`, `--glass`,
+ * `--accent`), so that a part can be moved without its colours being lost.
+ *
+ * Every rule is inside `:root:is([data-skin='bubbles'], [data-skin-base='bubbles'])` (it answers when it is the look, and when a skin from a room's folder says it builds on it), so that skins sit side by side and only the chosen one answers; the
+ * names of its keyframes start with `bubbles-` for the same reason.
+ *
+ * `@apply` is only the way this file is written; what the browser gets is plain CSS.
+ */
+
+:root:is([data-skin='bubbles'], [data-skin-base='bubbles']) {
+  /* a light sky: the warm yellow field of the first Bubbles (from Firegate's `ambient-4D` and its gold) with its warm family, hue 60° to 110°, turned by +164°, lightness and chroma as they were, so the contrast is the same; the blue of Nova's bubble, the green, the violet and the focus stay where they were */
+  --field-top: oklch(0.985 0.045 264);
+  --field-bottom: oklch(0.915 0.115 256);
+  --glow: oklch(0.9 0.16 259 / 0.55);
+  --ink: oklch(0.26 0.03 234);
+  --ink-soft: oklch(0.26 0.03 234 / 0.8);
+  --ink-faint: oklch(0.26 0.03 234 / 0.66);
+  --glass: oklch(1 0.02 264 / 0.62);
+  --glass-strong: oklch(1 0.015 264 / 0.82);
+  --glass-edge: oklch(1 0.03 264 / 0.8);
+  --code: oklch(0.26 0.03 234 / 0.07);
+  --code-edge: oklch(0.26 0.03 234 / 0.14);
+  --mine: oklch(0.96 0.012 259 / 0.8);
+  --companion: oklch(0.94 0.045 225 / 0.85);
+  --accent: oklch(0.8 0.15 242);
+  --accent-ink: oklch(0.25 0.03 234);
+  --focus: oklch(0.42 0.14 255);
+  --calm: oklch(0.52 0.11 170);
+  --warm: oklch(0.7 0.14 234);
+  --quiet: oklch(0.42 0.1 280);
+  --shadow: 0 1px 2px oklch(0.4 0.06 244 / 0.1), 0 6px 20px oklch(0.4 0.06 244 / 0.09);
+
+  body {
+    color: var(--ink);
+    background:
+      radial-gradient(120% 60% at 50% 0%, var(--glow), transparent 70%) fixed,
+      linear-gradient(180deg, var(--field-top), var(--field-bottom)) fixed;
+  }
+
+  /* --- the page, and what is behind it --- */
+
+  [data-part='app'] {
+    @apply relative h-full;
+  }
+
+  [data-part='stage'] {
+    @apply relative z-10 h-full;
+  }
+
+  /* the bubbles: bubbles of oxygen that bubbles-rise behind everything, bigger ones faster, swaying a little. For anyone who asks for less motion, there are none. */
+  [data-part='ambient'] {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  [data-part='mote'] {
+    position: absolute;
+    bottom: -60px;
+    border-radius: 50%;
+    /* almost nothing inside, a small glint off the middle, a thin pale-blue rim: a bubble of oxygen in clear water */
+    background: radial-gradient(circle at 32% 30%, rgb(255 255 255 / 0.9) 0 7%, rgb(255 255 255 / 0) 16%), radial-gradient(circle at 50% 50%, rgb(235 245 255 / 0.04) 55%, rgb(225 240 255 / 0.28) 100%);
+    border: 1px solid rgb(120 170 225 / 0.45);
+    box-shadow: inset 0 0 3px rgb(255 255 255 / 0.85);
+    opacity: 0;
+  }
+
+  /* --- the threshold --- */
+
+
+
+
+
+
+
+
+
+  /* --- the room: a side, and the channel beside it --- */
+
+  [data-part='room'] {
+    @apply mx-auto flex h-full max-w-6xl flex-col md:flex-row;
+  }
+
+  [data-part='side'] {
+    @apply flex shrink-0 flex-col gap-3 px-3 pt-3 md:w-56 md:px-4 md:pt-6;
+  }
+
+  [data-part='side-foot'] {
+    @apply flex items-start justify-between gap-3 md:min-h-0 md:flex-1 md:flex-col md:justify-between md:pb-4;
+  }
+
+  [data-part='label'] {
+    @apply mb-2 hidden text-[11px] uppercase tracking-widest md:block;
+    color: var(--ink-faint);
+  }
+
+  [data-part='hash'] {
+    color: var(--ink-faint);
+  }
+
+  [data-part='channel-list'] {
+    @apply flex gap-2 overflow-x-auto md:flex-col md:overflow-visible;
+  }
+
+  [data-part='channel'] {
+    @apply shrink-0 rounded-xl px-3 py-2 text-left text-sm transition-colors;
+    background: transparent;
+    font-weight: 400;
+    box-shadow: none;
+  }
+
+  [data-part='channel'][aria-current='true'] {
+    background: var(--glass-strong);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+  }
+
+  [data-part='people'] {
+    @apply min-w-0;
+  }
+
+  [data-part='people-list'] {
+    @apply flex list-none flex-wrap gap-x-3 gap-y-1 p-0 md:flex-col md:gap-y-1.5;
+  }
+
+  [data-part='person'] {
+    @apply flex items-center gap-2 text-sm;
+    color: var(--ink-soft);
+  }
+
+  [data-part='person'][data-here] {
+    color: var(--ink);
+  }
+
+  [data-part='person-name'] {
+    @apply truncate;
+  }
+
+  [data-part='presence'] {
+    @apply inline-block h-2.5 w-2.5 shrink-0 rounded-full;
+    background: var(--calm);
+  }
+
+  /* not here is an empty ring, not a grey or a red */
+  [data-part='presence']:not([data-here]) {
+    border-width: 1.5px;
+    border-color: var(--ink-faint);
+    background: transparent;
+  }
+
+  [data-part='self'] {
+    @apply shrink-0;
+  }
+
+  [data-part='self-name'] {
+    @apply mb-1 hidden truncate text-sm font-medium md:block;
+  }
+
+  [data-part='skin-switch'] {
+    @apply flex gap-1;
+  }
+
+  [data-part='skin-option'] {
+    @apply rounded-lg px-2 py-1 text-sm transition-colors;
+    background: transparent;
+    opacity: 0.6;
+  }
+
+  [data-part='skin-option'][aria-pressed='true'] {
+    background: var(--glass-strong);
+    box-shadow: var(--shadow);
+    opacity: 1;
+  }
+
+  /* the sign is written against the name, ida🦁: no gap, the same size */
+  [data-part='sign'] {
+    margin-left: 0.05em;
+  }
+
+  /* your sign, after your name: a slot, ▲▼ beside it, and behind it a grid moved like a cursor on a select screen */
+  [data-part='sign-slot-wrap'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.125rem;
+  }
+
+  [data-part='sign-slot'] {
+    padding: 0.125rem 0.1875rem;
+    font-size: 1rem;
+    line-height: 1;
+    background: transparent;
+    border-radius: 0.5rem;
+  }
+
+  [data-part='sign-slot'][data-preview] {
+    outline: 1px dashed var(--ink-faint);
+    outline-offset: 1px;
+  }
+
+  [data-part='sign-steps'] {
+    display: inline-flex;
+    flex-direction: column;
+  }
+
+  [data-part='sign-step'] {
+    padding: 0 0.25rem;
+    font-size: 0.6rem;
+    line-height: 1.1;
+    color: var(--ink-faint);
+    background: transparent;
+  }
+
+  [data-part='sign-step']:hover,
+  [data-part='sign-step']:focus-visible {
+    color: var(--ink);
+  }
+
+  [data-part='sign-grid'] {
+    flex-basis: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 2rem);
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+    padding: 0.375rem;
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-edge);
+    border-radius: 0.75rem;
+  }
+
+  [data-part='sign-tile'],
+  [data-part='sign-add'] {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.05rem;
+    line-height: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+  }
+
+  [data-part='sign-tile'][data-own] {
+    background: var(--glass);
+  }
+
+  [data-part='sign-tile'][aria-pressed='true'] {
+    border-color: var(--calm);
+  }
+
+  /* the frame of the cursor */
+  [data-part='sign-tile']:focus-visible,
+  [data-part='sign-add']:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  [data-part='sign-add'] {
+    color: var(--ink-soft);
+    border: 1px dashed var(--ink-faint);
+  }
+
+  [data-part='sign-input'] {
+    grid-column: span 2;
+    width: 100%;
+    height: 2rem;
+    font-size: 1.05rem;
+    text-align: center;
+    color: inherit;
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    border-radius: 0.5rem;
+  }
+
+  [data-part='sign-said'] {
+    flex-basis: 100%;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+
+
+
+  [data-part='notify'] {
+    @apply block text-left text-xs underline-offset-2 hover:underline;
+    color: var(--ink-soft);
+  }
+
+  [data-part='signout'] {
+    @apply text-xs underline-offset-2 hover:underline;
+    color: var(--ink-soft);
+  }
+
+  /* the third column, on a page wide enough for it (64 rem, so that the channel keeps room for its words): a few quiet lines that turn by themselves, on the sky as the left of the page is */
+  [data-part='field'] {
+    @apply hidden shrink-0 items-center justify-center px-5 lg:flex lg:w-56;
+    color: var(--ink-soft);
+  }
+
+  [data-part='field-line'] {
+    @apply m-0 text-center text-sm italic leading-relaxed;
+  }
+
+  [data-part='main'] {
+    @apply flex min-h-0 flex-1 flex-col;
+  }
+
+  /* --- a channel --- */
+
+  [data-part='channel-view'] {
+    @apply flex min-h-0 flex-1 flex-col;
+  }
+
+  [data-part='channel-head'] {
+    @apply flex items-center justify-between gap-3 px-4 py-3 md:px-6;
+  }
+
+  [data-part='channel-title'] {
+    @apply text-base font-semibold;
+  }
+
+  [data-part='signal'] {
+    @apply inline-flex items-center gap-2 text-xs;
+    color: var(--ink-soft);
+  }
+
+  [data-part='signal-dot'] {
+    @apply inline-block h-2 w-2 rounded-full;
+    background: var(--calm);
+  }
+
+  [data-part='signal'][data-connection='connecting'] [data-part='signal-dot'],
+  [data-part='signal'][data-connection='reconnecting'] [data-part='signal-dot'] {
+    background: var(--warm);
+  }
+
+  [data-part='signal'][data-connection='refused'] [data-part='signal-dot'] {
+    background: var(--quiet);
+  }
+
+  /* --- what was said --- */
+
+  [data-part='log'] {
+    @apply min-h-0 flex-1 overflow-y-auto px-3 py-4 md:px-6;
+    /* what is only for a screen reader is absolute: it sits in the log and scrolls with it, and does not stretch the page */
+    position: relative;
+  }
+
+  [data-part='older'] {
+    @apply flex justify-center;
+  }
+
+  [data-part='older-button'] {
+    @apply rounded-full px-4 py-1.5 text-xs transition-opacity disabled:opacity-50;
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    color: var(--ink-soft);
+  }
+
+  [data-part='empty'] {
+    @apply mt-16 text-center text-sm;
+    color: var(--ink-faint);
+  }
+
+  [data-part='messages'] {
+    @apply list-none p-0;
+  }
+
+  [data-part='message'] {
+    @apply mt-1 grid grid-cols-[3rem_1fr] items-start gap-x-2;
+  }
+
+  [data-part='message'][data-head] {
+    @apply mt-3;
+  }
+
+  [data-part='time'] {
+    @apply pt-2 text-right text-[11px] tabular-nums transition-opacity;
+    color: var(--ink-faint);
+    opacity: 0;
+  }
+
+  [data-part='message'][data-head] [data-part='time'] {
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    [data-part='message']:hover [data-part='time'] {
+      opacity: 1;
+    }
+  }
+
+  [data-part='message-body'] {
+    @apply min-w-0 max-w-[46rem];
+  }
+
+  [data-part='speaker'] {
+    @apply mb-1 ml-1 text-xs font-semibold;
+    color: hsl(var(--hue) 45% 34%);
+  }
+
+  [data-part='speaker-mark'] {
+    @apply ml-1.5 font-normal;
+    color: var(--ink-faint);
+  }
+
+  [data-part='bubble'] {
+    @apply inline-block max-w-full rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed;
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--shadow);
+    word-break: break-word;
+  }
+
+  [data-part='message'][data-from='mine'] [data-part='bubble'] {
+    background: var(--mine);
+  }
+
+  [data-part='message'][data-from='companion'] [data-part='bubble'] {
+    background: var(--companion);
+  }
+
+  /* a message that names the reader: the edge of its bubble is warm, and nothing else changes, so that the signal stays fine */
+  [data-part='message'][data-to-you] [data-part='bubble'] {
+    border-color: var(--accent);
+  }
+
+  [data-part='content'] {
+    @apply space-y-2;
+  }
+
+  [data-part='text'] {
+    @apply m-0;
+    white-space: pre-wrap;
+  }
+
+  /* --- inside the words: who is named, what is marked, what is code, and a message that is only a sign --- */
+
+  [data-part='mention'] {
+    @apply rounded px-0.5 font-semibold;
+    color: hsl(var(--hue) 45% 34%);
+  }
+
+  [data-part='mention'][data-you] {
+    background: hsl(var(--hue) 80% 62% / 0.22);
+  }
+
+  [data-part='tag'] {
+    @apply font-medium;
+    color: var(--calm);
+  }
+
+  [data-part='inline-code'] {
+    @apply rounded px-1 py-px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--code);
+    border: 1px solid var(--code-edge);
+    font-variant-ligatures: none;
+  }
+
+  [data-part='text'][data-jumbo] {
+    font-size: 2.25rem;
+    line-height: 1.15;
+  }
+
+  /* the word selected in the log, wherever else it is: the browser's own highlight, and the selection itself is left as it is */
+  ::highlight(room-occurrence) {
+    background-color: oklch(0.8 0.15 242 / 0.45);
+  }
+
+  [data-part='sources'] {
+    @apply mt-2 text-xs;
+    color: var(--ink-soft);
+  }
+
+  [data-part='thinking'] {
+    @apply ml-14 mt-3 inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-sm;
+    background: var(--companion);
+    border: 1px solid var(--glass-edge);
+    color: var(--ink-soft);
+  }
+
+  [data-part='thinking-dots'] {
+    @apply inline-flex gap-1;
+  }
+
+  [data-part='dot'] {
+    @apply inline-block h-1.5 w-1.5 rounded-full;
+    background: var(--warm);
+  }
+
+  /* --- code, as it was written --- */
+
+  [data-part='code'] {
+    @apply m-0 min-w-0 max-w-full overflow-hidden rounded-xl;
+    background: var(--code);
+    border: 1px solid var(--code-edge);
+  }
+
+  [data-part='code-head'] {
+    @apply flex items-center justify-between gap-3 px-3 pt-1.5 text-[11px];
+    color: var(--ink-faint);
+  }
+
+  [data-part='code-lang'] {
+    @apply uppercase tracking-widest;
+  }
+
+  [data-part='code-copy'] {
+    @apply rounded px-1.5 py-0.5 underline-offset-2 hover:underline;
+    color: var(--ink-soft);
+  }
+
+  [data-part='code-body'] {
+    @apply m-0 overflow-x-auto px-3 pb-2.5 pt-1 text-[13px] leading-relaxed;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-ligatures: none;
+  }
+
+  /* --- where something is written --- */
+
+  [data-part='composer'] {
+    @apply rounded-t-2xl px-3 pb-3 pt-3 md:px-6;
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow);
+  }
+
+  [data-part='composer-row'] {
+    @apply flex items-end gap-2;
+  }
+
+  [data-part='composer-input'] {
+    @apply grow resize-none rounded-xl border px-4 py-3 text-[15px];
+    background: var(--glass-strong);
+    border-color: var(--glass-edge);
+  }
+
+  [data-part='composer-send'] {
+    @apply rounded-xl px-4 py-3 text-sm font-medium transition-opacity disabled:opacity-50;
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  [data-part='composer-note'] {
+    @apply mt-1.5 min-h-4 px-1 text-xs;
+    color: var(--quiet);
+  }
+
+  [data-part='sr-only'] {
+    @apply sr-only;
+  }
+
+  /* --- motion is a gift, not a demand: for anyone who asks for less, there is none --- */
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-part='sign-slot'][data-popping] {
+      animation: bubbles-pop 0.45s ease-out both;
+    }
+    [data-part='sign-tile']:focus-visible,
+    [data-part='sign-add']:focus-visible {
+      animation: bubbles-breathe 1.6s ease-in-out infinite;
+    }
+    [data-part='ambient'] {
+      display: block;
+    }
+    [data-part='mote'] {
+      animation: bubbles-rise var(--dur) linear var(--delay) infinite;
+      will-change: transform, opacity;
+    }
+    [data-part='message'],
+    [data-part='thinking'] {
+      animation: bubbles-fade-in 0.4s ease-out both;
+    }
+    [data-part='field-line'] {
+      animation: bubbles-fade-in 0.6s ease-out both;
+    }
+    [data-part='field-line'][data-first] {
+      animation: bubbles-field-breathe 4.5s ease-in-out infinite;
+    }
+    [data-part='dot'] {
+      animation: bubbles-bounce-ball 0.9s ease-in-out infinite;
+      animation-delay: calc(var(--i) * 0.15s);
+    }
+    [data-part='presence'][data-popping] {
+      animation: bubbles-pop 0.45s ease-out both;
+    }
+    [data-part='signal'][data-connection='connecting'] [data-part='signal-dot'],
+    [data-part='signal'][data-connection='reconnecting'] [data-part='signal-dot'] {
+      animation: bubbles-breathe 2.4s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes bubbles-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bubbles-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes bubbles-bounce-ball {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes bubbles-pop {
+  0% {
+    transform: scale(0.5);
+  }
+  60% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* up the page, swaying a little from side to side on the way, and growing a little as the water pressure lets go of it; it fades out near the top, as at a surface */
+@keyframes bubbles-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.9);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--o);
+  }
+  25% {
+    transform: translate3d(var(--drift), -29vh, 0) scale(0.95);
+  }
+  50% {
+    transform: translate3d(calc(var(--drift) * -0.6), -58vh, 0) scale(1);
+  }
+  75% {
+    transform: translate3d(calc(var(--drift) * 0.8), -87vh, 0) scale(1.05);
+    opacity: var(--o);
+  }
+  100% {
+    transform: translate3d(calc(var(--drift) * -0.3), -115vh, 0) scale(1.1);
+    opacity: 0;
+  }
+}
+
+@keyframes bubbles-field-breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}

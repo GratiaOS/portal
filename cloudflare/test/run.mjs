@@ -1,0 +1,206 @@
+// Checks the Cloudflare home on this machine, with `wrangler dev`: nothing is deployed and no account is used. The page must
+// be built first (`pnpm --filter portal-ui build`); `pnpm cloudflare:check` does both.
+// Usage: node cloudflare/test/run.mjs     (WRANGLER=/path/to/wrangler to use one already installed)
+
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = join(dirname(fileURLToPath(import.meta.url)), '..');
+const port = Number(process.env.PORT ?? 8798);
+const base = `http://127.0.0.1:${port}`;
+const state = mkdtempSync(join(tmpdir(), 'portal-cloudflare-'));
+const pkg = JSON.parse(readFileSync(join(here, '..', 'package.json'), 'utf8'));
+const page = join(here, '..', 'ui', 'dist', 'index.html');
+let failures = 0;
+
+const ZEUS = 'z'.repeat(24);
+const HERA = 'h'.repeat(24);
+// A stand-in for the model, on this machine: it answers every question the same way, and remembers what it was asked.
+const asked = [];
+const model = createServer((req, res) => {
+  let body = '';
+  req.on('data', (c) => (body += c));
+  req.on('end', () => {
+    asked.push({ authorization: req.headers.authorization, body: JSON.parse(body) });
+    res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+    const chunk = (delta, finish = null) => res.write(`data: ${JSON.stringify({ model: 'stand-in', choices: [{ delta, finish_reason: finish }] })}\n\n`);
+    chunk({ content: 'SAY: Ambrozia este hrana zeilor.\n' });
+    chunk({ content: 'SOURCES: olympus/food.md' });
+    chunk({}, 'stop');
+    res.end('data: [DONE]\n\n');
+  });
+});
+await new Promise((r) => model.listen(0, '127.0.0.1', r));
+
+// her folder: one file to read, one kept out of what she reads
+const knowledgeDir = join(state, 'knowledge');
+mkdirSync(join(knowledgeDir, 'olympus'), { recursive: true });
+mkdirSync(join(knowledgeDir, 'private'), { recursive: true });
+writeFileSync(join(knowledgeDir, 'olympus', 'food.md'), '# Food\n\nAmbrozia este hrana zeilor.\n');
+writeFileSync(join(knowledgeDir, 'private', 'contract.md'), '# Contract\n\nSECRET-7f3a\n');
+
+const CONFIG = {
+  participants: [
+    { kind: 'human', alias: 'Zeus' },
+    { kind: 'human', alias: 'Hera' },
+    { kind: 'companion', alias: 'Nova' },
+  ],
+  rooms: [{ id: 'general', title: 'General' }],
+  retention: { days: 14, messages: 50 },
+  rateLimit: { messages: 1000, perSeconds: 10 },
+  nova: {
+    alias: 'Nova',
+    knowledgeDir,
+    exclude: ['private'],
+    llm: { baseUrl: `http://127.0.0.1:${model.address().port}/v1`, model: 'stand-in', apiKeyEnv: 'PORTAL_LLM_API_KEY' },
+  },
+};
+
+const check = (ok, line) => {
+  if (!ok) failures += 1;
+  console.log(`${ok ? '✓' : '✗'} ${line}`);
+};
+
+function start() {
+  const [command, ...pre] = process.env.WRANGLER ? [process.env.WRANGLER] : ['npx', '--yes', 'wrangler@4.136.2'];
+  const vars = { PORTAL_CONFIG: JSON.stringify(CONFIG), PORTAL_TOKENS: JSON.stringify({ Zeus: ZEUS, Hera: HERA }), PORTAL_FORGET_EVERY_MS: '1000', PORTAL_LLM_API_KEY: 'stand-in-key' };
+  const args = [...pre, 'dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', state, '--log-level', 'error', '--show-interactive-dev-session=false'];
+  for (const [name, value] of Object.entries(vars)) args.push('--var', `${name}:${value}`);
+  const child = spawn(command, args, { cwd: here, stdio: ['ignore', 'pipe', 'pipe'] });
+  child.stderr.on('data', (d) => process.stderr.write(d));
+  return child;
+}
+
+async function ready() {
+  for (let i = 0; i < 240; i += 1) {
+    try {
+      if ((await fetch(`${base}/api/health`)).ok) return;
+    } catch {}
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error('wrangler dev did not answer');
+}
+
+async function until(predicate, ms = 3000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (await predicate()) return true;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return false;
+}
+
+const as = (token) => (path, init = {}) => fetch(base + path, { ...init, headers: { Authorization: `Bearer ${token}`, ...init.headers } });
+const zeus = as(ZEUS);
+const hera = as(HERA);
+const say = (call, text) => call('/api/rooms/general/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+
+function listen(token) {
+  const abort = new AbortController();
+  const heard = { text: '', abort: () => abort.abort() };
+  fetch(`${base}/api/stream`, { headers: { Authorization: `Bearer ${token}` }, signal: abort.signal })
+    .then(async (response) => {
+      const decoder = new TextDecoder();
+      for await (const chunk of response.body) heard.text += decoder.decode(chunk, { stream: true });
+    })
+    .catch(() => {});
+  return heard;
+}
+
+if (!existsSync(page)) {
+  console.error(`no page at ${page}: build it first, pnpm --filter portal-ui build`);
+  process.exit(1);
+}
+
+// her knowledge, bundled by the same script as for dev and deploy; what was bundled before is put back after
+const bundle = join(here, 'knowledge.json');
+const before = existsSync(bundle) ? readFileSync(bundle) : undefined;
+const configFile = join(state, 'portal.cloudflare.local.json');
+writeFileSync(configFile, JSON.stringify(CONFIG));
+// a config the Worker would refuse bundles nothing: an exclude that is not a list must not let everything through
+const badFile = join(state, 'bad.cloudflare.local.json');
+writeFileSync(badFile, JSON.stringify({ ...CONFIG, nova: { ...CONFIG.nova, exclude: 'private' } }));
+writeFileSync(bundle, '{"files":{"untouched.md":"x"}}\n');
+const refused = spawnSync(process.execPath, [join(here, 'bundle-knowledge.mjs'), badFile], { encoding: 'utf8' });
+const untouched = readFileSync(bundle, 'utf8').includes('untouched.md');
+const bundled = spawnSync(process.execPath, [join(here, 'bundle-knowledge.mjs'), configFile], { encoding: 'utf8' });
+const files = JSON.parse(readFileSync(bundle, 'utf8')).files;
+
+const dev = start();
+try {
+  console.log('\n— her knowledge, bundled');
+  check(refused.status !== 0 && untouched && /nova\.exclude/.test(refused.stderr), 'a config the Worker would refuse is refused before anything is bundled');
+  check(bundled.status === 0 && Object.keys(files).join() === 'olympus/food.md', `the folder is read as in Node, what is excluded left out: ${Object.keys(files).join(', ')}`);
+  await ready();
+
+  console.log('\n— the page, from the assets, with the headers it has in Node');
+  const root = await fetch(`${base}/`);
+  check(root.status === 200 && /^text\/html/.test(root.headers.get('content-type') ?? ''), `/ is the page (${root.status} ${root.headers.get('content-type')})`);
+  check(/default-src 'self'/.test(root.headers.get('content-security-policy') ?? ''), 'the page under its policy');
+  check(root.headers.get('cache-control') === 'no-cache' && root.headers.get('x-content-type-options') === 'nosniff', 'the page is asked for again, and not sniffed');
+  const script = /src="(\/assets\/[^"]+\.js)"/.exec(await root.text())?.[1];
+  const asset = script ? await fetch(base + script) : undefined;
+  check(asset?.status === 200 && asset.headers.get('cache-control') === 'public, max-age=31536000, immutable' && !asset.headers.has('content-security-policy'), `a file named by its content is kept for good (${script})`);
+  const deep = await fetch(`${base}/rooms/general`);
+  check(deep.status === 200 && /^text\/html/.test(deep.headers.get('content-type') ?? ''), 'a path of the page lands on the page');
+  const missing = await fetch(`${base}/nothing-here.js`);
+  check(missing.status === 404, `a file that is not there is a 404 (${missing.status} ${missing.headers.get('content-type')})`);
+  check((await fetch(`${base}/`, { method: 'POST' })).status === 405, 'the page takes no POST');
+
+  console.log('\n— the portal, from its object');
+  const health = await (await fetch(`${base}/api/health`)).json();
+  check(health.ok && health.version === pkg.version, `health, version ${health.version}`);
+  check((await fetch(`${base}/api/rooms`)).status === 401, 'without a token, no answer');
+  const me = await (await zeus('/api/me')).json();
+  check(me.id === 'human:zeus', 'a token from PORTAL_TOKENS signs in');
+  check((await zeus('/skins/any/skin.css')).status === 404, 'no skins from a folder: a calm 404');
+
+  const heard = listen(ZEUS);
+  check(await until(() => heard.text.includes('event: hello')), 'the stream says hello');
+  await say(hera, 'salut de pe Cloudflare 🌱');
+  check(await until(() => heard.text.includes('salut de pe Cloudflare 🌱')), 'a message from Hera reaches Zeus');
+
+  console.log('\n— Nova, from the object');
+  await say(zeus, '@Nova ce e ambrozia?');
+  check(await until(() => heard.text.includes('"speakerId":"companion:nova"'), 10_000), 'Nova answers in the room');
+  check(/Ambrozia este hrana zeilor\.[^"]*olympus\/food\.md/.test(heard.text), 'her answer, with the file she used');
+  const question = asked.at(-1);
+  const system = question?.body.messages.find((m) => m.role === 'system')?.content ?? '';
+  check(question?.authorization === 'Bearer stand-in-key', 'the model is asked with the key from its secret');
+  check(system.includes('### FILE: olympus/food.md') && !system.includes('SECRET-7f3a'), 'she reads the bundle, and not what was kept out');
+  check(system.includes('on Cloudflare'), 'what she says of the portal is true here: what is said is kept on Cloudflare');
+  heard.abort();
+
+  console.log('\n— forgetting, at the object\'s alarm (every second here, ten minutes by default)');
+  for (let i = 1; i <= 55; i += 1) await say(zeus, `m${i}`);
+  const kept = async () => (await (await zeus('/api/rooms/general/messages?limit=200')).json()).turns.map((t) => t.text);
+  check(await until(async () => (await kept()).length === 50, 5000), 'the room keeps its last 50, and lets go of the rest at the alarm');
+  const left = await kept();
+  check(left[0] === 'm6' && left.at(-1) === 'm55', `what is left is the last 50: ${left[0]} … ${left.at(-1)}`);
+
+  console.log('\n— wrong keys, counted in the object (last: it turns this caller away)');
+  const wrong = [];
+  for (let i = 0; i < 12; i += 1) wrong.push((await fetch(`${base}/api/me`, { headers: { Authorization: `Bearer wrong${i}` } })).status);
+  // a wrong key was already counted above (no token at all), so the wait comes at the tenth, not the eleventh
+  const waits = wrong.indexOf(429);
+  check(wrong[0] === 401 && waits >= 9 && waits <= 10 && wrong.slice(waits).every((s) => s === 429), `ten wrong keys are told no, then it waits: ${wrong.join(' ')}`);
+  check((await fetch(`${base}/api/me`, { headers: { Authorization: `Bearer ${ZEUS}`, 'x-portal-caller': 'someone-else' } })).status === 429, 'a caller cannot name itself to start over: the header it sends is replaced');
+} catch (err) {
+  failures += 1;
+  console.error(err);
+} finally {
+  dev.kill('SIGINT');
+  await new Promise((r) => dev.once('exit', r));
+  model.close();
+  if (before) writeFileSync(bundle, before);
+  else rmSync(bundle, { force: true });
+  rmSync(state, { recursive: true, force: true });
+  rmSync(join(here, '.wrangler'), { recursive: true, force: true });
+}
+
+console.log(failures ? `\n${failures} check(s) failed` : '\nall checks passed');
+process.exit(failures ? 1 : 0);

@@ -1,0 +1,120 @@
+# Install
+
+For whoever runs a portal for their people: one process, one config, one database file, on a machine you choose.
+
+## What it needs
+
+- Node.js 22.18 or newer, and pnpm (`corepack enable` gives the version the repository names).
+- An OpenAI-compatible chat-completions endpoint for the companion (a company gateway, LM Studio, vLLM, …), if you want one.
+  Without it the portal is a plain chat.
+
+## Build
+
+```bash
+git clone https://github.com/GratiaOS/portal && cd portal
+corepack enable
+pnpm install
+pnpm -r build
+```
+
+## Configure
+
+```bash
+cp portal.example.json portal.local.json   # the config; gitignored, with no secrets in it
+cp .env.example .env                       # the model's address and key: PORTAL_LLM_BASE_URL, PORTAL_LLM_API_KEY
+```
+
+In `portal.local.json`:
+
+- `participants`: the people (`human`) and the companion (`companion`), by alias. A person may be given a `sign`, one emoji
+  written after their name (`"sign": "🦁"`); each one can change their own in the page, and the one given shows again when they
+  let theirs go.
+- `rooms`: the rooms, each an `id` (a slug) and a `title`.
+- `"staticDir": "ui/dist"`, so the portal serves its page next to its API.
+- `dbPath`: where the database file lives (`data/portal.db`).
+- `retention`: what the portal keeps. By default each room keeps the last 14 days or its last 999 messages, whichever ends first,
+  and lets go of the rest (`{ "days": 14, "messages": 999 }`). A portal that must keep more says so here, up to `"forever"`; the
+  companion then tells its people.
+- `nova`: the companion, the model, and `knowledgeDir`, the folder of markdown she answers from (`nova.exclude` keeps parts of it
+  from her). Without `knowledgeDir` she still talks, with nothing written down for her yet: about the portal from its facts, and
+  about anything else she says she does not know yet. Leave the section out for a plain chat.
+
+Then a token for each person, kept in a file of its own (`chmod 600`):
+
+```bash
+pnpm --filter portal tokens portal.local.json new Zeus
+pnpm --filter portal tokens portal.local.json show Zeus | pbcopy   # hand it over in person or through a channel you trust
+```
+
+## Run
+
+```bash
+pnpm --filter portal start                 # reads .env and portal.local.json; logs "portal 0.1.0: listening on …"
+curl -s http://127.0.0.1:3100/api/health   # { "ok": true, "version": "0.1.0", "contracts": { "skins": 1 } }
+```
+
+Keep it running under whatever keeps a process alive on that machine (systemd, launchd, a container).
+
+The portal listens on `127.0.0.1`. To let people in from elsewhere, put it behind a TLS proxy, since the token travels in a header,
+and turn buffering off for `/api/stream` (server-sent events), so that messages arrive as they are written.
+
+Wrong keys are counted for each caller, and a caller who tries ten in a minute is asked to wait (`429`, with `Retry-After`).
+The caller is the address of the connection. Behind a proxy that is the proxy's, so everyone would count as one: name the header
+your proxy sets with the real address in the config, `"clientIpHeader": "x-forwarded-for"` (the last entry is used, the one your
+nearest proxy added). Name it only for a proxy that sets it, since otherwise a caller could choose its own address.
+
+## Back up
+
+The database is one SQLite file with its write-ahead log beside it. While the portal runs, back it up with SQLite itself:
+
+```bash
+sqlite3 data/portal.db ".backup 'portal-backup.db'"
+```
+
+or stop the portal and copy `data/portal.db` with its `-wal` and `-shm` files. The config, the tokens file and `.env` are yours to
+keep too; none of them is in git. A backup keeps what the portal later forgets: keep backups no longer than the portal keeps
+messages, unless you must.
+
+## Update
+
+```bash
+git pull && pnpm install && pnpm -r build
+```
+
+Restart the portal, and check the version in `/api/health`. Updates are pulled by you; nothing phones home. What changes from one
+version to the next, for whoever runs a portal, is in [CHANGELOG.md](CHANGELOG.md).
+
+## On Cloudflare
+
+A portal can also live on Cloudflare: one Worker in front, and one Durable Object that is the whole portal, its database
+included. The Workers Free plan is enough for a small team. It is the same portal (the same handler, the same store and the same
+page), with these differences, for now:
+
+- **Nova's knowledge is a bundle, not a folder.** It is read from `nova.knowledgeDir` with the same rules as in Node (what
+  `nova.exclude` names left out), and goes up with the Worker to your Cloudflare account; a change to the folder needs a new
+  deploy.
+- **No skins from a folder**: the looks built into the page only.
+- **Forgetting overwrites less.** A forgotten message is deleted, but whether its old bytes are overwritten in Cloudflare's
+  storage is Cloudflare's to say: `secure_delete` is refused there.
+- **No backup command.** What the object keeps stays on Cloudflare.
+
+The config and the tokens are two secrets, never files in the repository: `PORTAL_CONFIG`, the config as in
+`portal.example.json` without `tokensFile`, `dbPath`, `staticDir` and `skinsDir`; and `PORTAL_TOKENS`, `{ "<alias>": "<token>" }`,
+as `pnpm tokens` writes its tokens file. With `wrangler` signed in to your account (`npx wrangler@4.136.2 login`; the version is pinned on purpose, the same one the scripts in `package.json` run, so that what was checked is what you use):
+
+```bash
+npx wrangler@4.136.2 secret put PORTAL_CONFIG -c cloudflare/wrangler.jsonc < portal.cloudflare.local.json
+npx wrangler@4.136.2 secret put PORTAL_TOKENS -c cloudflare/wrangler.jsonc < portal.tokens.local.json
+npx wrangler@4.136.2 secret put PORTAL_LLM_API_KEY -c cloudflare/wrangler.jsonc
+pnpm cloudflare:deploy
+```
+
+The third is the model's key, under the name the config gives in `nova.llm.apiKeyEnv`, typed when asked; without a `nova`
+section it is not needed. `pnpm cloudflare:deploy` (and `:dev`) first bundles Nova's knowledge from the config in
+`portal.cloudflare.local.json`, or the file `PORTAL_CONFIG_FILE` names, into `cloudflare/knowledge.json` (kept out of git).
+
+After a deploy the previous version of the object can keep answering for a few minutes: look again before concluding that a change did not arrive.
+
+Give it a domain of your own in the Cloudflare dashboard (the Worker, Settings, Domains). To try it on this machine first, put
+both secrets in `cloudflare/.dev.vars` (`PORTAL_CONFIG='…'` and `PORTAL_TOKENS='…'`, kept out of git) and run
+`pnpm cloudflare:dev`; `pnpm cloudflare:check` checks it all on this machine, with its own people. Nothing is deployed by either.

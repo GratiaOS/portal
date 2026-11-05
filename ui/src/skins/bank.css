@@ -1,0 +1,800 @@
+/*
+ * 🏦 a skin for a room that is read like a ledger: a log of rows (time, who, what), square corners, ruled lines, a column of
+ * channels at the side. No bubbles, no glass, nothing that moves unless something is being worked on.
+ *
+ * It lays out the very same page as 🫧 and answers the same parts (see README.md). The difference is not colour: a message is
+ * not a rounded shape but a row of a table, made by giving `message` three columns and letting `message-body` disappear
+ * into them (`display: contents`), so that `time`, `speaker` and `bubble` are laid side by side.
+ *
+ * Every rule is inside `:root:is([data-skin='bank'], [data-skin-base='bank'])` (it answers when it is the look, and when a skin from a room's folder says it builds on it), and the names of its keyframes start with `bank-`. Plain CSS, no tools.
+ */
+
+:root:is([data-skin='bank'], [data-skin-base='bank']) {
+  color-scheme: light;
+
+  /* the grid of the log: the thinking line and the rows share these, so that they line up */
+  --pad: 1.25rem;
+  --col-time: 4.25rem;
+  --col-who: 8.5rem;
+  --gap: 0.75rem;
+
+  --field: oklch(0.955 0.008 250);
+  --paper: oklch(0.99 0.003 250);
+  --rule: oklch(0.8 0.012 250);
+  --rule-soft: oklch(0.9 0.008 250);
+  --ink: oklch(0.25 0.03 255);
+  --ink-soft: oklch(0.25 0.03 255 / 0.82);
+  --ink-faint: oklch(0.25 0.03 255 / 0.7);
+  --glass: var(--paper);
+  --glass-strong: oklch(1 0 0);
+  --glass-edge: var(--rule);
+  --code: oklch(0.96 0.008 250);
+  --code-edge: var(--rule);
+  --mine: transparent;
+  --companion: oklch(0.955 0.025 250);
+  --accent: oklch(0.36 0.09 255);
+  --accent-ink: oklch(0.99 0 0);
+  --focus: oklch(0.5 0.17 255);
+  --calm: oklch(0.48 0.1 160);
+  --warm: oklch(0.55 0.13 70);
+  --quiet: oklch(0.4 0.1 300);
+  --serif: ui-serif, Georgia, 'Times New Roman', serif;
+
+  body {
+    color: var(--ink);
+    background: var(--field);
+    font-size: 14px;
+  }
+
+  /* --- the page --- */
+
+  [data-part='app'],
+  [data-part='stage'] {
+    position: relative;
+    height: 100%;
+  }
+
+  /* nothing floats behind a ledger */
+  [data-part='ambient'],
+  [data-part='mote'] {
+    display: none;
+  }
+
+  [data-part='sr-only'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* --- the threshold --- */
+
+
+
+
+
+
+
+
+
+
+  /* --- the room: a ruled column of channels, and the log beside it --- */
+
+  [data-part='room'] {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+  }
+
+  [data-part='side'] {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  [data-part='label'] {
+    display: none;
+    margin-bottom: 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  [data-part='hash'] {
+    color: var(--ink-faint);
+  }
+
+  [data-part='channel-list'] {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+  }
+
+  [data-part='channel'] {
+    flex-shrink: 0;
+    padding: 0.375rem 0.625rem;
+    text-align: left;
+    border-left: 3px solid transparent;
+  }
+
+  [data-part='channel'][aria-current='true'] {
+    font-weight: 600;
+    background: var(--field);
+    border-left-color: var(--accent);
+  }
+
+  [data-part='side-foot'] {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  [data-part='people'] {
+    min-width: 0;
+  }
+
+  [data-part='people-list'] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  [data-part='person'] {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+  }
+
+  [data-part='person'][data-here] {
+    color: var(--ink);
+  }
+
+  [data-part='person-name'] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* here is a filled square, not here an empty one: told by shape, not only by colour */
+  [data-part='presence'] {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--calm);
+  }
+
+  [data-part='presence']:not([data-here]) {
+    background: transparent;
+    border: 1.5px solid var(--ink-faint);
+  }
+
+  [data-part='self'] {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+  }
+
+  [data-part='self-name'] {
+    display: none;
+  }
+
+  [data-part='skin-switch'] {
+    display: flex;
+    gap: 0;
+  }
+
+  [data-part='skin-option'] {
+    padding: 0.125rem 0.5rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--rule);
+    margin-left: -1px;
+    background: var(--paper);
+    opacity: 0.7;
+  }
+
+  [data-part='skin-option'][aria-pressed='true'] {
+    background: var(--accent);
+    opacity: 1;
+  }
+
+  /* the sign is written against the name, ida🦁: no gap, the same size */
+  [data-part='sign'] {
+    margin-left: 0.05em;
+  }
+
+  /* your sign, after your name: a slot, ▲▼ beside it, and behind it a grid moved like a cursor on a select screen */
+  [data-part='sign-slot-wrap'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.125rem;
+  }
+
+  [data-part='sign-slot'] {
+    padding: 0.125rem 0.1875rem;
+    font-size: 1rem;
+    line-height: 1;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  [data-part='sign-slot'][data-preview] {
+    outline: 1px dashed var(--ink-faint);
+    outline-offset: 1px;
+  }
+
+  [data-part='sign-steps'] {
+    display: inline-flex;
+    flex-direction: column;
+  }
+
+  [data-part='sign-step'] {
+    padding: 0 0.25rem;
+    font-size: 0.6rem;
+    line-height: 1.1;
+    color: var(--ink-faint);
+    background: transparent;
+  }
+
+  [data-part='sign-step']:hover,
+  [data-part='sign-step']:focus-visible {
+    color: var(--ink);
+  }
+
+  [data-part='sign-grid'] {
+    flex-basis: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 2rem);
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+    padding: 0.375rem;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 0;
+  }
+
+  [data-part='sign-tile'],
+  [data-part='sign-add'] {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.05rem;
+    line-height: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0;
+  }
+
+  [data-part='sign-tile'][data-own] {
+    background: var(--rule-soft);
+  }
+
+  [data-part='sign-tile'][aria-pressed='true'] {
+    border-color: var(--calm);
+  }
+
+  /* the frame of the cursor */
+  [data-part='sign-tile']:focus-visible,
+  [data-part='sign-add']:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  [data-part='sign-add'] {
+    color: var(--ink-soft);
+    border: 1px dashed var(--ink-faint);
+  }
+
+  [data-part='sign-input'] {
+    grid-column: span 2;
+    width: 100%;
+    height: 2rem;
+    font-size: 1.05rem;
+    text-align: center;
+    color: inherit;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 0;
+  }
+
+  [data-part='sign-said'] {
+    flex-basis: 100%;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+
+
+  [data-part='notify'],
+  [data-part='signout'] {
+    font-size: 0.75rem;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    color: var(--ink-soft);
+  }
+
+  [data-part='main'] {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    background: var(--paper);
+  }
+
+  /* --- a channel --- */
+
+  [data-part='channel-view'] {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  [data-part='channel-head'] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem var(--pad);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  [data-part='channel-title'] {
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  [data-part='signal'] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  [data-part='signal-dot'] {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--calm);
+  }
+
+  [data-part='signal'][data-connection='connecting'] [data-part='signal-dot'],
+  [data-part='signal'][data-connection='reconnecting'] [data-part='signal-dot'] {
+    background: var(--warm);
+  }
+
+  [data-part='signal'][data-connection='refused'] [data-part='signal-dot'] {
+    background: var(--quiet);
+  }
+
+  /* --- what was said: a row to a message --- */
+
+  [data-part='log'] {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    /* the log holds what is only for a screen reader (position: absolute): so that it sits in the log and scrolls with it, and does not stretch the page */
+    position: relative;
+  }
+
+  [data-part='older'] {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  [data-part='older-button'] {
+    padding: 0.25rem 0.875rem;
+    font-size: 0.75rem;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+  }
+
+  [data-part='older-button']:disabled {
+    opacity: 0.5;
+  }
+
+  [data-part='empty'] {
+    padding: 2rem var(--pad);
+    color: var(--ink-faint);
+  }
+
+  [data-part='messages'] {
+    padding: 0;
+    list-style: none;
+  }
+
+  /* on a narrow page: the time and the name on one line, the words under them */
+  [data-part='message'] {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--gap);
+    align-items: baseline;
+    padding: 0.375rem 0.75rem;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  [data-part='message'][data-from='companion'] {
+    background: var(--companion);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  /* a message that names the reader: the row is tinted, over the companion's own colour when it is hers */
+  [data-part='message'][data-to-you] {
+    background-image: linear-gradient(oklch(0.48 0.1 160 / 0.1), oklch(0.48 0.1 160 / 0.1));
+  }
+
+  [data-part='message-body'] {
+    display: contents;
+  }
+
+  [data-part='time'] {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+  }
+
+  [data-part='message']:not([data-head]) [data-part='time'] {
+    display: none;
+  }
+
+  [data-part='speaker'] {
+    grid-column: 2;
+    grid-row: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: hsl(var(--hue) 45% 26%);
+  }
+
+  [data-part='speaker-mark'] {
+    margin-left: 0.25rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+  }
+
+  [data-part='bubble'] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  [data-part='message']:not([data-head]) [data-part='bubble'] {
+    grid-row: 1;
+  }
+
+  [data-part='content'] {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  [data-part='text'] {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  /* --- inside the words: who is named, what is marked, what is code, and a message that is only a sign --- */
+
+  [data-part='mention'] {
+    font-weight: 600;
+    color: hsl(var(--hue) 45% 26%);
+  }
+
+  [data-part='mention'][data-you] {
+    background: hsl(var(--hue) 60% 70% / 0.3);
+  }
+
+  [data-part='tag'] {
+    font-weight: 500;
+    color: var(--calm);
+  }
+
+  [data-part='inline-code'] {
+    padding: 0 0.25rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--code);
+    border: 1px solid var(--code-edge);
+    font-variant-ligatures: none;
+  }
+
+  [data-part='text'][data-jumbo] {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  ::highlight(room-occurrence) {
+    background-color: oklch(0.36 0.09 255 / 0.22);
+  }
+
+  [data-part='sources'] {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+
+  [data-part='thinking'] {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0.5rem 0.75rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8125rem;
+    font-style: italic;
+    background: var(--companion);
+    border-left: 3px solid var(--accent);
+    color: var(--ink-soft);
+  }
+
+  [data-part='thinking-dots'] {
+    display: inline-flex;
+    gap: 0.25rem;
+  }
+
+  [data-part='dot'] {
+    display: inline-block;
+    width: 0.375rem;
+    height: 0.375rem;
+    background: var(--warm);
+  }
+
+  /* --- code, as it was written --- */
+
+  [data-part='code'] {
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--code);
+    border: 1px solid var(--rule);
+  }
+
+  [data-part='code-head'] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.6875rem;
+    border-bottom: 1px solid var(--rule-soft);
+    color: var(--ink-faint);
+  }
+
+  [data-part='code-lang'] {
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  [data-part='code-copy'] {
+    padding: 0 0.25rem;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    color: var(--ink-soft);
+  }
+
+  [data-part='code-body'] {
+    margin: 0;
+    padding: 0.5rem 0.625rem;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    font-variant-ligatures: none;
+  }
+
+  /* --- where something is written --- */
+
+  [data-part='composer'] {
+    padding: 0.625rem 0.75rem;
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+  }
+
+  [data-part='composer-row'] {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  [data-part='composer-input'] {
+    flex-grow: 1;
+    resize: none;
+    padding: 0.625rem 0.75rem;
+    background: var(--glass-strong);
+    border: 1px solid var(--rule);
+  }
+
+  [data-part='composer-send'] {
+    padding: 0 1.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  [data-part='composer-send']:disabled {
+    opacity: 0.5;
+  }
+
+  [data-part='composer-note'] {
+    min-height: 1.125rem; /* a line of its own height, so the box does not move when the hint appears */
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--quiet);
+  }
+
+  [data-part='field'] {
+    display: none;
+  }
+
+
+  [data-part='field-line'] {
+    margin: 0;
+    text-align: center;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+  }
+
+  /* --- a wide page: the channels become a ruled column, and a message a row of three --- */
+
+  @media (min-width: 48rem) {
+    [data-part='room'] {
+      display: grid;
+      grid-template-columns: 15rem minmax(0, 1fr);
+    }
+
+    [data-part='side'] {
+      padding: 1.25rem 1rem;
+      border-bottom: 0;
+      border-right: 1px solid var(--rule);
+    }
+
+    [data-part='label'] {
+      display: block;
+    }
+
+    [data-part='channel-list'] {
+      flex-direction: column;
+      overflow: visible;
+    }
+
+    [data-part='side-foot'] {
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    [data-part='people-list'] {
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    [data-part='self-name'] {
+      display: block;
+      font-weight: 600;
+    }
+
+    [data-part='channel-head'] {
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+    }
+
+    [data-part='message'] {
+      grid-template-columns: var(--col-time) var(--col-who) minmax(0, 1fr);
+      padding: 0.375rem var(--pad);
+    }
+
+    [data-part='message']:not([data-head]) [data-part='time'] {
+      display: block;
+      opacity: 0;
+    }
+
+    [data-part='message']:hover [data-part='time'] {
+      opacity: 1;
+    }
+
+    [data-part='speaker'] {
+      grid-column: 2;
+    }
+
+    [data-part='bubble'],
+    [data-part='message']:not([data-head]) [data-part='bubble'] {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    [data-part='thinking'] {
+      margin: 0.5rem var(--pad) 0.5rem calc(var(--pad) + var(--col-time) + var(--col-who) + 2 * var(--gap));
+    }
+
+    [data-part='composer'] {
+      padding: 0.75rem var(--pad);
+    }
+  }
+
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
+    [data-part='message']:not([data-head]) [data-part='time'] {
+      transition: opacity 0.15s;
+    }
+  }
+
+  /* the third column, only where the channel keeps room for its rows: a ruled margin with a line in it, still (after the rules of the wide page, so that it wins over their two columns) */
+  @media (min-width: 64rem) {
+    [data-part='room'] {
+      grid-template-columns: 15rem minmax(0, 1fr) 13rem;
+    }
+
+    [data-part='field'] {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem 1rem;
+      border-left: 1px solid var(--rule);
+    }
+  }
+
+  /* --- motion: only for what is being worked on, and for anyone who asks for less, none --- */
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-part='sign-slot'][data-popping] {
+      animation: bank-blink 0.15s steps(2) 4 alternate;
+    }
+    [data-part='sign-tile']:focus-visible,
+    [data-part='sign-add']:focus-visible {
+      animation: bank-blink 0.5s steps(2) infinite alternate;
+    }
+    [data-part='dot'] {
+      animation: bank-blink 1.2s steps(2, jump-none) infinite;
+      animation-delay: calc(var(--i) * 0.2s);
+    }
+
+    [data-part='signal'][data-connection='connecting'] [data-part='signal-dot'],
+    [data-part='signal'][data-connection='reconnecting'] [data-part='signal-dot'] {
+      animation: bank-blink 1.2s steps(2, jump-none) infinite;
+    }
+  }
+}
+
+@keyframes bank-blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.25;
+  }
+}

@@ -1,0 +1,43 @@
+/* The garden remembers.
+   This portal forgets what was said, by default, and keeps what was understood where someone put it on purpose. The look lives in the
+   skins (data-part and data-here answer to a stylesheet); nothing here reaches past them. */
+
+@import 'tailwindcss';
+@import './skins/bubbles.css';
+@import './skins/bank.css';
+@import './skins/radar.css';
+@import './gate.css';
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+/*
+ * What every skin starts from: the page fills the window, the type is the system's, and keyboard focus is visible.
+ * Everything else, colour and place and motion, is the skin's (see `skins/`).
+ */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * A part that came after contract 1 is hidden until a skin shows it: a skin made for contract 1, from a room's folder and built
+ * on nothing, does not know it, and must not find it in its layout at every width. The skins that know it (the built-in ones,
+ * and any that builds on one of them) show it with rules of their own, which win over this one.
+ */
+[data-part='field'] {
+  display: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

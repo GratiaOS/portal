@@ -1,0 +1,3 @@
+#!/bin/sh
+# Every commit carries a whisper and a sign-off; see CONTRIBUTING.md. Set up by `pnpm install` (core.hooksPath).
+exec node "$(dirname "$0")/commit-msg.cjs" "$1"

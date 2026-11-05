@@ -1,0 +1,11 @@
+.env
+*.local.json
+data/
+*.db
+*.db-*
+node_modules
+dist
+# the Cloudflare home, run locally
+.wrangler
+.dev.vars
+cloudflare/knowledge.json

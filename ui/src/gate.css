@@ -1,0 +1,237 @@
+/*
+ * The threshold, the portal's own and the same in every look: the gate of lights, drawn from the photograph it came from. Dusk
+ * above (cobalt, then a band of coral and pink at the horizon, with dark clouds drawn across it), one tree alone on the horizon,
+ * and below, a dark field with a fence in it, lit by a string of warm bulbs: along its top, down its right post, and in a loop on
+ * its left post that lights the grass. The fence is the doorway: the key is given inside it. The lights were solar: the day
+ * feeds the night, and nobody is asked to charge them.
+ *
+ * Its parts are named with `data-gate`, not `data-part`, so that no skin's rule reaches them (skins/README.md, "The threshold").
+ */
+
+[data-gate='page'] {
+  /* the dusk of the photograph, in the cobalt and coral of the trip */
+  --sky-top: #16295e;
+  --sky-blue: #2f63c4;
+  --sky-haze: #8e6aa8;
+  --sky-coral: #e8735a;
+  --sky-last: #f4b48a;
+  --cloud: #1b2140;
+  --land: #07090d;
+  --ink: #f2eee3;
+  --ink-soft: #a9ab9f;
+  /* the lights */
+  --bulb: #fef9c3;
+  --bulb-warm: #facc15;
+  --horizon: 40%;
+
+  position: relative;
+  display: grid;
+  grid-template-rows: var(--horizon) 1fr auto;
+  justify-items: center;
+  min-height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
+  background: linear-gradient(
+    180deg,
+    var(--sky-top) 0%,
+    var(--sky-blue) calc(var(--horizon) * 0.55),
+    var(--sky-haze) calc(var(--horizon) * 0.8),
+    var(--sky-coral) calc(var(--horizon) * 0.93),
+    var(--sky-last) calc(var(--horizon) - 0.6%),
+    var(--land) var(--horizon),
+    var(--land) 100%
+  );
+}
+
+/* the sky's drawing: clouds across it, the land's edge, and the tree on it */
+[data-gate='sky'] {
+  position: absolute;
+  inset: 0 0 auto 0;
+  width: 100%;
+  height: calc(var(--horizon) + 2px);
+  pointer-events: none;
+}
+
+[data-gate='cloud'] {
+  fill: var(--cloud);
+  opacity: 0.78;
+}
+
+[data-gate='hill'],
+[data-gate='tree'] {
+  fill: var(--land);
+}
+
+/* the doorway: the fence and its lights, with the key given inside it */
+[data-gate='doorway'] {
+  position: relative;
+  grid-row: 2;
+  align-self: center;
+  width: min(92vw, 30rem);
+  aspect-ratio: 480 / 250;
+  margin-top: -6vh;
+}
+
+[data-gate='fence'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+[data-gate='glow-in'] {
+  stop-color: var(--bulb-warm);
+  stop-opacity: 0.5;
+}
+
+[data-gate='glow-out'] {
+  stop-color: #9bb04a;
+  stop-opacity: 0;
+}
+
+[data-gate='post'] {
+  fill: #2b2a24;
+}
+
+[data-gate='wire'] {
+  stroke: #3a3a30;
+  stroke-width: 0.8;
+  opacity: 0.45;
+}
+
+/* one string, drawn twice: a wide soft halo, and the bulbs themselves as round dots along it */
+[data-gate='halo'],
+[data-gate='bulbs'] {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 0 9;
+}
+
+[data-gate='halo'] {
+  stroke: var(--bulb-warm);
+  stroke-width: 9;
+  opacity: 0.2;
+}
+
+[data-gate='bulbs'] {
+  stroke: var(--bulb);
+  stroke-width: 3.6;
+}
+
+/* inside the doorway: the name of the place, the key, and a calm line */
+[data-gate='opening'] {
+  position: absolute;
+  inset: 14% 11% 12% 16%;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(0.3rem, 1.4vw, 0.55rem);
+  text-align: center;
+}
+
+[data-gate='title'] {
+  margin: 0;
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: clamp(1.1rem, 4.5vw, 1.7rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* the question above the field, small and quiet: who has a key knows what it is for */
+[data-gate='label'] {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+[data-gate='input'] {
+  width: 100%;
+  max-width: 15rem;
+  padding: 0.4rem 0.25rem;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgb(254 249 195 / 0.5);
+  border-radius: 0;
+  outline: none;
+}
+
+[data-gate='input']::placeholder {
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink-soft);
+}
+
+/* its own focus: the page's ring, in the colour of a skin, does not come through */
+[data-gate='input']:focus-visible {
+  outline: none;
+  border-bottom-color: var(--bulb);
+  box-shadow: 0 6px 12px -8px rgb(250 204 21 / 0.6);
+}
+
+[data-gate='note'] {
+  min-height: 1.3em;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--sky-last);
+}
+
+[data-gate='side'] {
+  grid-row: 3;
+  margin: 0 0 1.4rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  text-underline-offset: 3px;
+}
+
+[data-gate='side']:focus-visible {
+  outline: 2px solid var(--bulb);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+[data-gate='sr-only'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* the bulbs breathe a little, and the doorway lights up once; for anyone who asked for less motion, all is still */
+@media (prefers-reduced-motion: no-preference) {
+  [data-gate='string'] {
+    animation: gate-breathe 5s ease-in-out infinite;
+  }
+  [data-gate='doorway'] {
+    animation: gate-arrive 0.9s ease-out both;
+  }
+}
+
+@keyframes gate-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes gate-arrive {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

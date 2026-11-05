@@ -1,0 +1,32 @@
+{
+  "name": "portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A small team chat with a companion who answers from a folder, on the model you bring.",
+  "license": "MPL-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
+    "build": "pnpm --filter @gratiaos/llm-provider build && tsc -p tsconfig.json",
+    "start": "node --env-file-if-exists=.env dist/main.js",
+    "gaps": "node dist/gaps.js",
+    "tokens": "node dist/tokens.js",
+    "traces": "node scripts/verify-traces.mjs",
+    "demo": "pnpm run build && node scripts/demo.mjs",
+    "test": "pnpm run build && node --test \"test/*.test.mjs\"",
+    "cloudflare:dev": "pnpm run build && pnpm --filter portal-ui build && node cloudflare/bundle-knowledge.mjs && npx --yes wrangler@4.136.2 dev -c cloudflare/wrangler.jsonc",
+    "cloudflare:check": "pnpm run build && pnpm --filter portal-ui build && node cloudflare/test/run.mjs",
+    "cloudflare:deploy": "pnpm run build && pnpm --filter portal-ui build && node cloudflare/bundle-knowledge.mjs && npx --yes wrangler@4.136.2 deploy -c cloudflare/wrangler.jsonc"
+  },
+  "dependencies": {
+    "@gratiaos/llm-provider": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@11.18.0"
+}

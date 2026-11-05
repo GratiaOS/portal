@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  portal:
+    name: Build, the three suites, the Cloudflare check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # the pnpm version is the one `packageManager` names
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.18.0' # the page's tests need 22.18
+          cache: 'pnpm'
+
+      - name: Install from the lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Model client tests
+        run: pnpm --filter @gratiaos/llm-provider test
+
+      - name: Server tests
+        run: pnpm --filter portal test
+
+      - name: Page tests
+        run: pnpm --filter portal-ui test
+
+      - name: Page builds
+        run: pnpm --filter portal-ui build
+
+      # the Worker and its object, on `wrangler dev` on this machine: no account, nothing deployed
+      - name: Cloudflare check
+        run: pnpm cloudflare:check
