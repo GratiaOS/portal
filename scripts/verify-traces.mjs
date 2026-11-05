@@ -96,11 +96,18 @@ export function checkTraces(dir) {
  * Each place is asked once, all of them at the same time, so an offline run ends after one timeout. `fetchImpl` is for tests.
  */
 export async function checkLinks(links, fetchImpl = fetch, { timeoutMs = 10_000 } = {}) {
-  const ask = (raw) =>
-    fetchImpl(raw, { method: 'HEAD', signal: AbortSignal.timeout(timeoutMs) }).then(
-      (res) => (res.ok ? 'there' : res.status === 404 ? 'gone' : 'unreachable'),
-      () => 'unreachable',
-    );
+  // a timer of our own, not AbortSignal.timeout: that one does not keep Node alive, so a request that never answers could let the
+  // process end with the question still open (seen on a CI runner), instead of giving up after the timeout
+  const ask = (raw) => {
+    const stop = new AbortController();
+    const timer = setTimeout(() => stop.abort(new DOMException('timed out', 'TimeoutError')), timeoutMs);
+    return fetchImpl(raw, { method: 'HEAD', signal: stop.signal })
+      .then(
+        (res) => (res.ok ? 'there' : res.status === 404 ? 'gone' : 'unreachable'),
+        () => 'unreachable',
+      )
+      .finally(() => clearTimeout(timer));
+  };
   const rawOf = (link) => `https://raw.githubusercontent.com/${link.owner}/${link.repo}/${link.commit}/${link.path}`;
   const answers = new Map();
   for (const link of links) if (!answers.has(rawOf(link))) answers.set(rawOf(link), ask(rawOf(link)));
