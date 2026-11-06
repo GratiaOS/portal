@@ -48,6 +48,18 @@ export function canIn(store: Pick<RoomStore, 'getConversation' | 'bindingsOf'>, 
   return permissionsIn(store, who, roomId, now).includes(permission);
 }
 
+/** Whether the participant is in their time at all: the team always; a guest while one of their bindings lasts. After it, nothing of theirs opens. */
+export function isLive(store: Pick<RoomStore, 'bindingsOf'>, who: Participant, now: number): boolean {
+  return who.kind !== 'guest' || store.bindingsOf(who.id).some((binding) => binding.activeFrom <= now && now < binding.expiresAt);
+}
+
+/** When the last of a guest's bindings that is in its time ends (milliseconds since the epoch), or `undefined` for someone who has no end. */
+export function endOfGuest(store: Pick<RoomStore, 'bindingsOf'>, who: Participant, now: number): number | undefined {
+  if (who.kind !== 'guest') return undefined;
+  const live = store.bindingsOf(who.id).filter((binding) => binding.activeFrom <= now && now < binding.expiresAt);
+  return live.length ? Math.max(...live.map((binding) => binding.expiresAt)) : now;
+}
+
 /** Whom a participant may know of at all: the team knows everyone; a guest knows other guests and the companions, never the team's people. */
 export function mayKnow(who: Participant, other: Participant): boolean {
   return who.kind !== 'guest' || other.kind === 'guest' || other.kind === 'companion';

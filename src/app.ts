@@ -1,4 +1,4 @@
-import { canIn } from './access.js';
+import { canIn, isLive } from './access.js';
 import type { GuestsConfig } from './config.js';
 import { tokenDigest } from './config.js';
 import { GuestRoomFull, admitGuest } from './guests.js';
@@ -145,6 +145,8 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       failures.take(caller);
       throw new HttpError(401, 'unauthorized', { 'WWW-Authenticate': 'Bearer realm="portal"' });
     }
+    // a guest whose time is over is known, and let in nowhere: not a wrong key, so it is not counted as one, and it opens no stream
+    if (!isLive(store, participant, clock())) throw new HttpError(401, 'unauthorized', { 'WWW-Authenticate': 'Bearer realm="portal"' });
     return participant;
   }
 

@@ -1,4 +1,4 @@
-import { canIn, mayKnow } from './access.js';
+import { canIn, endOfGuest, mayKnow } from './access.js';
 import type { Conversation, Participant, Presence, Turn } from './domain.js';
 import { frame } from './sse.js';
 import type { RoomStore } from './store.js';
@@ -40,7 +40,7 @@ export type HubOptions = {
   now?: () => number;
 };
 
-type Connection = { participant: Participant; sink: Sink };
+type Connection = { participant: Participant; sink: Sink; endTimer?: ReturnType<typeof setTimeout> };
 
 const DEFAULT_GRACE_MS = 5000;
 const REPLAY_PAGE = 1000;
@@ -91,6 +91,16 @@ export class Hub {
     // told before the connection exists, so the newcomer hears about everyone else, not about themselves
     if (participant.kind === 'human' && this.presenceOf(participant).state !== 'online') this.setPresence(participant.id, 'online');
     this.connections.add(connection);
+
+    // a guest's stream ends when their time does: it does not outlive the binding that opened it
+    const end = endOfGuest(this.store, participant, this.now());
+    if (end !== undefined) {
+      connection.endTimer = setTimeout(() => {
+        this.drop(connection);
+        connection.sink.close?.();
+      }, Math.max(0, end - this.now()));
+      connection.endTimer.unref();
+    }
 
     // what a connection is told is what its participant may know: a guest hears of their own room and of no one on the team
     const known = this.store.listParticipants().filter((other) => mayKnow(participant, other));
@@ -143,7 +153,10 @@ export class Hub {
     for (const timer of this.leaving.values()) clearTimeout(timer);
     this.leaving.clear();
     this.thinking.clear();
-    for (const { sink } of this.connections) sink.close?.();
+    for (const { sink, endTimer } of this.connections) {
+      if (endTimer) clearTimeout(endTimer);
+      sink.close?.();
+    }
     this.connections.clear();
   }
 
@@ -177,6 +190,7 @@ export class Hub {
 
   private drop(connection: Connection): void {
     if (!this.connections.delete(connection)) return;
+    if (connection.endTimer) clearTimeout(connection.endTimer);
     const { participant } = connection;
     if (participant.kind !== 'human' || this.hasConnection(participant.id)) return;
 

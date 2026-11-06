@@ -90,13 +90,15 @@ test('one caller may bring in only so many guests, and another caller is not ask
   assert.equal((await enter('same')).status, 201);
 });
 
-test('a guest whose time is over has a key that opens nothing', async () => {
+test('a guest whose time is over has a key that opens nothing, not even a stream, and it is not a wrong key', async () => {
   const { enter, call, advance } = setup();
   const { token } = await (await enter()).json();
   advance(31 * MIN);
-  assert.equal((await call('/api/me', { token })).status, 200); // they still are who they were
-  assert.deepEqual((await (await call('/api/rooms', { token })).json()).rooms, []);
-  assert.equal((await call('/api/rooms/guests/messages', { token })).status, 404);
+  for (const path of ['/api/me', '/api/rooms', '/api/rooms/guests/messages', '/api/stream']) assert.equal((await call(path, { token })).status, 401, path);
+
+  // an expired key is a known key, not a guess: however often it is tried, the same address is not locked out for it
+  for (let i = 0; i < 25; i += 1) await call('/api/me', { token });
+  assert.equal((await call('/api/me', { token: ZEUS })).status, 200);
 });
 
 test('a wrong key is still a wrong key, for a guest as for anyone', async () => {
