@@ -64,6 +64,30 @@ not what the knowledge lacked), and they cannot ask the companion. `maxActive` i
 door answers `503`); `perCaller` is how many one address may bring in per window (`429`), and counts by the address the connection has (see `clientIpHeader`).
 Without `guests`, there is no door. Only the digest of a guest's key is kept.
 
+**The companion for guests** is off until you turn it on, and it is never the team's: she has an engine of her own, a folder of her own, and a
+budget she keeps.
+
+```json
+"guests": {
+  "room": "guests",
+  "nova": {
+    "enabled": true,
+    "llm": { "baseUrl": "https://engine-for-guests.example/v1", "model": "…", "apiKeyEnv": "PORTAL_GUESTS_LLM_API_KEY" },
+    "knowledgeDir": "public-docs",
+    "questions": 5,
+    "perHour": 60
+  }
+}
+```
+
+- **`llm` is required to turn her on**, and is not inherited from the team's `nova.llm`: the engine that answers strangers is chosen on purpose.
+- **`knowledgeDir`** is a folder written for visitors, apart from the team's. It is never a filter on the team's folder: what is not in what is sent
+  to the model cannot be got out of it. What she may say about the portal is made for guests too (no name of the team, no server).
+- **`questions`** is how many each guest may ask in their visit (5), and **`perHour`** how many all the guests together may ask in an hour (60).
+  Both are counted when the question is asked, before the model is called, so a model that fails still costs one; past either, the portal says so
+  in a plain line. What a visitor asks is never put on the list of what the knowledge lacked.
+- Not on Cloudflare yet: there the portal refuses to open with `guests.nova.enabled` true, rather than open without her folder.
+
 ## Run
 
 ```bash

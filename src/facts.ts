@@ -49,3 +49,24 @@ export function roomFacts(
     ...nova.facts.map((fact) => `- ${fact}`),
   ].join('\n');
 }
+
+/**
+ * What Nova may say about the portal, to guests: made for them, never cut from the team's. No name of a person of the team, nothing of what
+ * the team keeps or for how long, no server (a visitor must not learn where an engine runs). What she is told is what is true of a guest room:
+ * who may read it, how many questions a visit has, and that she reads only what was written for visitors.
+ */
+export function guestFacts(config: { questions: number; nova: { alias: string; contextTurns: number; llm: { model: string }; facts: string[] } }, knowledgeFiles: number): string {
+  const { nova } = config;
+  return [
+    '- This is a room for visitors, in a portal that a team runs. Each visitor has a name of the hour (an animal) and no account; you know nothing else of anyone.',
+    '- Everything said in this room is read by every visitor who is in it, and your answers too: do not say anything here that you would not say to all of them.',
+    `- You answer only when someone writes @${nova.alias}. You see the last ${nova.contextTurns} messages of this room and the documents written for visitors, nothing from any other room and nothing about the team.`,
+    `- Each visitor may ask you ${config.questions} question${config.questions === 1 ? '' : 's'} during a visit; after that you are not asked anything, and the portal says so, not you.`,
+    `- You run on the model "${nova.llm.model}".`,
+    knowledgeFiles
+      ? `- You read ${knowledgeFiles} documents, written for visitors. You can name the ones you used; what they do not say, you do not know, and you say so.`
+      : '- Nothing is written down for you yet: what you say of this place comes from these facts and from the conversation.',
+    '- You do not know how long messages are kept, who runs the portal, or who else is in it: if you are asked, say that you do not know.',
+    ...nova.facts.map((fact) => `- ${fact}`),
+  ].join('\n');
+}

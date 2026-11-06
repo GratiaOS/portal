@@ -57,6 +57,22 @@ export type GuestsConfig = {
   minutes: number;
   /** How many guests one caller may bring in, per window. */
   perCaller: { count: number; perMinutes: number };
+  /** The companion for guests: an engine of her own, off until it is chosen. */
+  nova: GuestNovaConfig;
+};
+
+/**
+ * Nova for guests. Apart from the team's in everything that matters: her own engine (`nova.llm`), her own public folder (`nova.knowledgeDir`,
+ * never a filter on the team's), her own facts (made without the team's names), and a budget of questions that she keeps. `enabled` is false
+ * until it is chosen to be true; then `nova` holds her.
+ */
+export type GuestNovaConfig = {
+  enabled: boolean;
+  nova?: NovaConfig;
+  /** How many questions each guest may ask. */
+  questions: number;
+  /** How many questions guests may ask in an hour, all together: what bounds the cost whoever comes. */
+  perHour: number;
 };
 
 export type RoomConfig = {
@@ -113,7 +129,7 @@ function whole(value: unknown, fallback: number, name: string, { min, max }: { m
   return value;
 }
 
-function parseGuests(raw: unknown, rooms: ConversationInput[]): GuestsConfig {
+function parseGuests(raw: unknown, rooms: ConversationInput[], participants: ConfigParticipant[], teamNova: NovaConfig | undefined, baseDir: string): GuestsConfig {
   if (!isRecord(raw)) throw new ConfigError('guests must be an object');
   const room = text(raw.room, 'guests.room');
   const found = rooms.find((r) => r.id === room);
@@ -129,7 +145,28 @@ function parseGuests(raw: unknown, rooms: ConversationInput[]): GuestsConfig {
       count: whole(each.count, 5, 'guests.perCaller.count', { min: 1, max: 100 }),
       perMinutes: whole(each.perMinutes, 10, 'guests.perCaller.perMinutes', { min: 1, max: 1440 }),
     },
+    nova: parseGuestNova(raw.nova, participants, teamNova, baseDir),
   };
+}
+
+function parseGuestNova(raw: unknown, participants: ConfigParticipant[], teamNova: NovaConfig | undefined, baseDir: string): GuestNovaConfig {
+  if (raw === undefined) return { enabled: false, questions: 5, perHour: 60 };
+  if (!isRecord(raw)) throw new ConfigError('guests.nova must be an object');
+  const { enabled, questions, perHour, ...novaFields } = raw;
+  if (enabled !== undefined && typeof enabled !== 'boolean') throw new ConfigError('guests.nova.enabled must be true or false');
+  const limits = { questions: whole(questions, 5, 'guests.nova.questions', { min: 1, max: 100 }), perHour: whole(perHour, 60, 'guests.nova.perHour', { min: 1, max: 10_000 }) };
+  if (enabled !== true) {
+    // off: nothing of her is read, so nothing is half-checked; a typo in her fields waits until she is turned on
+    return { enabled: false, ...limits };
+  }
+  if (novaFields.llm === undefined) throw new ConfigError('guests.nova.llm is needed to turn her on: the engine that answers guests is chosen, never inherited from the team\'s');
+  try {
+    const nova = parseNova({ alias: teamNova?.alias, contextTurns: 6, maxQueue: 3, ...novaFields }, participants, baseDir);
+    return { enabled: true, nova, ...limits };
+  } catch (err) {
+    if (err instanceof ConfigError) throw new ConfigError(err.message.replace(/\bnova\./g, 'guests.nova.'));
+    throw err;
+  }
 }
 
 function roomKind(value: unknown, name: string): 'team' | 'guest' {
@@ -241,7 +278,7 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
     },
     maxStreamsPerParticipant: whole(raw.maxStreamsPerParticipant, 10, 'maxStreamsPerParticipant', { min: 1, max: 100 }),
     retention: parseRetention(raw.retention),
-    ...(raw.guests === undefined ? {} : { guests: parseGuests(raw.guests, rooms) }),
+    ...(raw.guests === undefined ? {} : { guests: parseGuests(raw.guests, rooms, participants, nova, baseDir) }),
     ...(raw.tokensFile === undefined ? {} : { tokensFile: resolve(baseDir, text(raw.tokensFile, 'tokensFile')) }),
     ...(raw.clientIpHeader === undefined ? {} : { clientIpHeader: text(raw.clientIpHeader, 'clientIpHeader') }),
     ...(raw.staticDir === undefined ? {} : { staticDir: resolve(baseDir, text(raw.staticDir, 'staticDir')) }),
