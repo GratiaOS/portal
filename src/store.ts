@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { ALIAS_PATTERN, CONVERSATION_ID_PATTERN, GAP_REASONS, MAX_TEXT_LENGTH, PARTICIPANT_KINDS, RoomError, VISIBILITIES, isSign, participantId } from './domain.js';
+import type { Binding, RoomKind } from './authority.js';
 import type { Conversation, ConversationStatus, GapReason, KnowledgeGap, Participant, ParticipantKind, Turn, Visibility } from './domain.js';
+import { mayKnow } from './access.js';
 import { extractMentions } from './mentions.js';
 import type { Row, Sqlite } from './sqlite.js';
 
@@ -16,6 +18,8 @@ export type ParticipantInput = {
 export type ConversationInput = {
   id: string;
   title: string;
+  /** `team` unless said; `guest` makes the one kind of room a guest may be in. */
+  kind?: RoomKind;
   visibility?: Visibility;
   tags?: string[];
 };
@@ -106,8 +110,27 @@ const SCHEMA_V5 = (db: Sqlite) => {
   for (const column of ['given_sign', 'sign']) if (!have.has(column)) db.exec(`ALTER TABLE participants ADD COLUMN ${column} TEXT;`);
 };
 
+// What a guest may do, and where: a room is of a kind (`team` unless it is a guest room), and a binding is the temporary right of one
+// participant to exercise one role in one room (authority.ts). A binding is never removed by the portal here: it simply ends, and
+// what ended is no authority. Nothing in a binding says what the guest said or when they came.
+const SCHEMA_V6 = (db: Sqlite) => {
+  const have = new Set(db.all('PRAGMA table_info(conversations)').map((column) => column.name));
+  if (!have.has('kind')) db.exec("ALTER TABLE conversations ADD COLUMN kind TEXT NOT NULL DEFAULT 'team';");
+  db.exec(`CREATE TABLE IF NOT EXISTS bindings (
+    id             TEXT PRIMARY KEY,
+    room_id        TEXT NOT NULL REFERENCES conversations(id),
+    participant_id TEXT NOT NULL REFERENCES participants(id),
+    role_id        TEXT NOT NULL,
+    active_from    INTEGER NOT NULL,
+    expires_at     INTEGER NOT NULL,
+    budget         INTEGER NOT NULL,
+    ledger_id      TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS bindings_by_participant ON bindings(participant_id);`);
+};
+
 /** One entry per version: a database at version n gets the entries from n on, and keeps what it has. */
-const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5];
+const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6];
 const SCHEMA_VERSION = MIGRATIONS.length;
 
 function clamp(value: number | undefined, fallback: number, max: number): number {
@@ -139,6 +162,7 @@ function toConversation(row: Row): Conversation {
   return {
     id: row.id as string,
     title: row.title as string,
+    kind: (row.kind ?? 'team') as RoomKind,
     visibility: row.visibility as Visibility,
     status: row.status as ConversationStatus,
     tags: JSON.parse(row.tags as string) as string[],
@@ -217,14 +241,16 @@ export class RoomStore {
   /** Adds new conversations and updates title, visibility and tags. A closed conversation stays closed. */
   syncConversations(inputs: ConversationInput[]): void {
     const at = this.now().toISOString();
-    const upsert = `INSERT INTO conversations (id, title, visibility, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET title = excluded.title, visibility = excluded.visibility, tags = excluded.tags`;
+    const upsert = `INSERT INTO conversations (id, title, kind, visibility, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET title = excluded.title, kind = excluded.kind, visibility = excluded.visibility, tags = excluded.tags`;
     this.transaction(() => {
       for (const input of inputs) {
         if (!CONVERSATION_ID_PATTERN.test(input.id)) throw new RoomError('invalid', `"${input.id}" is not a valid conversation id`);
         const visibility = input.visibility ?? 'private';
         if (!VISIBILITIES.includes(visibility)) throw new RoomError('invalid', `unknown visibility "${visibility}"`);
-        this.db.run(upsert, input.id, input.title, visibility, JSON.stringify(input.tags ?? []), at, at);
+        const kind = input.kind ?? 'team';
+        if (kind !== 'team' && kind !== 'guest') throw new RoomError('invalid', `unknown room kind "${kind}"`);
+        this.db.run(upsert, input.id, input.title, kind, visibility, JSON.stringify(input.tags ?? []), at, at);
       }
     });
   }
@@ -236,6 +262,47 @@ export class RoomStore {
   getParticipant(id: string): Participant | undefined {
     const row = this.one('SELECT * FROM participants WHERE id = ?', id) as Row | undefined;
     return row && toParticipant(row);
+  }
+
+  // --- guests: made while the portal runs, bound to one room, never written by the config ---
+
+  /** Makes a guest, who can do nothing until a binding gives them something. The alias is the name of the hour (`owl`). */
+  addGuest(alias: string): Participant {
+    if (!ALIAS_PATTERN.test(alias)) throw new RoomError('invalid', `"${alias}" is not a valid alias`);
+    const id = participantId('guest', alias);
+    if (this.one('SELECT id FROM participants WHERE alias = ?', alias)) throw new RoomError('invalid', `alias "${alias}" is taken`);
+    this.db.run('INSERT INTO participants (id, kind, alias, capabilities, created_at) VALUES (?, ?, ?, ?, ?)', id, 'guest', alias, '[]', this.now().toISOString());
+    return this.getParticipant(id) as Participant;
+  }
+
+  /** Gives a participant the temporary right to exercise a role in a room. Only a guest room takes a guest. */
+  addBinding(binding: Binding): void {
+    const room = this.getConversation(binding.roomId);
+    if (!room) throw new RoomError('not_found', `no conversation "${binding.roomId}"`);
+    const who = this.getParticipant(binding.participantId);
+    if (!who) throw new RoomError('not_found', `no participant "${binding.participantId}"`);
+    if (who.kind === 'guest' && room.kind !== 'guest') throw new RoomError('invalid', `"${room.id}" is not a guest room`);
+    // a guest is kept to one room: a second binding for the same room is a renewal, for another room it is refused
+    if (who.kind === 'guest' && this.bindingsOf(who.id).some((other) => other.roomId !== binding.roomId)) {
+      throw new RoomError('invalid', `"${who.alias}" is a guest of another room`);
+    }
+    this.db.run(
+      'INSERT INTO bindings (id, room_id, participant_id, role_id, active_from, expires_at, budget, ledger_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      binding.id, binding.roomId, binding.participantId, binding.roleId, binding.activeFrom, binding.expiresAt, binding.budget, binding.ledgerId,
+    );
+  }
+
+  bindingsOf(participantId: string): Binding[] {
+    return (this.db.all('SELECT * FROM bindings WHERE participant_id = ? ORDER BY active_from', participantId) as Row[]).map((row) => ({
+      id: row.id as string,
+      roomId: row.room_id as string,
+      participantId: row.participant_id as string,
+      roleId: row.role_id as string,
+      activeFrom: row.active_from as number,
+      expiresAt: row.expires_at as number,
+      budget: row.budget as number,
+      ledgerId: row.ledger_id as string,
+    }));
   }
 
   listConversations(): Conversation[] {
@@ -271,11 +338,13 @@ export class RoomStore {
       const conversation = this.getConversation(input.conversationId);
       if (!conversation) throw new RoomError('not_found', `no conversation "${input.conversationId}"`);
       if (conversation.status === 'closed') throw new RoomError('closed', `conversation "${conversation.id}" is closed`);
-      if (!this.getParticipant(input.speakerId)) throw new RoomError('not_found', `no participant "${input.speakerId}"`);
+      const speaker = this.getParticipant(input.speakerId);
+      if (!speaker) throw new RoomError('not_found', `no participant "${input.speakerId}"`);
 
       const id = randomUUID();
       const createdAt = this.now().toISOString();
-      const mentions = extractMentions(text, this.listParticipants());
+      // a name is resolved only among those the speaker may know of: a guest who types @zeus must not learn, from what comes back, that there is one
+      const mentions = extractMentions(text, this.listParticipants().filter((other) => mayKnow(speaker, other)));
 
       const { lastInsertRowid } = this.db.run('INSERT INTO turns (id, conversation_id, speaker_id, text, mentions, created_at) VALUES (?, ?, ?, ?, ?, ?)', id, conversation.id, input.speakerId, text, JSON.stringify(mentions), createdAt);
       this.db.run('UPDATE conversations SET updated_at = ? WHERE id = ?', createdAt, conversation.id);
