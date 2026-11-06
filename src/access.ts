@@ -9,12 +9,15 @@ import type { Permission, Role, RoomContext } from './authority.js';
 import type { Conversation, Participant } from './domain.js';
 import type { RoomStore } from './store.js';
 
-/** What a guest is given: to read and to write in the guest room. Asking the companion is not here yet. */
+/**
+ * What a guest may be given: to read and to write in the guest room, and to ask the companion. Asking is only ever effective on a binding that
+ * has a budget of questions (see permissionsIn): a binding with none, which is every binding while the companion is off for guests, cannot.
+ */
 export const GUEST_ROLE: Role = {
   id: 'guest',
   purpose: 'a visitor, in one room',
-  permissions: ['read', 'write'],
-  boundaries: ['sees no other room', 'sees none of the team', 'does not ask the companion', 'reads none of what the knowledge lacks'],
+  permissions: ['read', 'write', 'ask'],
+  boundaries: ['sees no other room', 'sees none of the team', 'asks the companion only as many times as the binding has a budget for', 'reads none of what the knowledge lacks'],
 };
 
 /** A room as a place of authority. A team room allows a bound role nothing; a guest room allows what a guest role may have. It has no end here: a binding does. */
@@ -24,7 +27,7 @@ export function roomContext(room: Conversation): RoomContext {
     kind: room.kind,
     createdAt: Date.parse(room.createdAt),
     expiresAt: Number.MAX_SAFE_INTEGER,
-    allowed: room.kind === 'guest' ? ['read', 'write'] : [],
+    allowed: room.kind === 'guest' ? ['read', 'write', 'ask'] : [],
   };
 }
 
@@ -40,7 +43,12 @@ export function permissionsIn(
   if (!room) return [];
   const context = roomContext(room);
   const given = new Set<Permission>();
-  for (const binding of store.bindingsOf(who.id)) for (const permission of effectivePermissions(binding, GUEST_ROLE, context, now)) given.add(permission);
+  for (const binding of store.bindingsOf(who.id)) {
+    for (const permission of effectivePermissions(binding, GUEST_ROLE, context, now)) {
+      if (permission === 'ask' && binding.budget <= 0) continue; // a binding with no questions in it cannot ask
+      given.add(permission);
+    }
+  }
   return PERMISSIONS.filter((permission) => given.has(permission));
 }
 

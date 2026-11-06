@@ -8,7 +8,7 @@ import { createApp } from './app.js';
 import { toNodeListener } from './http-node.js';
 import { VERSION } from './version.js';
 import { createAuthenticator } from './config.js';
-import { roomFacts } from './facts.js';
+import { guestFacts, roomFacts } from './facts.js';
 import type { NovaConfig, RoomConfig } from './config.js';
 import { Hub } from './hub.js';
 import { KnowledgeBase } from './knowledge.js';
@@ -27,6 +27,8 @@ export type RunningRoom = {
   /** What Nova answers from, when there is a Nova. */
   knowledge?: KnowledgeBase;
   nova?: Nova;
+  /** Nova for guests, when she is turned on: her own engine and folder, in the guest room only. */
+  guestNova?: Nova;
   /** The skins from a folder, when there is one. */
   skins?: SkinFolder;
   close(): Promise<void>;
@@ -37,6 +39,8 @@ export type StartOptions = {
   graceMs?: number;
   /** Stands in for the model, for tests. */
   llm?: LlmProvider;
+  /** Stands in for the model that answers guests, for tests. */
+  guestLlm?: LlmProvider;
 };
 
 function providerFor(config: NovaConfig): LlmProvider {
@@ -55,6 +59,7 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
   const store = new RoomStore(nodeSqlite(config.dbPath));
   let hub: Hub | undefined;
   let nova: Nova | undefined;
+  let guestNova: Nova | undefined;
   let forgetting: NodeJS.Timeout | undefined;
   try {
     store.syncParticipants(config.participants.map(({ kind, alias, locale, capabilities, sign }) => ({ kind, alias, locale, capabilities, sign })));
@@ -91,6 +96,19 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
       );
     }
 
+    // Nova for guests: another of her, with her own engine and her own folder (never a filter on the team's), answering only in the guest room
+    const guests = config.guests;
+    if (guests?.nova.enabled && guests.nova.nova) {
+      const guestConfig = guests.nova;
+      const novaForGuests = guests.nova.nova;
+      const base = novaForGuests.knowledgeDir ? new KnowledgeBase(novaForGuests.knowledgeDir, undefined, { exclude: novaForGuests.exclude }) : fixedKnowledge({});
+      if (!novaForGuests.knowledgeDir) console.log(`portal: ${novaForGuests.alias} for guests has no folder of public documents yet; she talks, and says what she does not know`);
+      guestNova = createNova(
+        { hub: live, store, llm: options.guestLlm ?? providerFor(novaForGuests), knowledge: base, facts: () => guestFacts({ questions: guestConfig.questions, nova: novaForGuests }, base.files.size) },
+        { alias: novaForGuests.alias, contextTurns: novaForGuests.contextTurns, maxQueue: novaForGuests.maxQueue, scope: 'guest', guestsPerHour: guestConfig.perHour },
+      );
+    }
+
     if (config.staticDir && !existsSync(join(config.staticDir, 'index.html'))) {
       console.warn(`portal: ${config.staticDir} has no index.html; build the UI with "pnpm --filter portal-ui build"`);
     }
@@ -122,10 +140,13 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
       hub: live,
       knowledge,
       nova,
+      guestNova,
       skins,
       async close() {
         clearInterval(forgetting);
         nova?.stop();
+    guestNova?.stop();
+        guestNova?.stop();
         live.close();
         server.closeAllConnections();
         await new Promise<void>((resolve) => server.close(() => resolve()));

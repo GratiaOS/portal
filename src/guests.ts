@@ -50,7 +50,8 @@ export function admitGuest(store: RoomStore, config: GuestsConfig, now: number):
 
   const token = randomBytes(32).toString('base64url');
   const expiresAt = now + config.minutes * 60_000;
-  // no question to the companion yet: a guest's budget of them is zero until the companion is opened to guests
-  const guest = store.createGuest({ alias: freeName(store), room: room.id, activeFrom: now, expiresAt, budget: 0, keyDigest: tokenDigest(token) });
+  // the questions a guest may ask the companion: none while she is off for guests, which is what keeps the door from ever asking her
+  const budget = config.nova.enabled ? config.nova.questions : 0;
+  const guest = store.createGuest({ alias: freeName(store), room: room.id, activeFrom: now, expiresAt, budget, keyDigest: tokenDigest(token) });
   return { token, guest, room, expiresAt };
 }

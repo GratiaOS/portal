@@ -1,4 +1,5 @@
 import type { ChatMessage, LlmProvider } from '@gratiaos/llm-provider';
+import { canIn } from './access.js';
 import { MAX_TEXT_LENGTH, participantId } from './domain.js';
 import type { GapReason, Participant, Turn } from './domain.js';
 import type { Hub } from './hub.js';
@@ -23,6 +24,16 @@ export type NovaOptions = {
   maxQueue: number;
   /** How many questions the model works on at once. A local model usually takes one. */
   concurrency?: number;
+  /**
+   * Whose questions she answers. `team` (the default): in the team's rooms, to the people. `guest`: only in guest rooms, to the guests who
+   * have a budget of questions and to the people who are there. Two of her may run in one portal, each with her own engine and her own
+   * folder, and neither answers in the other's rooms.
+   */
+  scope?: 'team' | 'guest';
+  /** In the guest scope: how many questions all the guests together may ask in an hour. */
+  guestsPerHour?: number;
+  /** The clock, in milliseconds. For tests. */
+  now?: () => number;
 };
 
 export type Nova = {
@@ -60,6 +71,10 @@ type Words = {
   failed: string;
   /** The model answered with nothing, for instance by running out of room to think. */
   empty: string;
+  /** A guest has asked as many questions as their visit has. Said by the portal, in plain words. */
+  limit: string;
+  /** All the guests together have asked as many as the portal allows in an hour. */
+  hour: string;
   /** Her figures could not be found in what she leaned on, even after she was asked again. */
   unsure: (sources: string) => string;
   sources: string;
@@ -70,6 +85,8 @@ const WORDS: Record<'ro' | 'en', Words> = {
     busy: 'Am câteva întrebări în față. Ajung și la a ta imediat ce se eliberează.',
     failed: 'Nu ajung la model acum, așa că nu pot răspunde. Încearcă puțin mai târziu.',
     empty: 'Mi-am pierdut firul în mijlocul gândului. Mai întrebi o dată?',
+    limit: 'Compania a ajuns la limita de întrebări pentru această vizită.',
+    hour: 'Compania are multe întrebări acum. Încearcă puțin mai târziu.',
     unsure: (sources) => `Răspunsul meu avea cifre pe care nu le găsesc în documentație, așa că nu ți le dau.${sources ? ` Uită-te direct în ${sources}.` : ''}`,
     sources: 'Surse',
   },
@@ -77,6 +94,8 @@ const WORDS: Record<'ro' | 'en', Words> = {
     busy: 'I have a few questions ahead of yours. I will get to it as soon as they clear.',
     failed: 'I cannot reach the model right now, so I cannot answer. Try again in a bit.',
     empty: 'I lost my thread in the middle of the thought. Could you ask again?',
+    limit: 'The companion has reached its limit of questions for this visit.',
+    hour: 'The companion has many questions at the moment. Please try again a little later.',
     unsure: (sources) => `My answer had figures I cannot find in the documentation, so I will not give them.${sources ? ` Have a look at ${sources} directly.` : ''}`,
     sources: 'Sources',
   },
@@ -211,6 +230,8 @@ export function createNova(
   if (store.getParticipant(id)?.kind !== 'companion') throw new Error(`nova: there is no companion "${options.alias}" in the portal`);
 
   const concurrency = options.concurrency ?? 1;
+  const scope = options.scope ?? 'team';
+  const clock = options.now ?? Date.now;
   const waiting: Job[] = [];
   const pendingIn = new Map<string, number>();
   const abort = new AbortController();
@@ -237,6 +258,8 @@ export function createNova(
 
   /** A question the knowledge could not answer, kept without who asked. Never allowed to get in the way of answering. */
   function noteGap(turn: Turn, why: GapReason, sources: string[] = []): void {
+    // what a visitor asks is not kept for the team to read: not here, and not in the list of what the knowledge lacked
+    if (scope === 'guest') return;
     console.error(`portal: a question the knowledge did not answer (${why})`);
     const mention = new RegExp(`@${options.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}_.-])`, 'giu');
     try {
@@ -338,10 +361,30 @@ export function createNova(
     pump();
   }
 
+  /**
+   * Whether a question may be put to her, and what is said if not. A guest's is counted against the ledger of their binding, and against
+   * the portal's hour, before anything is asked of the model.
+   */
+  function admit(turn: Turn, asker: Participant): boolean {
+    if (asker.kind !== 'guest') return true; // the people of the team are not counted
+    if (!canIn(store, asker, turn.conversationId, 'ask', clock())) return false; // no budget on their binding: she is not theirs to ask
+    const now = clock();
+    const binding = store.bindingsOf(asker.id).find((b) => b.roomId === turn.conversationId && b.activeFrom <= now && now < b.expiresAt && b.budget > 0);
+    if (!binding) return false;
+    const verdict = store.spendQuestion({ ledgerId: binding.ledgerId, budget: binding.budget, now, perHour: options.guestsPerHour ?? 60 });
+    if (verdict === 'ok') return true;
+    say(turn.conversationId, addressed(asker.alias, wordsFor(asker.locale)[verdict === 'spent' ? 'limit' : 'hour']));
+    return false;
+  }
+
   const unsubscribe = hub.on('turn', (turn) => {
     if (stopped || !turn.mentions.includes(id)) return;
+    // each of her answers only in the rooms of her own kind: the team's in the team's, the guests' in the guest room
+    if ((store.getConversation(turn.conversationId)?.kind ?? 'team') !== scope) return;
     const asker = store.getParticipant(turn.speakerId);
-    if (asker?.kind !== 'human') return; // a companion never summons a companion, or she would talk to herself
+    // a companion never summons a companion, or she would talk to herself; a guest may ask only her who answers guests
+    if (!asker || (asker.kind !== 'human' && !(asker.kind === 'guest' && scope === 'guest'))) return;
+    if (!admit(turn, asker)) return;
 
     enqueue(turn, asker);
   });

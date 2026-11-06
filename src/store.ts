@@ -138,8 +138,20 @@ CREATE TABLE IF NOT EXISTS guest_keys (
 );
 `;
 
+// The ledger of questions to the companion: a line per question asked, counted before the model is called. It holds which ledger (the one
+// of a binding) and when, in milliseconds, and nothing of what was asked or by whom beyond that. A day later it is forgotten.
+const SCHEMA_V8 = `
+CREATE TABLE IF NOT EXISTS ledger_entries (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  ledger_id TEXT NOT NULL,
+  at        INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ledger_by_ledger ON ledger_entries(ledger_id);
+CREATE INDEX IF NOT EXISTS ledger_by_time ON ledger_entries(at);
+`;
+
 /** One entry per version: a database at version n gets the entries from n on, and keeps what it has. */
-const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7];
+const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8];
 const SCHEMA_VERSION = MIGRATIONS.length;
 
 function clamp(value: number | undefined, fallback: number, max: number): number {
@@ -328,6 +340,27 @@ export class RoomStore {
     return (this.one('SELECT participant_id FROM guest_keys WHERE digest = ?', keyDigest) as { participant_id: string } | undefined)?.participant_id;
   }
 
+  /**
+   * Counts one question to the companion against a binding's ledger, or says why not: `spent` when that ledger has had its budget,
+   * `hour` when all the questions of the last hour are at what the portal allows. Counted here, before the model is called, so that a
+   * model that fails, or a question asked again at once, still costs: the bound is on asking, not on answering.
+   */
+  spendQuestion(input: { ledgerId: string; budget: number; now: number; perHour: number }): 'ok' | 'spent' | 'hour' {
+    return this.transaction(() => {
+      const own = (this.one('SELECT COUNT(*) AS n FROM ledger_entries WHERE ledger_id = ?', input.ledgerId) as { n: number }).n;
+      if (own >= input.budget) return 'spent';
+      const lately = (this.one('SELECT COUNT(*) AS n FROM ledger_entries WHERE at > ?', input.now - 3_600_000) as { n: number }).n;
+      if (lately >= input.perHour) return 'hour';
+      this.db.run('INSERT INTO ledger_entries (ledger_id, at) VALUES (?, ?)', input.ledgerId, input.now);
+      return 'ok';
+    });
+  }
+
+  /** How many questions a ledger has had, for whoever shows it. */
+  questionsAsked(ledgerId: string): number {
+    return (this.one('SELECT COUNT(*) AS n FROM ledger_entries WHERE ledger_id = ?', ledgerId) as { n: number }).n;
+  }
+
   /** How many guests have a binding that is in its time now: the ones the portal is hosting. */
   countActiveGuests(now: number): number {
     const row = this.one(
@@ -458,6 +491,8 @@ export class RoomStore {
    * `seq` is never given again (AUTOINCREMENT), so a client resuming after a forgotten turn misses nothing it could still read.
    */
   forget(retention: Retention): { turns: number; gaps: number } {
+    // a ledger line has done its work after a day (a binding is never longer): this is not what a person said, so no retention asks for it
+    this.db.run('DELETE FROM ledger_entries WHERE at < ?', this.now().getTime() - 25 * 3_600_000);
     if (retention === 'forever') return { turns: 0, gaps: 0 };
     const cutoff = new Date(this.now().getTime() - retention.days * 86_400_000).toISOString();
     const forgotten = this.transaction(() => {

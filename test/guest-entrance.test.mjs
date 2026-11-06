@@ -19,7 +19,7 @@ function setup({ guests = { room: 'guests', maxActive: 3, minutes: 30, perCaller
     authenticate: (token) => known.get(token),
     rateLimit: { messages: 1000, windowMs: 10_000 },
     callerFromHome: true,
-    ...(config ? { guests } : {}),
+    ...(config ? { guests: { nova: { enabled: false, questions: 5, perHour: 60 }, ...guests } } : {}),
     now: () => now,
   });
   const call = (path, { token, caller = 'c1', ...init } = {}) =>
@@ -110,7 +110,7 @@ test('the guest room of the config must exist and be of kind guest', () => {
   const config = (guests, rooms) => parseConfig({ participants: [{ kind: 'human', alias: 'Zeus', token: ZEUS }], rooms, guests, dbPath: ':memory:' }, '/base');
   const rooms = [{ id: 'general', title: 'General' }, { id: 'guests', title: 'Guests', kind: 'guest' }];
   const ok = config({ room: 'guests' }, rooms).guests;
-  assert.deepEqual(ok, { room: 'guests', maxActive: 20, minutes: 60, perCaller: { count: 5, perMinutes: 10 } });
+  assert.deepEqual(ok, { room: 'guests', maxActive: 20, minutes: 60, perCaller: { count: 5, perMinutes: 10 }, nova: { enabled: false, questions: 5, perHour: 60 } });
   assert.throws(() => config({ room: 'nowhere' }, rooms), /there is no room/);
   assert.throws(() => config({ room: 'general' }, rooms), /kind "guest"/);
   assert.throws(() => config({ room: 'guests', minutes: 0 }, rooms), /minutes/);

@@ -55,6 +55,8 @@ export class Portal extends DurableObject<Env> {
   private open(): (request: Request) => Promise<Response> {
     if (this.handler) return this.handler;
     const config = configFrom(this.env);
+    // her folder of public documents is not bundled on Cloudflare yet: a portal that asks for her there says so, and does not open with her missing
+    if (config.guests?.nova.enabled) throw new ConfigError('guests.nova is not available on Cloudflare yet: leave guests.nova.enabled false there');
     const store = new RoomStore(objectSqlite(this.ctx.storage));
     store.syncParticipants(config.participants.map(({ kind, alias, locale, capabilities, sign }) => ({ kind, alias, locale, capabilities, sign })));
     store.syncConversations(config.rooms);
