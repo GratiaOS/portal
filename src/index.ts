@@ -1,6 +1,7 @@
 export * from './domain.js';
 export * from './authority.js';
 export * from './access.js';
+export * from './guests.js';
 export * from './mentions.js';
 export * from './store.js';
 export * from './sqlite.js';

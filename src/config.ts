@@ -47,6 +47,18 @@ export type NovaConfig = {
   facts: string[];
 };
 
+/** The guest room: where a visitor may come in without a key of their own, and how many, and for how long. Absent: nobody does. */
+export type GuestsConfig = {
+  /** The id of a room of kind `guest`. */
+  room: string;
+  /** Guests the portal hosts at once; past it the door says the room is full. */
+  maxActive: number;
+  /** How long a guest's binding lasts, in minutes. */
+  minutes: number;
+  /** How many guests one caller may bring in, per window. */
+  perCaller: { count: number; perMinutes: number };
+};
+
 export type RoomConfig = {
   port: number;
   /** `127.0.0.1` unless said otherwise: anything wider belongs behind TLS. */
@@ -59,6 +71,7 @@ export type RoomConfig = {
   maxStreamsPerParticipant: number;
   /** What the portal keeps: by default the last 14 days and the last 999 messages of each room, whichever ends first. */
   retention: Retention;
+  guests?: GuestsConfig;
   /**
    * A file that holds the tokens of the humans, `{ "Alias": "token" }`, apart from the config: the config says who and what, this says
    * who may come in. It can be kept out of version control and read by few (`chmod 600`); the room warns if others can read it.
@@ -98,6 +111,25 @@ function whole(value: unknown, fallback: number, name: string, { min, max }: { m
     throw new ConfigError(`${name} must be a whole number from ${min} to ${max}`);
   }
   return value;
+}
+
+function parseGuests(raw: unknown, rooms: ConversationInput[]): GuestsConfig {
+  if (!isRecord(raw)) throw new ConfigError('guests must be an object');
+  const room = text(raw.room, 'guests.room');
+  const found = rooms.find((r) => r.id === room);
+  if (!found) throw new ConfigError(`guests.room: there is no room "${room}"`);
+  if (found.kind !== 'guest') throw new ConfigError(`guests.room: "${room}" must be a room of kind "guest"`);
+  const each = raw.perCaller === undefined ? {} : raw.perCaller;
+  if (!isRecord(each)) throw new ConfigError('guests.perCaller must be an object');
+  return {
+    room,
+    maxActive: whole(raw.maxActive, 20, 'guests.maxActive', { min: 1, max: 1000 }),
+    minutes: whole(raw.minutes, 60, 'guests.minutes', { min: 1, max: 1440 }),
+    perCaller: {
+      count: whole(each.count, 5, 'guests.perCaller.count', { min: 1, max: 100 }),
+      perMinutes: whole(each.perMinutes, 10, 'guests.perCaller.perMinutes', { min: 1, max: 1440 }),
+    },
+  };
 }
 
 function roomKind(value: unknown, name: string): 'team' | 'guest' {
@@ -209,6 +241,7 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
     },
     maxStreamsPerParticipant: whole(raw.maxStreamsPerParticipant, 10, 'maxStreamsPerParticipant', { min: 1, max: 100 }),
     retention: parseRetention(raw.retention),
+    ...(raw.guests === undefined ? {} : { guests: parseGuests(raw.guests, rooms) }),
     ...(raw.tokensFile === undefined ? {} : { tokensFile: resolve(baseDir, text(raw.tokensFile, 'tokensFile')) }),
     ...(raw.clientIpHeader === undefined ? {} : { clientIpHeader: text(raw.clientIpHeader, 'clientIpHeader') }),
     ...(raw.staticDir === undefined ? {} : { staticDir: resolve(baseDir, text(raw.staticDir, 'staticDir')) }),
@@ -393,6 +426,8 @@ export function loadConfig(path: string): RoomConfig {
 }
 
 const digest = (token: string) => createHash('sha256').update(token).digest('hex');
+/** What of a token is kept and compared: its digest, never the token. */
+export const tokenDigest = digest;
 
 /** Turns a token into the id of the participant it belongs to, or `undefined`. Only digests are kept in memory. */
 export function createAuthenticator(config: RoomConfig): (token: string) => string | undefined {

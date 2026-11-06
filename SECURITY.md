@@ -38,6 +38,10 @@ What is not collected cannot leak. A portal is one process, one config and one d
 ## What is not done for you
 
 - **TLS.** The portal listens on `127.0.0.1`. Anything wider belongs behind a TLS proxy, because the token travels in a header.
+- **The guest room** is the one door with no key, and exists only if you declare it (see INSTALL.md). A guest is kept to one room by default-deny:
+  what is not given to them is closed, a room they may not read does not exist for them, and neither do your people (not in the roster, the presence,
+  the stream or what a typed `@name` returns). The door is limited by how many guests it hosts at once and how many one address may bring in; a
+  guest's key lasts as long as their binding and only its digest is kept. A guest cannot ask the companion yet.
 - **Guessing keys** is slowed, not forbidden: ten wrong keys in a minute from one address and that address waits (`429`). Keys are long and random (`pnpm tokens`); the count is in memory, so a restart empties it. Behind a proxy, name its address header in the config (`clientIpHeader`, see INSTALL.md), or everyone counts as one address.
 - **Sign-in through your company's SSO** does not exist yet.
 - **Backups** are yours: see [INSTALL.md](INSTALL.md).
