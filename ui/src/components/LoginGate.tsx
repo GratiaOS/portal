@@ -9,6 +9,7 @@
  *             card around it. Enter in the field sends; there is no button.
  * Not copied: written new for Room (MPL-2.0); Firegate is AGPL-3.0.
  */
+import type { Refused } from '../lib/guest.ts';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiError, createApi } from '../lib/client.ts';
@@ -80,7 +81,10 @@ function Fence() {
   );
 }
 
-export default function LoginGate({ onEnter }: { onEnter: (token: string) => void }) {
+/** The door for visitors, when the portal has one: what it is doing, and how to ask it to open. `only` hides the key, for the link that steps through by itself. */
+export type GuestDoor = { state: 'idle' | 'stepping' | Refused; onStep: () => void; only: boolean };
+
+export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: string) => void; door?: GuestDoor; ended?: boolean }) {
   const t = stringsFor(navigator.language);
   const [token, setToken] = useState('');
   const [state, setState] = useState<'idle' | 'checking' | 'unknown' | 'slow' | 'away'>('idle');
@@ -114,9 +118,12 @@ export default function LoginGate({ onEnter }: { onEnter: (token: string) => voi
             El portal
           </h1>
           <span data-gate="sr-only">{t.signInTitle}</span>
-          <label htmlFor="token" data-gate="label">
-            {t.gateKey}
-          </label>
+          {!door?.only && (
+            <label htmlFor="token" data-gate="label">
+              {t.gateKey}
+            </label>
+          )}
+          {!door?.only && (
           <input
             id="token"
             type="password"
@@ -133,12 +140,38 @@ export default function LoginGate({ onEnter }: { onEnter: (token: string) => voi
             }}
             data-gate="input"
           />
+          )}
           <span id="gate-hint" data-gate="sr-only">
             {t.signInHint} {t.gateEnter}
           </span>
           <p role="status" data-gate="note">
-            {state === 'checking' ? t.checking : state === 'unknown' ? t.tokenUnknown : state === 'slow' ? t.tooManyKeys : state === 'away' ? t.roomAway : ''}
+            {door && door.state !== 'idle'
+              ? door.state === 'stepping'
+                ? t.stepping
+                : door.state === 'full'
+                  ? t.guestFull
+                  : door.state === 'slow'
+                    ? t.guestSlow
+                    : door.state === 'closed'
+                      ? t.guestClosed
+                      : t.guestAway
+              : state === 'checking'
+                ? t.checking
+                : state === 'unknown'
+                  ? t.tokenUnknown
+                  : state === 'slow'
+                    ? t.tooManyKeys
+                    : state === 'away'
+                      ? t.roomAway
+                      : ended
+                        ? t.visitEnded
+                        : ''}
           </p>
+          {door && door.state !== 'closed' && (
+            <button type="button" onClick={door.onStep} disabled={door.state === 'stepping'} data-gate="step" autoFocus={door.only}>
+              {t.stepThrough}
+            </button>
+          )}
         </div>
       </form>
       <a href={RUN_YOUR_OWN} target="_blank" rel="noopener noreferrer" data-gate="side">

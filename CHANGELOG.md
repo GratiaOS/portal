@@ -5,6 +5,9 @@
 - **A guest room, optional.** A room can be of kind `guest`, and `guests` in the config opens a door (`POST /api/guest`) where a visitor is given a
   name of the hour, a key and that room, for a while, with limits on how many at once and per address. A guest does what their binding gives
   them in that room and nothing else; the team is unchanged.
+- **The page for a visitor.** The gate offers *Step through* when the portal has a door, and `/guest` steps through by itself, asking nothing. The visitor
+  lands in the one room: no list of rooms, no team, no sign, no notifications, only how many others are there. `/api/health` says `guests: true` only when there
+  is a door, and `/api/hints` gives a guest their companion's examples and never the team's.
 - **Nova for guests, off until chosen** (`guests.nova`): an engine of her own, a public folder of her own, facts made without the team's names, a
   budget of questions per guest and per hour counted before the model is called, and no entry in the list of what the knowledge lacked. Not on
   Cloudflare yet. The database moves to version 8 at the next start.

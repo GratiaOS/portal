@@ -1,7 +1,7 @@
 // The shapes the room speaks over the wire, as `src/domain.ts` and `src/hub.ts` define them.
 // Kept here by hand so the UI builds on its own; a change on the room's side is a change here.
 
-export type ParticipantKind = 'human' | 'companion' | 'service';
+export type ParticipantKind = 'human' | 'companion' | 'service' | 'guest';
 
 export type Participant = {
   id: string;

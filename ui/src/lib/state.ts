@@ -86,7 +86,8 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
       const { participant } = action;
       return {
         ...state,
-        participants: state.participants.map((p) => (p.id === participant.id ? participant : p)),
+        // a participant the page has not heard of (a visitor who has just come in) is added, and one it knows is replaced
+        participants: state.participants.some((p) => p.id === participant.id) ? state.participants.map((p) => (p.id === participant.id ? participant : p)) : [...state.participants, participant],
         you: state.you?.id === participant.id ? participant : state.you,
       };
     }

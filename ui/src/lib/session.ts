@@ -27,3 +27,30 @@ export function forgetToken(): void {
     /* nothing kept */
   }
 }
+
+const GUEST_KEY = 'portal.guest';
+
+/** Whether this tab's key is a visitor's, so that when it stops opening, the gate says the visit has ended and not that a key is wrong. */
+export function readGuest(): boolean {
+  try {
+    return sessionStorage.getItem(GUEST_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function keepGuest(): void {
+  try {
+    sessionStorage.setItem(GUEST_KEY, '1');
+  } catch {
+    /* in memory only */
+  }
+}
+
+export function forgetGuest(): void {
+  try {
+    sessionStorage.removeItem(GUEST_KEY);
+  } catch {
+    /* nothing kept */
+  }
+}

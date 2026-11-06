@@ -12,6 +12,19 @@ export type Strings = {
   gatePlaceholder: string;
   gateEnter: string;
   runYourOwn: string;
+  /** The door for visitors: the button, what is said while it opens, and why it may not. */
+  stepThrough: string;
+  stepping: string;
+  guestFull: string;
+  guestSlow: string;
+  guestClosed: string;
+  guestAway: string;
+  /** In the guest room: who else is here, with no list; and the way out. */
+  guestAlone: string;
+  guestOthers: (count: number) => string;
+  guestLeave: string;
+  /** Said when a visit has ended, on the gate it returns to. */
+  visitEnded: string;
   enter: string;
   checking: string;
   tokenUnknown: string;
@@ -75,6 +88,16 @@ const ro: Strings = {
   gatePlaceholder: 'tokenul tău',
   gateEnter: 'Enter o trimite.',
   runYourOwn: 'Rulează-l pe al tău',
+  stepThrough: 'Intră',
+  stepping: 'Intru…',
+  guestFull: 'Camera e plină acum. Mai încearcă puțin mai târziu.',
+  guestSlow: 'Prea mulți vizitatori de aici, chiar acum. Așteaptă puțin.',
+  guestClosed: 'Acest portal nu primește vizitatori.',
+  guestAway: 'Nu ajung la portal acum. Încearcă din nou în câteva clipe.',
+  guestAlone: 'Ești singur aici, deocamdată.',
+  guestOthers: (count) => (count === 1 ? 'Mai e cineva aici.' : `Mai sunt ${count} aici.`),
+  guestLeave: 'Pleacă',
+  visitEnded: 'Vizita ta s-a încheiat.',
   enter: 'Intră',
   checking: 'Verific…',
   tokenUnknown: 'Tokenul nu e recunoscut. Verifică-l și încearcă din nou.',
@@ -130,6 +153,16 @@ const en: Strings = {
   gatePlaceholder: 'your token',
   gateEnter: 'Enter sends it.',
   runYourOwn: 'Run your own',
+  stepThrough: 'Step through',
+  stepping: 'Stepping through…',
+  guestFull: 'The room is full right now. Try again in a little while.',
+  guestSlow: 'Too many visitors from here just now. Wait a little.',
+  guestClosed: 'This portal does not take visitors.',
+  guestAway: 'The portal is out of reach right now. Try again in a moment.',
+  guestAlone: 'You are the only one here, for now.',
+  guestOthers: (count) => (count === 1 ? 'Someone else is here.' : `${count} others are here.`),
+  guestLeave: 'Leave',
+  visitEnded: 'Your visit has ended.',
   enter: 'Enter',
   checking: 'Checking…',
   tokenUnknown: 'That token is not recognised. Check it and try again.',

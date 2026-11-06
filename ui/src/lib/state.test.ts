@@ -97,3 +97,13 @@ test('a participant that changed (a sign) takes the place of the one we had, and
   assert.equal(state.you?.sign, '🫁');
   assert.equal(state.participants.length, 2); // a change, not a newcomer
 });
+
+test('a participant the page has not heard of is added, and one it knows is replaced', () => {
+  let state = run([{ type: 'hello', hello: hello(1) }]);
+  const visitor = { id: 'guest:owl', kind: 'guest' as const, alias: 'owl', capabilities: [] };
+  state = run([{ type: 'participant', participant: visitor }], state);
+  assert.deepEqual(state.participants.map((p) => p.id), ['human:athena', 'guest:owl']);
+  state = run([{ type: 'participant', participant: { ...visitor, sign: '🦉' } }], state);
+  assert.equal(state.participants.length, 2);
+  assert.equal(state.participants[1]?.sign, '🦉');
+});
