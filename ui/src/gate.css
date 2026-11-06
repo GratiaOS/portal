@@ -58,7 +58,6 @@
 
 [data-gate='cloud'] {
   fill: var(--cloud);
-  opacity: 0.78;
 }
 
 [data-gate='hill'],
