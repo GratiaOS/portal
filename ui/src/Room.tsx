@@ -60,7 +60,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
   const selected = state.conversations.find((c) => c.id === wanted) ?? state.conversations[0];
   const channelId = selected?.id;
   const { here: looking, start } = useUnread(state, channelId, TITLE);
-  useNotify(state, looking, start, t);
+  useNotify(state, looking, start, t, !guest); // a visitor's messages are never shown as notifications of the computer
 
   // the first page of a channel's history, once, when it is first looked at
   const [loadingFor, setLoadingFor] = useState<string | undefined>(undefined);

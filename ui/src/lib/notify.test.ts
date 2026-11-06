@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { advance, newsAfter, noticesFor, topSeq } from './notify.ts';
+import { advance, mayNotify, newsAfter, noticesFor, topSeq } from './notify.ts';
 import type { Turn } from './types.ts';
 
 const turn = (seq: number, speakerId = 'human:apollo', conversationId = 'general', text = `m${seq}`): Turn => ({
@@ -80,4 +80,11 @@ test('notices: long words are cut and lines are flattened; an unknown speaker is
   assert.equal(long!.body.endsWith('…'), true);
   assert.equal(long!.body.includes('\n'), false);
   assert.equal(noticesFor([turn(7, 'human:alex')], names, channels, many)[0]!.title, 'alex');
+});
+
+test('a visitor\'s session never shows notifications, even where the computer has the permission of a team session', () => {
+  assert.equal(mayNotify(true, 2, true), true);
+  assert.equal(mayNotify(false, 2, true), false); // a visitor: whatever the permission, whatever the news
+  assert.equal(mayNotify(true, 0, true), false);
+  assert.equal(mayNotify(true, 2, false), false);
 });

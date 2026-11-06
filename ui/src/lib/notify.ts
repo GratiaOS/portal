@@ -60,3 +60,11 @@ export function noticesFor(
       : { title: channels[channel] ?? channel, body: `${many(turns.length)} · ${who}: ${clip(last.text)}`, tag: channel };
   });
 }
+
+/**
+ * Whether a notice is shown at all: the person has them on for this session (a visitor's session never does: what a visitor reads stays on the
+ * page, and not on the notifications of a computer that may hold a team's permission), there is news, and the browser allows it.
+ */
+export function mayNotify(enabled: boolean, news: number, permitted: boolean): boolean {
+  return enabled && news > 0 && permitted;
+}
