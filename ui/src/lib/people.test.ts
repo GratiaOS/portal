@@ -49,3 +49,17 @@ test('bearing: the same for the same id, inside the scope, and nothing to do wit
   }
   assert.equal(new Set(['human:athena', 'human:zeus', 'human:apollo', 'human:hermes'].map((id) => bearingOf(id).angle)).size, 4); // the room's own four do not sit on top of each other
 });
+
+test('a visitor is not shown as here until the portal says they are, as a person is not; a companion is', () => {
+  const people = peopleOf(
+    [
+      { id: 'guest:owl', kind: 'guest', alias: 'owl', capabilities: [] },
+      { id: 'human:zeus', kind: 'human', alias: 'Zeus', capabilities: [] },
+      { id: 'companion:nova', kind: 'companion', alias: 'Nova', capabilities: [] },
+    ],
+    {},
+  );
+  assert.deepEqual(Object.fromEntries(people.map((p) => [p.participant.id, p.here])), { 'guest:owl': false, 'human:zeus': false, 'companion:nova': true });
+  const here = peopleOf([{ id: 'guest:owl', kind: 'guest', alias: 'owl', capabilities: [] }], { 'guest:owl': { participantId: 'guest:owl', state: 'online' } });
+  assert.equal(here[0]?.here, true);
+});

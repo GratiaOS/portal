@@ -9,13 +9,29 @@
  *             card around it. Enter in the field sends; there is no button.
  * Not copied: written new for Room (MPL-2.0); Firegate is AGPL-3.0.
  */
+import type { Refused } from '../lib/guest.ts';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiError, createApi } from '../lib/client.ts';
 import { stringsFor } from '../lib/strings.ts';
 
-/** The place the "run your own" link leads to: the GratiaOS organisation, until GratiaOS/portal exists. */
-const RUN_YOUR_OWN = 'https://github.com/GratiaOS';
+/** The place the "run your own" link leads to: the repository of the portal, public since 0.1.0. */
+const RUN_YOUR_OWN = 'https://github.com/GratiaOS/portal';
+
+/**
+ * Each cloud is a few ellipses laid along a line, wider in the middle and lighter at the ends, and then softened: so it thins out
+ * the way a cloud does, instead of ending at a point or at an edge. [centre x, centre y, half width, half height, opacity].
+ */
+const CLOUDS: { id: string; depth: 'far' | 'near'; puffs: [number, number, number, number, number][] }[] = [
+  { id: 'a', depth: 'far', puffs: [[40, 117, 110, 7, 0.42], [150, 112, 90, 8, 0.66], [262, 115, 85, 6.5, 0.74], [375, 111, 75, 5.5, 0.6], [470, 114, 60, 4, 0.36]] },
+  { id: 'b', depth: 'far', puffs: [[300, 153, 55, 4.5, 0.45], [372, 150, 70, 6, 0.7], [446, 153, 55, 4.5, 0.46]] },
+  { id: 'c', depth: 'near', puffs: [[845, 68, 70, 8, 0.42], [925, 59, 95, 12, 0.7], [1025, 56, 110, 13, 0.78], [1120, 62, 90, 10, 0.68], [1205, 65, 70, 7, 0.42]] },
+  { id: 'd', depth: 'near', puffs: [[975, 153, 60, 7, 0.46], [1060, 147, 90, 10, 0.74], [1150, 150, 100, 8, 0.68], [1235, 155, 60, 5.5, 0.4]] },
+  { id: 'e', depth: 'far', puffs: [[30, 237, 90, 6, 0.44], [150, 231, 110, 7, 0.66], [285, 234, 100, 6, 0.68], [385, 237, 55, 4, 0.4]] },
+  { id: 'f', depth: 'far', puffs: [[735, 253, 60, 5, 0.42], [850, 248, 100, 6, 0.66], [985, 247, 120, 7, 0.72], [1105, 251, 100, 6, 0.66], [1215, 255, 70, 4.5, 0.42]] },
+  { id: 'g', depth: 'far', puffs: [[155, 303, 45, 3.2, 0.42], [235, 299, 70, 4, 0.62], [320, 302, 50, 3, 0.42]] },
+  { id: 'h', depth: 'far', puffs: [[1015, 321, 55, 3.2, 0.42], [1100, 317, 70, 4, 0.62], [1175, 320, 50, 3, 0.4]] },
+];
 
 /**
  * The sky of the photograph: dark clouds drawn across the dusk, the edge of the land, and one tree alone on it. Its colours are in
@@ -24,14 +40,22 @@ const RUN_YOUR_OWN = 'https://github.com/GratiaOS';
 function Sky() {
   return (
     <svg data-gate="sky" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
-      <path d="M-40 112 Q60 96 170 104 Q250 92 330 108 Q420 100 520 112 Q440 122 330 120 Q240 128 150 122 Q60 130 -40 128 Z" data-gate="cloud" />
-      <path d="M260 150 Q330 142 410 150 Q470 146 520 156 Q450 162 380 160 Q320 164 260 158 Z" data-gate="cloud" />
-      <path d="M800 64 Q880 44 980 56 Q1060 40 1160 58 Q1210 54 1260 62 L1260 92 Q1180 100 1100 90 Q1010 102 930 92 Q860 98 800 84 Z" data-gate="cloud" />
-      <path d="M940 150 Q1010 132 1090 146 Q1160 136 1260 150 L1260 176 Q1180 182 1110 172 Q1040 184 960 170 Z" data-gate="cloud" />
-      <path d="M-40 232 Q80 222 200 230 Q300 224 400 234 Q300 242 190 240 Q80 246 -40 242 Z" data-gate="cloud" />
-      <path d="M700 250 Q800 240 900 248 Q1000 238 1110 250 Q1190 246 1260 252 L1260 262 Q1170 266 1080 260 Q980 270 880 262 Q790 268 700 260 Z" data-gate="cloud" />
-      <path d="M120 300 Q220 294 330 300 Q240 306 120 306 Z" data-gate="cloud" />
-      <path d="M980 318 Q1080 310 1190 318 Q1090 324 980 324 Z" data-gate="cloud" />
+      <defs>
+        {/* two softnesses: the clouds low and small are far, and a little sharper; the big ones are near, and softer */}
+        <filter id="gate-soft-far" x="-10%" y="-60%" width="120%" height="220%">
+          <feGaussianBlur stdDeviation="2.2" />
+        </filter>
+        <filter id="gate-soft-near" x="-10%" y="-80%" width="120%" height="260%">
+          <feGaussianBlur stdDeviation="3.6" />
+        </filter>
+      </defs>
+      {CLOUDS.map((cloud) => (
+        <g key={cloud.id} filter={`url(#gate-soft-${cloud.depth})`}>
+          {cloud.puffs.map(([cx, cy, rx, ry, o]) => (
+            <ellipse key={`${cx}-${cy}`} cx={cx} cy={cy} rx={rx} ry={ry} opacity={o} data-gate="cloud" />
+          ))}
+        </g>
+      ))}
       {/* an olive tree: a crown uneven at its edge, wider than tall, on a short trunk, and a shrub beside it */}
       <path
         d="M552 392 L554 368 Q530 372 512 364 Q494 366 490 354 Q478 348 488 338 Q480 326 494 320 Q492 306 508 304 Q512 290 528 292 Q534 278 550 282 Q560 270 574 278 Q590 272 598 284 Q614 282 618 296 Q634 298 632 312 Q646 318 638 330 Q650 340 638 350 Q640 362 624 364 Q610 374 590 368 Q578 372 566 368 L568 392 Z"
@@ -80,7 +104,10 @@ function Fence() {
   );
 }
 
-export default function LoginGate({ onEnter }: { onEnter: (token: string) => void }) {
+/** The door for visitors, when the portal has one: what it is doing, and how to ask it to open. `only` hides the key, for the link that steps through by itself. */
+export type GuestDoor = { state: 'idle' | 'stepping' | Refused; onStep: () => void; only: boolean };
+
+export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: string) => void; door?: GuestDoor; ended?: boolean }) {
   const t = stringsFor(navigator.language);
   const [token, setToken] = useState('');
   const [state, setState] = useState<'idle' | 'checking' | 'unknown' | 'slow' | 'away'>('idle');
@@ -114,9 +141,12 @@ export default function LoginGate({ onEnter }: { onEnter: (token: string) => voi
             El portal
           </h1>
           <span data-gate="sr-only">{t.signInTitle}</span>
-          <label htmlFor="token" data-gate="label">
-            {t.gateKey}
-          </label>
+          {!door?.only && (
+            <label htmlFor="token" data-gate="label">
+              {t.gateKey}
+            </label>
+          )}
+          {!door?.only && (
           <input
             id="token"
             type="password"
@@ -133,12 +163,38 @@ export default function LoginGate({ onEnter }: { onEnter: (token: string) => voi
             }}
             data-gate="input"
           />
+          )}
           <span id="gate-hint" data-gate="sr-only">
             {t.signInHint} {t.gateEnter}
           </span>
           <p role="status" data-gate="note">
-            {state === 'checking' ? t.checking : state === 'unknown' ? t.tokenUnknown : state === 'slow' ? t.tooManyKeys : state === 'away' ? t.roomAway : ''}
+            {door && door.state !== 'idle'
+              ? door.state === 'stepping'
+                ? t.stepping
+                : door.state === 'full'
+                  ? t.guestFull
+                  : door.state === 'slow'
+                    ? t.guestSlow
+                    : door.state === 'closed'
+                      ? t.guestClosed
+                      : t.guestAway
+              : state === 'checking'
+                ? t.checking
+                : state === 'unknown'
+                  ? t.tokenUnknown
+                  : state === 'slow'
+                    ? t.tooManyKeys
+                    : state === 'away'
+                      ? t.roomAway
+                      : ended
+                        ? t.visitEnded
+                        : ''}
           </p>
+          {door && door.state !== 'closed' && (
+            <button type="button" onClick={door.onStep} disabled={door.state === 'stepping'} data-gate="step" autoFocus={door.only}>
+              {t.stepThrough}
+            </button>
+          )}
         </div>
       </form>
       <a href={RUN_YOUR_OWN} target="_blank" rel="noopener noreferrer" data-gate="side">

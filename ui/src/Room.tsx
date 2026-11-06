@@ -23,9 +23,11 @@ const TITLE = 'El portal';
 
 const channelFromHash = () => decodeURIComponent(location.hash.replace(/^#/, '')) || undefined;
 
-export function Room({ token, onSignOut }: { token: string; onSignOut: () => void }) {
-  const { state, dispatch, api } = useRoom(token, onSignOut);
+export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?: boolean) => void }) {
+  const { state, dispatch, api } = useRoom(token, () => onSignOut(true)); // the portal stopped opening to this key
   const t = stringsFor(state.you?.locale ?? navigator.language);
+  // a visitor has one room and no one to look up: no list of rooms, no team, no sign, no notifications; only who else is here
+  const guest = state.you?.kind === 'guest';
 
   // what the box where people write may say, asked once; without it the box keeps its one line
   const [hints, setHints] = useState<Hints | undefined>(undefined);
@@ -58,7 +60,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: () => voi
   const selected = state.conversations.find((c) => c.id === wanted) ?? state.conversations[0];
   const channelId = selected?.id;
   const { here: looking, start } = useUnread(state, channelId, TITLE);
-  useNotify(state, looking, start, t);
+  useNotify(state, looking, start, t, !guest); // a visitor's messages are never shown as notifications of the computer
 
   // the first page of a channel's history, once, when it is first looked at
   const [loadingFor, setLoadingFor] = useState<string | undefined>(undefined);
@@ -81,6 +83,11 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: () => voi
   const rows = useMemo(() => rowsOf(turns, state.participants), [turns, state.participants]);
 
   const people = useMemo(() => peopleOf(state.participants, state.presence), [state.participants, state.presence]);
+  // the other visitors who are here now, counted and never listed (the portal tells a guest of no one else)
+  const othersHere = useMemo(
+    () => people.filter((p) => p.participant.kind === 'guest' && p.participant.id !== state.you?.id && p.here).length,
+    [people, state.you?.id],
+  );
   const spoke = useSpoke(state);
   const arrived = useArrived(people);
   const thinkingIds = useMemo(() => new Set(state.thinking.filter((a) => a.conversationId === channelId).map((a) => a.participantId)), [channelId, state.thinking]);
@@ -124,20 +131,28 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: () => voi
   return (
     <div data-part="room">
       <aside data-part="side">
-        <div data-part="channels">
-          <p data-part="label">
-            {t.channels}
-          </p>
-          <ChannelList channels={state.conversations} selected={channelId} onSelect={(id) => (location.hash = encodeURIComponent(id))} label={t.channels} />
-        </div>
+        {!guest && (
+          <div data-part="channels">
+            <p data-part="label">
+              {t.channels}
+            </p>
+            <ChannelList channels={state.conversations} selected={channelId} onSelect={(id) => (location.hash = encodeURIComponent(id))} label={t.channels} />
+          </div>
+        )}
         <div data-part="side-foot">
-          <PeopleList people={people} meId={state.you?.id} thinking={thinkingIds} spoke={spoke} arrived={arrived} t={t} />
+          {guest ? (
+            <p data-part="label" role="status">
+              {othersHere === 0 ? t.guestAlone : t.guestOthers(othersHere)}
+            </p>
+          ) : (
+            <PeopleList people={people} meId={state.you?.id} thinking={thinkingIds} spoke={spoke} arrived={arrived} t={t} />
+          )}
           <div data-part="self">
-            {state.you && <SignSlot name={state.you.alias} current={state.you.sign} onChoose={chooseSign} t={t} />}
+            {state.you && !guest && <SignSlot name={state.you.alias} current={state.you.sign} onChoose={chooseSign} t={t} />}
             <SkinSwitch t={t} extra={skins} />
-            <NotifyButton t={t} />
-            <button type="button" onClick={onSignOut} data-part="signout">
-              {t.signOut}
+            {!guest && <NotifyButton t={t} />}
+            <button type="button" onClick={() => onSignOut()} data-part="signout">
+              {guest ? t.guestLeave : t.signOut}
             </button>
           </div>
         </div>

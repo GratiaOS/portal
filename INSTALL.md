@@ -64,6 +64,10 @@ not what the knowledge lacked), and they cannot ask the companion. `maxActive` i
 door answers `503`); `perCaller` is how many one address may bring in per window (`429`), and counts by the address the connection has (see `clientIpHeader`).
 Without `guests`, there is no door. Only the digest of a guest's key is kept.
 
+**The page for a visitor.** When the portal has a door, its gate offers **Step through** under the field for a key. A link to `/guest` (on your own
+site, in a mail) steps through by itself and asks for nothing: no key field, no name. The visitor lands in the one room, with no list of rooms and none of
+your people; the page says only how many others are there, never who. Their key lives as long as the tab, and when their time is over the gate says so.
+
 **The companion for guests** is off until you turn it on, and it is never the team's: she has an engine of her own, a folder of her own, and a
 budget she keeps.
 

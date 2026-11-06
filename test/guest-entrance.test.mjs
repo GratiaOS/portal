@@ -7,7 +7,7 @@ const T0 = Date.parse('2026-11-06T12:00:00Z');
 const MIN = 60_000;
 const ZEUS = 'z'.repeat(24);
 
-function setup({ guests = { room: 'guests', maxActive: 3, minutes: 30, perCaller: { count: 2, perMinutes: 10 } }, config = true } = {}) {
+function setup({ guests = { room: 'guests', maxActive: 3, minutes: 30, perCaller: { count: 2, perMinutes: 10 } }, config = true, guestHints } = {}) {
   let now = T0;
   const store = new RoomStore(nodeSqlite(':memory:'), { now: () => new Date(now) });
   store.syncParticipants([{ kind: 'human', alias: 'Zeus' }, { kind: 'companion', alias: 'Nova' }]);
@@ -19,13 +19,15 @@ function setup({ guests = { room: 'guests', maxActive: 3, minutes: 30, perCaller
     authenticate: (token) => known.get(token),
     rateLimit: { messages: 1000, windowMs: 10_000 },
     callerFromHome: true,
+    hints: { companion: 'Nova', examples: ['what does the team earn?'] }, // the team's, in the team's own words
+    guestHints,
     ...(config ? { guests: { nova: { enabled: false, questions: 5, perHour: 60 }, ...guests } } : {}),
     now: () => now,
   });
   const call = (path, { token, caller = 'c1', ...init } = {}) =>
     app(new Request(`http://portal.test${path}`, { ...init, headers: { 'x-portal-caller': caller, ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers } }));
   const enter = (caller) => call('/api/guest', { method: 'POST', caller });
-  return { store, call, enter, advance: (ms) => (now += ms) };
+  return { store, hub, call, enter, advance: (ms) => (now += ms) };
 }
 
 test('without a guest room in the config there is no door', async () => {
@@ -116,4 +118,32 @@ test('the guest room of the config must exist and be of kind guest', () => {
   assert.throws(() => config({ room: 'guests', minutes: 0 }, rooms), /minutes/);
   assert.equal(config(undefined, rooms).guests, undefined);
   assert.ok(createAuthenticator);
+});
+
+test('the portal says it has a door only when it has one, and a guest is told of their companion\'s examples, never the team\'s', async () => {
+  const none = setup({ config: false });
+  assert.equal('guests' in (await (await none.call('/api/health')).json()), false);
+
+  const { enter, call } = setup();
+  assert.equal((await (await call('/api/health')).json()).guests, true);
+  const { token } = await (await enter()).json();
+  assert.deepEqual(await (await call('/api/hints', { token: ZEUS })).json(), { companion: 'Nova', examples: ['what does the team earn?'] });
+  // a guest is told of none while the companion is off for guests, and never of the team's
+  assert.deepEqual(await (await call('/api/hints', { token })).json(), { companion: null, examples: [] });
+
+  // and of their companion's own when she is on
+  const on = setup({ guestHints: { companion: 'Nova', examples: ['what is El portal?'] } });
+  const guest = await (await on.enter()).json();
+  assert.deepEqual(await (await on.call('/api/hints', { token: guest.token })).json(), { companion: 'Nova', examples: ['what is El portal?'] });
+});
+
+test('a visitor who steps through is announced to those already in the room, so that they can say who else is here', async () => {
+  const { enter, hub, store } = setup();
+  const first = await (await enter()).json();
+  const sink = { chunks: [], write(chunk) { this.chunks.push(chunk); } };
+  hub.subscribe(store.getParticipant(first.participant.id), sink);
+  const second = await (await enter()).json();
+  const heard = sink.chunks.join('').split('\n\n').filter((block) => block.includes('event: participant')).map((block) => JSON.parse(block.split('\n').find((l) => l.startsWith('data: ')).slice(6)).id);
+  assert.deepEqual(heard, [second.participant.id]);
+  hub.close();
 });

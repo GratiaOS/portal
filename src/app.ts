@@ -31,6 +31,8 @@ export type AppOptions = {
   callerFromHome?: boolean;
   /** Where a visitor may come in without a key of their own (`POST /api/guest`). Absent: the door is not there. */
   guests?: GuestsConfig;
+  /** What the box where a guest writes may say: only when Nova is on for guests, and their examples, never the team's. */
+  guestHints?: { companion: string; examples: string[] };
   /** Defaults to 10. */
   maxStreamsPerParticipant?: number;
   /** Defaults to 32 KB: room for the longest message, in JSON, with margin. */
@@ -157,7 +159,8 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
     if (path === '/api/health') {
       only(request, 'GET');
       // which room this is, and the contracts it keeps, so that a module or a person can tell before relying on one
-      return send(200, { ok: true, version: options.version, contracts: { skins: SKIN_CONTRACT } });
+      // `guests` is said only when there is a door, so that the gate can offer it and a portal without one says nothing of it
+      return send(200, { ok: true, version: options.version, contracts: { skins: SKIN_CONTRACT }, ...(options.guests ? { guests: true } : {}) });
     }
     if (path.startsWith('/skins/')) {
       // no token: the sign-in page wears a skin too, and a skin holds a look, nothing of what is said in the room
@@ -177,6 +180,7 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       if (wait > 0) throw new HttpError(429, 'too many guests from here just now, wait a little', { 'Retry-After': String(Math.ceil(wait / 1000)) });
       try {
         const { token, guest, room, expiresAt } = admitGuest(store, options.guests, clock());
+        hub.participantChanged(guest); // those already here hear that someone has come: the page counts the guests it knows of
         return send(201, { token, participant: { id: guest.id, alias: guest.alias, kind: guest.kind }, room: { id: room.id, title: room.title }, expiresAt });
       } catch (err) {
         if (err instanceof GuestRoomFull) throw new HttpError(503, 'the guest room is full, try again in a little while', { 'Retry-After': '60' });
@@ -211,7 +215,9 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
 
     if (path === '/api/hints') {
       only(request, 'GET');
-      return send(200, { companion: options.hints?.companion ?? null, examples: options.hints?.examples ?? [] });
+      // the team's examples are questions in the team's own words: a guest gets their companion's, or none
+      const hints = me.kind === 'guest' ? options.guestHints : options.hints;
+      return send(200, { companion: hints?.companion ?? null, examples: hints?.examples ?? [] });
     }
 
     if (path === '/api/rooms') {

@@ -40,6 +40,9 @@ export type HubOptions = {
   now?: () => number;
 };
 
+/** Those who come and go, and are shown offline when they are not there: people and visitors. A companion is there while the portal runs. */
+const comesAndGoes = (participant: Participant): boolean => participant.kind === 'human' || participant.kind === 'guest';
+
 type Connection = { participant: Participant; sink: Sink; endTimer?: ReturnType<typeof setTimeout> };
 
 const DEFAULT_GRACE_MS = 5000;
@@ -89,7 +92,7 @@ export class Hub {
 
     this.cancelLeaving(participant.id);
     // told before the connection exists, so the newcomer hears about everyone else, not about themselves
-    if (participant.kind === 'human' && this.presenceOf(participant).state !== 'online') this.setPresence(participant.id, 'online');
+    if (comesAndGoes(participant) && this.presenceOf(participant).state !== 'online') this.setPresence(participant.id, 'online');
     this.connections.add(connection);
 
     // a guest's stream ends when their time does: it does not outlive the binding that opened it
@@ -164,7 +167,7 @@ export class Hub {
     return (
       this.presence.get(participant.id) ?? {
         participantId: participant.id,
-        state: participant.kind === 'human' ? 'offline' : 'online',
+        state: comesAndGoes(participant) ? 'offline' : 'online',
       }
     );
   }
@@ -192,7 +195,7 @@ export class Hub {
     if (!this.connections.delete(connection)) return;
     if (connection.endTimer) clearTimeout(connection.endTimer);
     const { participant } = connection;
-    if (participant.kind !== 'human' || this.hasConnection(participant.id)) return;
+    if (!comesAndGoes(participant) || this.hasConnection(participant.id)) return;
 
     // not offline yet: the same person often comes right back (a refresh, a tunnel, a phone changing network)
     const timer = setTimeout(() => {

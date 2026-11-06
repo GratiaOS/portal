@@ -172,3 +172,36 @@ test('a guest\'s stream ends when their time does, and nothing is told to it aft
   assert.equal(sink.chunks.length, before, 'and nothing was told to it after');
   hub.close();
 });
+
+test('a guest is shown here while they are, and offline once they have gone, as people are', async () => {
+  const { hub, store, owl } = setup();
+  const other = store.addGuest('wren');
+  store.addBinding({ id: 'bw', roomId: 'guests', participantId: other.id, roleId: 'guest', activeFrom: T0, expiresAt: T0 + HOUR, budget: 0, ledgerId: 'lw' });
+
+  const sink = fakeSink();
+  hub.subscribe(owl, sink);
+  const stateOf = (frames, id) => frames.filter((f) => f.event === 'presence' && f.data.participantId === id).at(-1)?.data.state;
+  assert.equal(sink.frames()[0].data.presence.find((p) => p.participantId === 'guest:wren').state, 'offline'); // not there yet
+
+  const leaving = fakeSink();
+  const close = hub.subscribe(other, leaving);
+  assert.equal(stateOf(sink.frames(), 'guest:wren'), 'online');
+  close();
+  await new Promise((resolve) => setTimeout(resolve, 90)); // past the grace period
+  assert.equal(stateOf(sink.frames(), 'guest:wren'), 'offline');
+  hub.close();
+});
+
+test('those already here hear of a guest who has come in: the visitors, and the team', async () => {
+  const { hub, store, owl, zeus } = setup();
+  const sink = fakeSink();
+  hub.subscribe(owl, sink);
+  const team = fakeSink();
+  hub.subscribe(zeus, team);
+
+  const newcomer = store.addGuest('wren');
+  hub.participantChanged(newcomer);
+  assert.equal(sink.frames().filter((f) => f.event === 'participant').at(-1)?.data.id, 'guest:wren'); // a visitor hears of the one who came
+  assert.equal(team.frames().filter((f) => f.event === 'participant').at(-1)?.data.id, 'guest:wren');
+  hub.close();
+});

@@ -13,8 +13,8 @@ export function peopleOf(participants: Participant[], presence: Record<string, P
     .sort((a, b) => rank(a) - rank(b) || a.alias.localeCompare(b.alias, 'ro', { sensitivity: 'base' }))
     .map((participant) => ({
       participant,
-      // a companion is there while the room runs, unless the room says otherwise
-      here: (presence[participant.id]?.state ?? (participant.kind === 'human' ? 'offline' : 'online')) === 'online',
+      // a companion is there while the room runs, unless the room says otherwise; a person or a visitor is not, until they are
+      here: (presence[participant.id]?.state ?? (participant.kind === 'human' || participant.kind === 'guest' ? 'offline' : 'online')) === 'online',
     }));
 }
 
