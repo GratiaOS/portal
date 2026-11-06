@@ -100,6 +100,11 @@ function whole(value: unknown, fallback: number, name: string, { min, max }: { m
   return value;
 }
 
+function roomKind(value: unknown, name: string): 'team' | 'guest' {
+  if (value !== 'team' && value !== 'guest') throw new ConfigError(`${name} must be "team" or "guest"`);
+  return value;
+}
+
 function text(value: unknown, name: string): string {
   if (typeof value !== 'string' || !value.trim()) throw new ConfigError(`${name} must be a non-empty string`);
   return value;
@@ -177,6 +182,7 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
     return {
       id,
       title: text(entry.title, `rooms[${index}].title`),
+      ...(entry.kind === undefined ? {} : { kind: roomKind(entry.kind, `rooms[${index}].kind`) }),
       ...(entry.visibility === undefined ? {} : { visibility: entry.visibility as ConversationInput['visibility'] }),
       ...(entry.tags === undefined ? {} : { tags: entry.tags as string[] }),
     };

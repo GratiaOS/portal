@@ -13,8 +13,14 @@
  * Not copied: written new for Room (MPL-2.0); the RFC is a document, M3's server is AGPL-3.0 and its UI Apache-2.0.
  */
 
-/** `service` is for local helpers; `companion` is a participant that thinks, like Nova. */
-export type ParticipantKind = 'human' | 'companion' | 'service';
+import type { RoomKind } from './authority.js';
+
+/**
+ * `service` is for local helpers; `companion` is a participant that thinks, like Nova; `guest` is a visitor made while the portal runs, never by the
+ * config, who may do only what a binding gives them in one room (see authority.ts and access.ts).
+ */
+export type ParticipantKind = 'human' | 'companion' | 'service' | 'guest';
+/** What the config may declare: a guest is not one of them. */
 export const PARTICIPANT_KINDS: readonly ParticipantKind[] = ['human', 'companion', 'service'];
 
 export type Participant = {
@@ -54,6 +60,8 @@ export type ConversationStatus = 'open' | 'closed';
 export type Conversation = {
   id: string;
   title: string;
+  /** A team room stays; a guest room is the one place a guest may be (see access.ts). */
+  kind: RoomKind;
   visibility: Visibility;
   status: ConversationStatus;
   tags: string[];

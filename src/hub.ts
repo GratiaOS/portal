@@ -1,3 +1,4 @@
+import { canIn, mayKnow } from './access.js';
 import type { Conversation, Participant, Presence, Turn } from './domain.js';
 import { frame } from './sse.js';
 import type { RoomStore } from './store.js';
@@ -35,6 +36,8 @@ export type HubEvents = {
 export type HubOptions = {
   /** How long a human may be gone before they are shown offline, so a page refresh does not blink. Defaults to 5000 ms. */
   graceMs?: number;
+  /** The clock a guest's binding is read by, in milliseconds. For tests; defaults to the real one. */
+  now?: () => number;
 };
 
 type Connection = { participant: Participant; sink: Sink };
@@ -53,12 +56,14 @@ export class Hub {
     activity: new Set(),
   };
   private readonly graceMs: number;
+  private readonly now: () => number;
 
   constructor(
     private readonly store: RoomStore,
     options: HubOptions = {},
   ) {
     this.graceMs = options.graceMs ?? DEFAULT_GRACE_MS;
+    this.now = options.now ?? Date.now;
   }
 
   /** Listen to what happens in the room: every turn, from a person or a companion, and every change of presence. */
@@ -70,7 +75,7 @@ export class Hub {
   /** The one way a turn enters the room: written, then told to everyone, then to the listeners. */
   publish(input: { conversationId: string; speakerId: string; text: string }): Turn {
     const turn = this.store.appendTurn(input);
-    this.broadcast(frame('message', turn, turn.seq));
+    this.broadcast(frame('message', turn, turn.seq), (to) => this.mayRead(to, turn.conversationId));
     this.emit('turn', turn);
     return turn;
   }
@@ -87,12 +92,14 @@ export class Hub {
     if (participant.kind === 'human' && this.presenceOf(participant).state !== 'online') this.setPresence(participant.id, 'online');
     this.connections.add(connection);
 
+    // what a connection is told is what its participant may know: a guest hears of their own room and of no one on the team
+    const known = this.store.listParticipants().filter((other) => mayKnow(participant, other));
     const hello: Hello = {
       you: participant,
-      participants: this.store.listParticipants(),
-      presence: this.snapshot(),
-      activity: [...this.thinking.values()],
-      conversations: this.store.listConversations(),
+      participants: known,
+      presence: known.map((p) => this.presenceOf(p)),
+      activity: [...this.thinking.values()].filter((a) => this.mayRead(participant, a.conversationId)),
+      conversations: this.store.listConversations().filter((c) => this.mayRead(participant, c.id)),
       lastSeq: this.store.lastSeq(),
     };
     if (this.deliver(connection, frame('hello', hello))) this.replay(connection, lastEventId);
@@ -117,13 +124,13 @@ export class Hub {
       if (!was) return;
       this.thinking.delete(key);
     }
-    this.broadcast(frame('activity', activity));
+    this.broadcast(frame('activity', activity), (to) => this.mayRead(to, conversationId));
     this.emit('activity', activity);
   }
 
   /** Tells everyone how someone shows now (their sign), as they show in `hello`. Not kept: the store has only the current one. */
   participantChanged(participant: Participant): void {
-    this.broadcast(frame('participant', participant));
+    this.broadcast(frame('participant', participant), (to) => mayKnow(to, participant));
   }
 
   /** Who is here, for everyone the room knows. */
@@ -152,7 +159,8 @@ export class Hub {
   private setPresence(participantId: string, state: Presence['state']): void {
     const presence: Presence = { participantId, state };
     this.presence.set(participantId, presence);
-    this.broadcast(frame('presence', presence));
+    const who = this.store.getParticipant(participantId);
+    this.broadcast(frame('presence', presence), (to) => !who || mayKnow(to, who));
     this.emit('presence', presence);
   }
 
@@ -187,7 +195,10 @@ export class Hub {
 
     for (;;) {
       const page = this.store.turnsAfter(cursor, REPLAY_PAGE);
-      for (const turn of page) if (!this.deliver(connection, frame('message', turn, turn.seq))) return;
+      for (const turn of page) {
+        if (!this.mayRead(connection.participant, turn.conversationId)) continue;
+        if (!this.deliver(connection, frame('message', turn, turn.seq))) return;
+      }
       if (page.length < REPLAY_PAGE) return;
       cursor = page[page.length - 1].seq;
     }
@@ -204,8 +215,13 @@ export class Hub {
     }
   }
 
-  private broadcast(chunk: string): void {
-    for (const connection of [...this.connections]) this.deliver(connection, chunk);
+  /** Told to the connections whose participant may be told it (everyone, when no one is named). */
+  private broadcast(chunk: string, to: (participant: Participant) => boolean = () => true): void {
+    for (const connection of [...this.connections]) if (to(connection.participant)) this.deliver(connection, chunk);
+  }
+
+  private mayRead(participant: Participant, conversationId: string): boolean {
+    return canIn(this.store, participant, conversationId, 'read', this.now());
   }
 
   private emit<K extends keyof HubEvents>(event: K, payload: HubEvents[K]): void {

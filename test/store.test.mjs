@@ -337,7 +337,30 @@ test('a database made before the gap log gets it, and keeps everything it had', 
   assert.equal(after.listGaps().length, 1);
   after.close();
 
-  home.raw((db) => assert.equal(home.version(db), 5));
+  home.raw((db) => assert.equal(home.version(db), 6));
+});
+
+test('a database made before rooms had a kind and guests had bindings gets both, and every room it had is a team room', (home) => {
+  const before = room(home);
+  say(before, 'general', 'human:zeus', 'de dinainte');
+  before.close();
+
+  home.raw((db) => {
+    db.exec('DROP TABLE bindings;'); // as it was before this table existed
+    db.exec('ALTER TABLE conversations DROP COLUMN kind;'); // and before rooms had a kind
+    home.setVersion(db, 5);
+  });
+
+  const after = new RoomStore(home.open());
+  assert.deepEqual(after.listTurns('general').map((t) => t.text), ['de dinainte']);
+  assert.deepEqual(after.listConversations().map((c) => [c.id, c.kind]), [['general', 'team'], ['olympus', 'team']]);
+  after.syncConversations([{ id: 'guests', title: 'Guests', kind: 'guest' }]);
+  const owl = after.addGuest('owl');
+  after.addBinding({ id: 'b1', roomId: 'guests', participantId: owl.id, roleId: 'guest', activeFrom: 1, expiresAt: 2, budget: 3, ledgerId: 'l' });
+  assert.deepEqual(after.bindingsOf(owl.id).map((b) => [b.roomId, b.budget]), [['guests', 3]]);
+  after.close();
+
+  home.raw((db) => assert.equal(home.version(db), 6));
 });
 
 // --- what the portal keeps ---

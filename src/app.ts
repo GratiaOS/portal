@@ -1,3 +1,4 @@
+import { canIn } from './access.js';
 import { RoomError } from './domain.js';
 import type { Participant } from './domain.js';
 import type { Hub } from './hub.js';
@@ -113,6 +114,7 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
   const limiter = new SlidingWindowLimiter(messageLimit.messages, messageLimit.windowMs, options.now);
   // a sign is told to everyone at once: a few changes a minute is a mood, more is noise
   const signs = new SlidingWindowLimiter(6, 60_000, options.now);
+  const clock = options.now ?? Date.now;
   // what was sent within the window before this handler began still counts: a restart in Node, or, on Cloudflare, an object
   // that slept and woke, must not give anyone a second full window
   const since = new Date((options.now ?? Date.now)() - messageLimit.windowMs).toISOString();
@@ -189,11 +191,14 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
 
     if (path === '/api/rooms') {
       only(request, 'GET');
-      return send(200, { rooms: store.listConversations() });
+      // a guest is told of the rooms they may read, and of no other
+      return send(200, { rooms: store.listConversations().filter((c) => canIn(store, me, c.id, 'read', clock())) });
     }
 
     if (path === '/api/gaps') {
       only(request, 'GET');
+      // what the knowledge lacked is what the team's people wondered: not for a guest
+      if (me.kind === 'guest') throw new HttpError(403, 'not for guests');
       return send(200, { gaps: store.listGaps(wholeParam(url, 'limit')) });
     }
 
@@ -207,11 +212,15 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
         throw new HttpError(400, 'bad room id');
       }
 
+      // a room a guest may not read is, to them, a room that does not exist
+      if (!canIn(store, me, id, 'read', clock())) throw new RoomError('not_found', `no conversation "${id}"`);
+
       if (request.method === 'GET') {
         const turns = store.listTurns(id, { before: wholeParam(url, 'before'), limit: wholeParam(url, 'limit') });
         return send(200, { turns });
       }
 
+      if (!canIn(store, me, id, 'write', clock())) throw new HttpError(403, 'you may read this room, not write in it');
       const wait = limiter.take(me.id);
       if (wait > 0) throw new HttpError(429, 'too many messages, slow down', { 'Retry-After': String(Math.ceil(wait / 1000)) });
       const body = await readJson(request, maxBodyBytes);
