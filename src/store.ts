@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { ALIAS_PATTERN, CONVERSATION_ID_PATTERN, GAP_REASONS, MAX_TEXT_LENGTH, PARTICIPANT_KINDS, RoomError, VISIBILITIES, isSign, participantId } from './domain.js';
 import type { Binding, RoomKind } from './authority.js';
 import type { Conversation, ConversationStatus, GapReason, KnowledgeGap, Participant, ParticipantKind, Turn, Visibility } from './domain.js';
+import { mayKnow } from './access.js';
 import { extractMentions } from './mentions.js';
 import type { Row, Sqlite } from './sqlite.js';
 
@@ -281,6 +282,10 @@ export class RoomStore {
     const who = this.getParticipant(binding.participantId);
     if (!who) throw new RoomError('not_found', `no participant "${binding.participantId}"`);
     if (who.kind === 'guest' && room.kind !== 'guest') throw new RoomError('invalid', `"${room.id}" is not a guest room`);
+    // a guest is kept to one room: a second binding for the same room is a renewal, for another room it is refused
+    if (who.kind === 'guest' && this.bindingsOf(who.id).some((other) => other.roomId !== binding.roomId)) {
+      throw new RoomError('invalid', `"${who.alias}" is a guest of another room`);
+    }
     this.db.run(
       'INSERT INTO bindings (id, room_id, participant_id, role_id, active_from, expires_at, budget, ledger_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       binding.id, binding.roomId, binding.participantId, binding.roleId, binding.activeFrom, binding.expiresAt, binding.budget, binding.ledgerId,
@@ -333,11 +338,13 @@ export class RoomStore {
       const conversation = this.getConversation(input.conversationId);
       if (!conversation) throw new RoomError('not_found', `no conversation "${input.conversationId}"`);
       if (conversation.status === 'closed') throw new RoomError('closed', `conversation "${conversation.id}" is closed`);
-      if (!this.getParticipant(input.speakerId)) throw new RoomError('not_found', `no participant "${input.speakerId}"`);
+      const speaker = this.getParticipant(input.speakerId);
+      if (!speaker) throw new RoomError('not_found', `no participant "${input.speakerId}"`);
 
       const id = randomUUID();
       const createdAt = this.now().toISOString();
-      const mentions = extractMentions(text, this.listParticipants());
+      // a name is resolved only among those the speaker may know of: a guest who types @zeus must not learn, from what comes back, that there is one
+      const mentions = extractMentions(text, this.listParticipants().filter((other) => mayKnow(speaker, other)));
 
       const { lastInsertRowid } = this.db.run('INSERT INTO turns (id, conversation_id, speaker_id, text, mentions, created_at) VALUES (?, ?, ?, ?, ?, ?)', id, conversation.id, input.speakerId, text, JSON.stringify(mentions), createdAt);
       this.db.run('UPDATE conversations SET updated_at = ? WHERE id = ?', createdAt, conversation.id);

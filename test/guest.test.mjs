@@ -130,3 +130,25 @@ test('a guest cannot be declared in the config: a guest is made while the portal
   );
   assert.ok(createAuthenticator); // the home's authenticator knows tokens, not kinds; a guest's token is for the step that makes it
 });
+
+test('a guest is kept to one room: a renewal is welcome, a second room is refused', () => {
+  const { store, owl } = setup();
+  store.syncConversations([{ id: 'guests-two', title: 'Guests, two', kind: 'guest' }]);
+  const more = { roomId: 'guests', participantId: owl.id, roleId: 'guest', activeFrom: T0 + HOUR, expiresAt: T0 + 2 * HOUR, budget: 5, ledgerId: 'l2' };
+  store.addBinding({ id: 'renewal', ...more }); // the same room, later: the guest stays
+  assert.throws(() => store.addBinding({ id: 'other', ...more, roomId: 'guests-two' }), /guest of another room/);
+  assert.deepEqual(store.bindingsOf(owl.id).map((b) => b.roomId), ['guests', 'guests']);
+});
+
+test('a guest who types a name of the team learns nothing of the team from what comes back', async () => {
+  const { say, store, call } = setup();
+  const turn = (await (await say(TOKENS.owl, 'guests', 'is @zeus here? and @nova? and @hera?')).json()).turn;
+  assert.deepEqual(turn.mentions, ['companion:nova']); // Nova is on their roster; Zeus and Hera are not
+  assert.deepEqual(store.listTurns('guests').at(-1).mentions, ['companion:nova']); // nor is it kept the other way
+
+  // and the team still resolves every name, as before
+  store.syncConversations([{ id: 'general', title: 'General' }]);
+  const team = (await (await say(TOKENS.zeus, 'general', 'ask @hera and @nova')).json()).turn;
+  assert.deepEqual(team.mentions.sort(), ['companion:nova', 'human:hera']);
+  assert.ok(call);
+});
