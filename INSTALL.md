@@ -46,6 +46,24 @@ pnpm --filter portal tokens portal.local.json new Zeus
 pnpm --filter portal tokens portal.local.json show Zeus | pbcopy   # hand it over in person or through a channel you trust
 ```
 
+### A guest room (optional)
+
+A portal can let visitors in without a key of their own, into one room. Declare a room of kind `guest` and name it in `guests`:
+
+```json
+"rooms": [
+  { "id": "general", "title": "General" },
+  { "id": "guests", "title": "Guests", "kind": "guest" }
+],
+"guests": { "room": "guests", "maxActive": 20, "minutes": 60, "perCaller": { "count": 5, "perMinutes": 10 } }
+```
+
+`POST /api/guest` (no key) then gives a visitor a name of the hour (`owl`, `fox`…), a key and the room, for `minutes`. What a guest may do is
+what that binding gives them, in that room: they read and write there, and nothing else exists for them (no other room, none of your people,
+not what the knowledge lacked), and they cannot ask the companion. `maxActive` is how many guests the portal hosts at once (past it the
+door answers `503`); `perCaller` is how many one address may bring in per window (`429`), and counts by the address the connection has (see `clientIpHeader`).
+Without `guests`, there is no door. Only the digest of a guest's key is kept.
+
 ## Run
 
 ```bash

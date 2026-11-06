@@ -105,6 +105,7 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
         rateLimit: { messages: config.rateLimit.messages, windowMs: config.rateLimit.perSeconds * 1000 },
         maxStreamsPerParticipant: config.maxStreamsPerParticipant,
         callerFromHome: true,
+        guests: config.guests,
         pages: config.staticDir ? createStaticHandler(config.staticDir) : undefined,
         skins,
         hints: config.nova ? { companion: config.nova.alias, examples: config.nova.examples } : undefined,

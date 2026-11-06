@@ -1,4 +1,7 @@
-import { canIn } from './access.js';
+import { canIn, isLive } from './access.js';
+import type { GuestsConfig } from './config.js';
+import { tokenDigest } from './config.js';
+import { GuestRoomFull, admitGuest } from './guests.js';
 import { RoomError } from './domain.js';
 import type { Participant } from './domain.js';
 import type { Hub } from './hub.js';
@@ -26,6 +29,8 @@ export type AppOptions = {
    * every caller is one caller.
    */
   callerFromHome?: boolean;
+  /** Where a visitor may come in without a key of their own (`POST /api/guest`). Absent: the door is not there. */
+  guests?: GuestsConfig;
   /** Defaults to 10. */
   maxStreamsPerParticipant?: number;
   /** Defaults to 32 KB: room for the longest message, in JSON, with margin. */
@@ -115,6 +120,8 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
   // a sign is told to everyone at once: a few changes a minute is a mood, more is noise
   const signs = new SlidingWindowLimiter(6, 60_000, options.now);
   const clock = options.now ?? Date.now;
+  // how many guests one caller brings in, per window (the caller is what the home says it is, see callerFromHome)
+  const entrances = options.guests ? new SlidingWindowLimiter(options.guests.perCaller.count, options.guests.perCaller.perMinutes * 60_000, options.now) : undefined;
   // what was sent within the window before this handler began still counts: a restart in Node, or, on Cloudflare, an object
   // that slept and woke, must not give anyone a second full window
   const since = new Date((options.now ?? Date.now)() - messageLimit.windowMs).toISOString();
@@ -131,12 +138,15 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
     const locked = failures.wait(caller);
     if (locked > 0) throw new HttpError(429, 'too many wrong keys, wait a little', { 'Retry-After': String(Math.ceil(locked / 1000)) });
     const token = /^Bearer\s+(\S+)$/i.exec(request.headers.get('authorization') ?? '')?.[1];
-    const id = token === undefined ? undefined : options.authenticate(token);
+    // the team's keys are known from the config; a guest's is found by its digest, among those the portal has given
+    const id = token === undefined ? undefined : (options.authenticate(token) ?? store.participantByGuestKey(tokenDigest(token)));
     const participant = id === undefined ? undefined : store.getParticipant(id);
     if (!participant) {
       failures.take(caller);
       throw new HttpError(401, 'unauthorized', { 'WWW-Authenticate': 'Bearer realm="portal"' });
     }
+    // a guest whose time is over is known, and let in nowhere: not a wrong key, so it is not counted as one, and it opens no stream
+    if (!isLive(store, participant, clock())) throw new HttpError(401, 'unauthorized', { 'WWW-Authenticate': 'Bearer realm="portal"' });
     return participant;
   }
 
@@ -157,6 +167,21 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
     if (!path.startsWith('/api/')) {
       if (options.pages) return options.pages(request);
       throw new HttpError(404, 'not found');
+    }
+
+    // the one door with no key: a visitor comes in, and is given a name, a room and a key for a while
+    if (path === '/api/guest' && options.guests && entrances) {
+      only(request, 'POST');
+      const caller = (options.callerFromHome && request.headers.get(CALLER_HEADER)) || 'unknown';
+      const wait = entrances.take(caller);
+      if (wait > 0) throw new HttpError(429, 'too many guests from here just now, wait a little', { 'Retry-After': String(Math.ceil(wait / 1000)) });
+      try {
+        const { token, guest, room, expiresAt } = admitGuest(store, options.guests, clock());
+        return send(201, { token, participant: { id: guest.id, alias: guest.alias, kind: guest.kind }, room: { id: room.id, title: room.title }, expiresAt });
+      } catch (err) {
+        if (err instanceof GuestRoomFull) throw new HttpError(503, 'the guest room is full, try again in a little while', { 'Retry-After': '60' });
+        throw err;
+      }
     }
 
     const me = authenticate(request);

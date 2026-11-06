@@ -51,17 +51,18 @@ test('a guest reads and writes in their room, and a team room is, to them, a roo
   assert.equal((await call(TOKENS.owl, '/api/rooms/nowhere/messages')).status, 404);
 });
 
-test('a guest with no binding has nothing, not even the guest room; and what ends in time is no authority', async () => {
+test('a guest with no binding is let in nowhere; and what ends in time is no authority', async () => {
   const none = setup({ bind: false });
-  assert.deepEqual((await (await none.call(TOKENS.owl, '/api/rooms')).json()).rooms, []);
-  assert.equal((await none.say(TOKENS.owl, 'guests', 'hello')).status, 404);
+  assert.equal((await none.call(TOKENS.owl, '/api/rooms')).status, 401);
+  assert.equal((await none.say(TOKENS.owl, 'guests', 'hello')).status, 401);
 
   let now = T0 + 60_000;
   const timed = setup({ now: () => now });
   assert.equal((await timed.say(TOKENS.owl, 'guests', 'in time')).status, 201);
   now = T0 + HOUR; // the binding ends here
-  assert.equal((await timed.say(TOKENS.owl, 'guests', 'too late')).status, 404);
-  assert.deepEqual((await (await timed.call(TOKENS.owl, '/api/rooms')).json()).rooms, []);
+  assert.equal((await timed.say(TOKENS.owl, 'guests', 'too late')).status, 401);
+  assert.equal((await timed.call(TOKENS.owl, '/api/rooms')).status, 401);
+  assert.equal((await timed.call(TOKENS.owl, '/api/stream')).status, 401); // and it opens no stream, which would keep a connection for ever
 });
 
 test('what the knowledge lacked is not for a guest, and a guest has no sign', async () => {
@@ -151,4 +152,23 @@ test('a guest who types a name of the team learns nothing of the team from what 
   const team = (await (await say(TOKENS.zeus, 'general', 'ask @hera and @nova')).json()).turn;
   assert.deepEqual(team.mentions.sort(), ['companion:nova', 'human:hera']);
   assert.ok(call);
+});
+
+test('a guest\'s stream ends when their time does, and nothing is told to it after', async () => {
+  let now = T0 + 60_000;
+  const { hub, store, owl } = setup({ now: () => now });
+  // the guest of setup has an hour; another, bound for 60 ms only, is the one whose stream must end
+  const brief = store.addGuest('wren');
+  store.addBinding({ id: 'b-wren', roomId: 'guests', participantId: brief.id, roleId: 'guest', activeFrom: T0, expiresAt: now + 60, budget: 0, ledgerId: 'l10' });
+
+  const sink = fakeSink();
+  hub.subscribe(brief, sink);
+  assert.equal(sink.closed, false);
+  await new Promise((resolve) => setTimeout(resolve, 150)); // a little more than the 60 ms that are left
+  assert.equal(sink.closed, true, 'the stream was closed when the binding ended');
+
+  const before = sink.chunks.length;
+  hub.publish({ conversationId: 'guests', speakerId: owl.id, text: 'said after' });
+  assert.equal(sink.chunks.length, before, 'and nothing was told to it after');
+  hub.close();
 });

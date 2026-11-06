@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **A guest room, optional.** A room can be of kind `guest`, and `guests` in the config opens a door (`POST /api/guest`) where a visitor is given a
+  name of the hour, a key and that room, for a while, with limits on how many at once and per address. A guest does what their binding gives
+  them in that room and nothing else; the team is unchanged. The companion is not open to guests yet. The database moves to version 7 at the next start.
+
 ## 0.1.0 (2026-11-05)
 
 The first version: a team chat with a companion who answers from a folder.

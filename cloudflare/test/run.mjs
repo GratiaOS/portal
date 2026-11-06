@@ -49,7 +49,11 @@ const CONFIG = {
     { kind: 'human', alias: 'Hera' },
     { kind: 'companion', alias: 'Nova' },
   ],
-  rooms: [{ id: 'general', title: 'General' }],
+  rooms: [
+    { id: 'general', title: 'General' },
+    { id: 'guests', title: 'Guests', kind: 'guest' },
+  ],
+  guests: { room: 'guests', maxActive: 5, minutes: 30, perCaller: { count: 3, perMinutes: 10 } },
   retention: { days: 14, messages: 50 },
   rateLimit: { messages: 1000, perSeconds: 10 },
   nova: {
@@ -207,6 +211,16 @@ try {
   check(await until(async () => (await kept()).length === 50, 5000), 'the room keeps its last 50, and lets go of the rest at the alarm');
   const left = await kept();
   check(left[0] === 'm6' && left.at(-1) === 'm55', `what is left is the last 50: ${left[0]} … ${left.at(-1)}`);
+
+  console.log('\n— a guest, let in by the object, kept to one room');
+  const entered = await fetch(`${base}/api/guest`, { method: 'POST' });
+  const guest = await entered.json();
+  check(entered.status === 201 && guest.participant?.kind === 'guest' && typeof guest.token === 'string', `a visitor is let in without a key: ${guest.participant?.alias}`);
+  const asGuest = (path, init = {}) => fetch(base + path, { ...init, headers: { Authorization: `Bearer ${guest.token}`, ...init.headers } });
+  check((await (await asGuest('/api/me')).json()).id === guest.participant.id, 'the key the object gave is the guest');
+  check(JSON.stringify((await (await asGuest('/api/rooms')).json()).rooms.map((r) => r.id)) === '["guests"]', 'the guest is told of the guest room only');
+  check((await asGuest('/api/rooms/general/messages')).status === 404, 'the team room does not exist for them');
+  check((await asGuest('/api/rooms/guests/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'salut' }) })).status === 201, 'and they speak in their own');
 
   console.log('\n— wrong keys, counted in the object (last: it turns this caller away)');
   const wrong = [];

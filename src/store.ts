@@ -129,8 +129,17 @@ const SCHEMA_V6 = (db: Sqlite) => {
   CREATE INDEX IF NOT EXISTS bindings_by_participant ON bindings(participant_id);`);
 };
 
+// The key a guest was given: only its digest is kept, so a copy of the database holds no way in. It points at the guest and says nothing of
+// when it was made or from where.
+const SCHEMA_V7 = `
+CREATE TABLE IF NOT EXISTS guest_keys (
+  digest         TEXT PRIMARY KEY,
+  participant_id TEXT NOT NULL REFERENCES participants(id)
+);
+`;
+
 /** One entry per version: a database at version n gets the entries from n on, and keeps what it has. */
-const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6];
+const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7];
 const SCHEMA_VERSION = MIGRATIONS.length;
 
 function clamp(value: number | undefined, fallback: number, max: number): number {
@@ -290,6 +299,44 @@ export class RoomStore {
       'INSERT INTO bindings (id, room_id, participant_id, role_id, active_from, expires_at, budget, ledger_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       binding.id, binding.roomId, binding.participantId, binding.roleId, binding.activeFrom, binding.expiresAt, binding.budget, binding.ledgerId,
     );
+  }
+
+  /**
+   * Makes a guest, binds them to a room, and keeps the digest of their key, all or nothing. The key itself is the caller's to hand over
+   * once; it is not kept. Only a guest room takes a guest.
+   */
+  createGuest(input: { alias: string; room: string; activeFrom: number; expiresAt: number; budget: number; keyDigest: string }): Participant {
+    return this.transaction(() => {
+      const guest = this.addGuest(input.alias);
+      this.addBinding({
+        id: randomUUID(),
+        roomId: input.room,
+        participantId: guest.id,
+        roleId: 'guest',
+        activeFrom: input.activeFrom,
+        expiresAt: input.expiresAt,
+        budget: input.budget,
+        ledgerId: randomUUID(),
+      });
+      this.db.run('INSERT INTO guest_keys (digest, participant_id) VALUES (?, ?)', input.keyDigest, guest.id);
+      return guest;
+    });
+  }
+
+  /** The guest a key (by its digest) belongs to, if any. */
+  participantByGuestKey(keyDigest: string): string | undefined {
+    return (this.one('SELECT participant_id FROM guest_keys WHERE digest = ?', keyDigest) as { participant_id: string } | undefined)?.participant_id;
+  }
+
+  /** How many guests have a binding that is in its time now: the ones the portal is hosting. */
+  countActiveGuests(now: number): number {
+    const row = this.one(
+      `SELECT COUNT(DISTINCT b.participant_id) AS n FROM bindings b JOIN participants p ON p.id = b.participant_id
+        WHERE p.kind = 'guest' AND b.active_from <= ? AND b.expires_at > ?`,
+      now,
+      now,
+    ) as { n: number };
+    return row.n;
   }
 
   bindingsOf(participantId: string): Binding[] {

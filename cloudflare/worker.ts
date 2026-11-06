@@ -72,6 +72,7 @@ export class Portal extends DurableObject<Env> {
       rateLimit: { messages: config.rateLimit.messages, windowMs: config.rateLimit.perSeconds * 1000 },
       maxStreamsPerParticipant: config.maxStreamsPerParticipant,
       callerFromHome: true,
+      guests: config.guests,
       hints: config.nova ? { companion: config.nova.alias, examples: config.nova.examples } : undefined,
     });
     return this.handler;
