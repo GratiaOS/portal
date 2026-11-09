@@ -172,7 +172,7 @@ The third is the model's key, under the name the config gives in `nova.llm.apiKe
 section it is not needed. `pnpm cloudflare:deploy` (and `:dev`) first bundles Nova's knowledge from the config in
 `portal.cloudflare.local.json`, or the file `PORTAL_CONFIG_FILE` names, into `cloudflare/knowledge.json` (kept out of git).
 
-After a deploy the previous version of the object can keep answering for a few minutes: look again before concluding that a change did not arrive.
+After a deploy, or after a secret changes, the object that is the portal keeps running what it was started with until it has nothing open: it can answer with the previous code or config for a few minutes, and for as long as anyone has a page of the portal open (a page keeps a stream open, and retries it when it fails). Look again before concluding that a change did not arrive; if it still has not, close the pages of the portal and wait a minute or two before you look.
 
 Give it a domain of your own in the Cloudflare dashboard (the Worker, Settings, Domains). To try it on this machine first, put
 both secrets in `cloudflare/.dev.vars` (`PORTAL_CONFIG='…'` and `PORTAL_TOKENS='…'`, kept out of git) and run
