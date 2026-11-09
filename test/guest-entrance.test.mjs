@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
+import { fakeSink } from './helpers.mjs';
 import { GUEST_NAMES, Hub, RoomStore, createApp, createAuthenticator, nodeSqlite, parseConfig } from '../dist/index.js';
 
 const T0 = Date.parse('2026-11-06T12:00:00Z');
@@ -156,4 +157,53 @@ test('a visitor is given the language their browser asks for, among ours, or Eng
   assert.equal(await enter('ro-RO,ro;q=0.9'), 'ro');
   assert.equal(await enter('fr-FR,fr;q=0.9'), 'en', 'not one of ours: English');
   assert.equal(await enter(undefined), 'en');
+});
+
+// --- leaving: a visitor who goes ends their own time, at the portal and not only on the page ---
+
+const leave = (call, token, init = {}) => call('/api/guest/leave', { method: 'POST', token, ...init });
+
+test('a visitor who leaves ends their time: the key opens nothing, the stream closes, the slot is free, and it is not a wrong key', async () => {
+  const { call, enter, hub, store } = setup({ guests: { room: 'guests', maxActive: 2, minutes: 30, perCaller: { count: 100, perMinutes: 10 } } });
+  const owl = await (await enter('a')).json();
+  await enter('b');
+  assert.equal((await enter('c')).status, 503, 'the room is full');
+
+  const sink = fakeSink();
+  hub.subscribe(store.getParticipant(owl.participant.id), sink);
+  assert.equal(sink.closed, false);
+  assert.equal(hub.snapshot().find((p) => p.participantId === owl.participant.id).state, 'online');
+
+  const left = await leave(call, owl.token);
+  assert.equal(left.status, 200);
+  assert.deepEqual(await left.json(), { left: true });
+
+  assert.equal(sink.closed, true, 'their stream closes at once');
+  assert.equal(hub.snapshot().find((p) => p.participantId === owl.participant.id).state, 'offline', 'and they are not here, with no wait for a return');
+  assert.equal((await call('/api/me', { token: owl.token })).status, 401, 'their key opens nothing now');
+  assert.equal((await leave(call, owl.token)).status, 401, 'leaving twice is a key that has done its hour');
+  for (let i = 0; i < 12; i += 1) await call('/api/me', { token: owl.token }); // an ended key is a known key: no number of tries locks the address out
+  assert.equal((await call('/api/me', { token: ZEUS })).status, 200, 'and the address is not locked out');
+  assert.equal((await enter('c')).status, 201, 'the slot is free for the next visitor');
+});
+
+test('leaving ends the time, not the memory of the room: what was said stays until the room ends by absence', async () => {
+  const { call, enter, store, advance } = setup();
+  const owl = await (await enter('a')).json();
+  await call('/api/rooms/guests/messages', { method: 'POST', token: owl.token, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'a word before leaving' }) });
+  await leave(call, owl.token);
+  assert.equal(store.listTurns('guests').length, 1);
+  assert.ok(store.getParticipant(owl.participant.id), 'the guest is on the roster until the room ends');
+  advance(4 * MIN);
+  assert.deepEqual(store.forgetEmptyGuestRooms(5 * MIN), { turns: 0, guests: 0 }, 'not before the minutes more');
+  advance(1 * MIN);
+  assert.deepEqual(store.forgetEmptyGuestRooms(5 * MIN), { turns: 1, guests: 1 }, 'and then the room is empty, counted from the leaving');
+});
+
+test('only a visitor can leave: the team has no time to end, and without a key there is nothing to end', async () => {
+  const { call } = setup();
+  assert.equal((await leave(call, ZEUS)).status, 404);
+  assert.equal((await call('/api/me', { token: ZEUS })).status, 200, 'and the team is as it was');
+  assert.equal((await call('/api/guest/leave', { method: 'POST' })).status, 401);
+  assert.equal((await call('/api/guest/leave', { method: 'GET', token: ZEUS })).status, 405);
 });

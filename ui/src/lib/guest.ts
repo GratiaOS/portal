@@ -19,6 +19,12 @@ export const GUEST_PATH = '/guest';
 export const isGuestPath = (pathname: string): boolean => pathname.replace(/\/+$/, '') === GUEST_PATH;
 
 /**
+ * Whether leaving ends a visit at the portal. Who they are is known from the stream's first word; until it comes, what the page kept of how they
+ * came in (`remembered`) decides, so that a visitor who leaves in that first moment does not leave their slot behind.
+ */
+export const leavingEndsAVisit = (kind: string | undefined, remembered: boolean): boolean => (kind === undefined ? remembered : kind === 'guest');
+
+/**
  * What *Step through* means, by what is in the field: a key there is the person's own, and they go in as themselves, to their place (a wrong
  * one is said to be wrong, and never turned into a visit); nothing there, and it is the door for visitors.
  */

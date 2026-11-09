@@ -156,3 +156,13 @@ test('the API: a token on every call, the page asked for, and a refusal that say
   await assert.rejects(api.say('general', 'x'), (err: unknown) => err instanceof ApiError && err.status === 429 && err.retryAfter === 7 && /slow down/.test(err.message));
   await assert.rejects(api.me(), (err: unknown) => err instanceof ApiError && err.status === 502 && err.message === 'Bad Gateway');
 });
+
+test('a visitor who leaves tells the portal, with their own key and a POST, so that their time ends there too', async () => {
+  const seen: { url: string; method?: string; authorization?: string }[] = [];
+  const api = createApi('visitor-key', (async (url: string | URL | Request, init?: RequestInit) => {
+    seen.push({ url: String(url), method: init?.method, authorization: (init?.headers as Record<string, string>)?.Authorization });
+    return new Response(JSON.stringify({ left: true }), { status: 200 });
+  }) as typeof fetch);
+  assert.deepEqual(await api.leave(), { left: true });
+  assert.deepEqual(seen, [{ url: '/api/guest/leave', method: 'POST', authorization: 'Bearer visitor-key' }]);
+});

@@ -47,6 +47,8 @@ export function createApi(token: string, fetchImpl: typeof fetch = fetch) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sign }),
       }).then((r) => r.participant),
+    /** A visitor leaves: their time ends now, at the portal too, not only on this page. */
+    leave: () => call<{ left: boolean }>('/api/guest/leave', { method: 'POST' }),
     say: (channel: string, text: string) =>
       call<{ turn: Turn }>(`/api/rooms/${encodeURIComponent(channel)}/messages`, {
         method: 'POST',
