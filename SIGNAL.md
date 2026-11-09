@@ -2,7 +2,7 @@
 
 Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
-**Verified:** 2026-11-09, against `main@4efc24d`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
+**Verified:** 2026-11-09, against `main@708288e`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
 
 ## Now
 
@@ -23,7 +23,7 @@ Where El portal is, for whoever starts work on it next. Short on purpose: what c
 - Taking a message out sooner, on request, is not built: messages are kept until the portal forgets them, and nothing else removes one.
 - A person with no `locale` gets the page in their browser's language and Nova's fixed sentences in English; there is no language for the portal as a whole.
 - It is not decided whether the gate at `/` offers *Step through* beside the key, or only `/guest` does.
-- Not measured: how a model answers from `guest-docs/`; Spanish by eye, in the page and on a phone; Nova's one-step habit with a real model (it is only a line of her prompt); contrast of the faint text by skin; Android Chrome notifications.
+- Measured once, not enough: `guest-docs/` with a real model (eight questions, three languages, one run); not measured: Spanish by eye, in the page and on a phone; Nova's one-step habit with a real model (it is only a line of her prompt); contrast of the faint text by skin; Android Chrome notifications.
 
 ## How this stays true
 
