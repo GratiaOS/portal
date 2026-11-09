@@ -33,3 +33,10 @@ test('the figures the documents give are the defaults the portal has, so they ca
   assert.match(said('for-visitors.md'), new RegExp(`\\(${config.guests.forgetAfterMinutes} by default\\)`));
   assert.match(said('about-nova.md'), new RegExp(`ask her ${config.guests.nova.questions} questions during a visit, and all visitors together may ask ${config.guests.nova.perHour} in an hour`));
 });
+
+test('the documents never promise that what a visitor writes or asks is hidden from whoever runs the portal, who can read every room', () => {
+  const { files } = read();
+  for (const [path, content] of files) assert.doesNotMatch(content, /anywhere else the team reads|nobody (else )?can read|only you can|private to you/i, path);
+  assert.match(files.get('for-visitors.md'), /Whoever runs the portal can read this room too/);
+  assert.match(files.get('about-nova.md'), /by whoever runs the portal, who can read every room/);
+});
