@@ -17,7 +17,7 @@ import ThinkingPill from './ThinkingPill.tsx';
 import type { Row } from '../lib/format.ts';
 import type { Strings } from '../lib/strings.ts';
 
-export default function MemoryStream({ rows, meId, channelIds, hasMore, loading, onOlder, thinking, t }: { rows: Row[]; meId: string | undefined; channelIds: string[]; hasMore: boolean; loading: boolean; onOlder: () => void; thinking: string[]; t: Strings }) {
+export default function MemoryStream({ rows, meId, channelIds, hasMore, loading, onOlder, thinking, welcome, t }: { welcome?: string; rows: Row[]; meId: string | undefined; channelIds: string[]; hasMore: boolean; loading: boolean; onOlder: () => void; thinking: string[]; t: Strings }) {
   const scroller = useRef<HTMLDivElement>(null);
   useOccurrences(scroller);
   const before = useRef({ height: 0, firstSeq: 0, atBottom: true });
@@ -78,7 +78,7 @@ export default function MemoryStream({ rows, meId, channelIds, hasMore, loading,
       )}
       {rows.length === 0 && !loading && (
         <p data-part="empty">
-          {t.empty}
+          {welcome ?? t.empty}
         </p>
       )}
       <ol role="log" aria-live="polite" data-part="messages">

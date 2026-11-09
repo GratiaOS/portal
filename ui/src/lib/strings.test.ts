@@ -29,3 +29,9 @@ test('a visitor is told, in their language, that the room is read by those in it
   assert.match(stringsFor('ro').guestNotPrivate, /oricine e în cameră și de cine rulează portalul/);
   assert.match(stringsFor('es').guestNotPrivate, /cualquiera que esté en la sala, y quien administra el portal/);
 });
+
+test('the whisper of the place a visitor finds in an empty room is the family\'s own line, in each language', () => {
+  assert.equal(stringsFor('en').guestWelcome, 'Many wings, same flight.');
+  assert.equal(stringsFor('ro').guestWelcome, 'Multe aripi, același zbor.');
+  assert.equal(stringsFor('es').guestWelcome, 'Muchas alas, un mismo vuelo.');
+});

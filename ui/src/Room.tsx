@@ -184,6 +184,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             onOlder={older}
             onSend={send}
             notice={guest ? t.guestNotPrivate : undefined}
+            welcome={guest ? t.guestWelcome : undefined}
             note={note}
             whispers={whispers}
             thinking={thinking}
