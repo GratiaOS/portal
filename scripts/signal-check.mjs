@@ -29,11 +29,11 @@ function refresh() {
   }
 }
 
-/** The merged pull requests since the stamp, but not those that only moved SIGNAL.md: the stamp's own pull request cannot count against it. */
+/** The pull requests merged into main since the stamp (not a merge of main into a branch), but not those that only moved SIGNAL.md: the stamp's own pull request cannot count against it. */
 function mergesSince(sha) {
   for (const ref of ['origin/main', 'main', 'HEAD']) {
     try {
-      const merges = git('rev-list', '--merges', `${sha}..${ref}`).split('\n').filter(Boolean);
+      const merges = git('rev-list', '--first-parent', '--merges', `${sha}..${ref}`).split('\n').filter(Boolean);
       return merges.filter((merge) => git('diff', '--name-only', `${merge}^1`, merge).split('\n').some((file) => file && file !== 'SIGNAL.md')).length;
     } catch {
       /* the next place to look */
