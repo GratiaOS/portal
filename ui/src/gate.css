@@ -71,7 +71,8 @@
   grid-row: 2;
   align-self: center;
   width: min(92vw, 30rem);
-  aspect-ratio: 480 / 250;
+  /* as tall as what is given in it, and never lower than the fence as it was drawn */
+  min-height: calc(min(92vw, 30rem) * 250 / 480);
   margin-top: -6vh;
 }
 
@@ -113,6 +114,13 @@
   stroke-dasharray: 0 9;
 }
 
+/* the fence is stretched to the height of what is in it: the strokes of the lights keep their width (the lantern's too, so that all the bulbs are one size), so the bulbs stay round and as far apart as they are drawn */
+[data-gate='halo'] path,
+[data-gate='bulbs'] path,
+[data-gate='wire'] {
+  vector-effect: non-scaling-stroke;
+}
+
 [data-gate='halo'] {
   stroke: var(--bulb-warm);
   stroke-width: 9;
@@ -124,10 +132,35 @@
   stroke-width: 3.6;
 }
 
-/* inside the doorway: the name of the place, the key, and a calm line */
-[data-gate='opening'] {
+/* on a narrow screen the doorway is drawn smaller, and so are the bulbs and the space between them (the strokes do not scale with it) */
+@media (max-width: 520px) {
+  [data-gate='halo'],
+  [data-gate='bulbs'] {
+    stroke-dasharray: 0 6.5;
+  }
+  [data-gate='halo'] {
+    stroke-width: 6.5;
+  }
+  [data-gate='bulbs'] {
+    stroke-width: 2.6;
+  }
+}
+
+/* the lantern on the left post, hung where the stub of the string ends (104 of 250 down the fence), with the proportions it was drawn in */
+[data-gate='lantern'] {
   position: absolute;
-  inset: 14% 11% 12% 16%;
+  top: 41.6%;
+  left: 4.17%;
+  width: 18.75%;
+  aspect-ratio: 90 / 146;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* inside the doorway: the name of the place, the key, and a calm line; it sets the height of the doorway, and the lights are clear of it */
+[data-gate='opening'] {
+  position: relative;
+  padding: 3.4rem 11% 2.2rem 16%;
   display: grid;
   align-content: center;
   justify-items: center;
@@ -141,12 +174,6 @@
   font-size: clamp(1.1rem, 4.5vw, 1.7rem);
   font-weight: 500;
   letter-spacing: 0.01em;
-}
-
-/* the question above the field, small and quiet: who has a key knows what it is for */
-[data-gate='label'] {
-  font-size: 0.85rem;
-  color: var(--ink-soft);
 }
 
 [data-gate='input'] {

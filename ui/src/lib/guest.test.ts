@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isGuestPath, leavingEndsAVisit, opensToGuests, stepThrough } from './guest.ts';
+import { isGuestPath, leavingEndsAVisit, opensToGuests, stepThrough, stepThroughMeans } from './guest.ts';
 
 const answer = (status: number, body?: unknown) => () => Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
 const down = () => Promise.reject(new TypeError('network down'));
@@ -48,4 +48,11 @@ test('leaving ends a visit when they are a visitor, and before the stream has sa
   assert.equal(leavingEndsAVisit('human', true), false, 'who they are, once known, beats what was remembered');
   assert.equal(leavingEndsAVisit(undefined, true), true, 'before the first word of the stream, the page remembers');
   assert.equal(leavingEndsAVisit(undefined, false), false);
+});
+
+test('Step through goes by what is in the field: a key is the person\'s own, nothing is the door for visitors', () => {
+  assert.equal(stepThroughMeans('a-long-key-0123456789'), 'key');
+  assert.equal(stepThroughMeans('  a-long-key-0123456789  '), 'key');
+  assert.equal(stepThroughMeans(''), 'visitor');
+  assert.equal(stepThroughMeans('   '), 'visitor');
 });

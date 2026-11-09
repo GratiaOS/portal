@@ -9,6 +9,7 @@
  *             card around it. Enter in the field sends; there is no button.
  * Not copied: written new for Room (MPL-2.0); Firegate is AGPL-3.0.
  */
+import { stepThroughMeans } from '../lib/guest.ts';
 import type { Refused } from '../lib/guest.ts';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -69,24 +70,16 @@ function Sky() {
 }
 
 /**
- * The fence in the field, and its lights: along the top, down the right post, and on the left post a loop that lights the grass.
- * Its shape is the doorway the key is given in; its colours are in gate.css.
+ * The fence in the field, and its lights: along the top and down the right post, and on the left post a loop that lights the grass.
+ * Its shape is the doorway the key is given in; its colours are in gate.css. The fence is as tall as what is given in it (the key,
+ * and the door for visitors when there is one): it is drawn to be stretched, with strokes that keep their width, and the lantern is
+ * drawn apart, so that it keeps its proportions however tall the doorway is.
  */
 function Fence() {
-  // the string, once for its halo and once for its bulbs
-  const string = [
-    'M72 38 Q160 47 250 41 T428 42 L432 120 L436 222',
-    'M72 38 L74 104 C46 102 44 146 68 150 C34 154 36 214 66 214 C96 214 94 158 72 152',
-  ];
+  // the string along the top and the right post, and the stub of the left one that carries the lantern
+  const string = ['M72 38 Q160 47 250 41 T428 42 L432 120 L436 222', 'M72 38 L74 104'];
   return (
-    <svg data-gate="fence" viewBox="0 0 480 250" aria-hidden="true" focusable="false">
-      <defs>
-        <radialGradient id="gate-glow" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" data-gate="glow-in" />
-          <stop offset="1" data-gate="glow-out" />
-        </radialGradient>
-      </defs>
-      <ellipse cx="62" cy="196" rx="78" ry="46" fill="url(#gate-glow)" />
+    <svg data-gate="fence" viewBox="0 0 480 250" preserveAspectRatio="none" aria-hidden="true" focusable="false">
       <polygon points="66,34 74,34 79,228 71,228" data-gate="post" />
       <polygon points="426,38 432,38 438,226 432,226" data-gate="post" />
       {[78, 110, 142, 174, 206].map((y) => (
@@ -105,6 +98,29 @@ function Fence() {
   );
 }
 
+/** The lantern on the left post: a loop of the string that lights the grass, hung where the stub ends and never stretched. */
+function Lantern() {
+  const loop = 'M74 104 C46 102 44 146 68 150 C34 154 36 214 66 214 C96 214 94 158 72 152';
+  return (
+    <svg data-gate="lantern" viewBox="20 104 90 146" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id="gate-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" data-gate="glow-in" />
+          <stop offset="1" data-gate="glow-out" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="62" cy="196" rx="78" ry="46" fill="url(#gate-glow)" />
+      <g data-gate="string">
+        {(['halo', 'bulbs'] as const).map((layer) => (
+          <g key={layer} data-gate={layer} data-lantern="">
+            <path d={loop} />
+          </g>
+        ))}
+      </g>
+    </svg>
+  );
+}
+
 /** The door for visitors, when the portal has one: what it is doing, and how to ask it to open. `only` hides the key, for the link that steps through by itself. */
 export type GuestDoor = { state: 'idle' | 'stepping' | Refused; onStep: () => void; only: boolean };
 
@@ -114,8 +130,8 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
   const [token, setToken] = useState('');
   const [state, setState] = useState<'idle' | 'checking' | 'unknown' | 'slow' | 'away'>('idle');
 
-  async function enter(event: FormEvent) {
-    event.preventDefault();
+  /** Goes in with the key in the field: as themselves, to their place. Enter does this, and *Step through* when there is a key. */
+  async function enterWithKey() {
     const candidate = token.trim();
     if (!candidate || state === 'checking') return;
     // A key is plain visible characters. Anything else (a pasted ellipsis, a line break) cannot even be sent
@@ -133,18 +149,24 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
     }
   }
 
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    void enterWithKey();
+  }
+
   return (
     <main data-gate="page">
       <Sky />
-      <form onSubmit={enter} data-gate="doorway" aria-labelledby="gate-title">
+      <form onSubmit={onSubmit} data-gate="doorway" aria-labelledby="gate-title">
         <Fence />
+        <Lantern />
         <div data-gate="opening">
           <h1 id="gate-title" data-gate="title">
             El portal
           </h1>
           <span data-gate="sr-only">{t.signInTitle}</span>
           {!door?.only && (
-            <label htmlFor="token" data-gate="label">
+            <label htmlFor="token" data-gate="sr-only">
               {t.gateKey}
             </label>
           )}
@@ -156,7 +178,7 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
             spellCheck={false}
             autoFocus
             enterKeyHint="go"
-            placeholder={t.gatePlaceholder}
+            placeholder={`🗝️\u2002${t.gatePlaceholder}`}
             aria-describedby="gate-hint"
             value={token}
             onChange={(e) => {
@@ -193,7 +215,13 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
                         : ''}
           </p>
           {door && door.state !== 'closed' && (
-            <button type="button" onClick={door.onStep} disabled={door.state === 'stepping'} data-gate="step" autoFocus={door.only}>
+            <button
+              type="button"
+              onClick={() => (stepThroughMeans(token) === 'key' ? void enterWithKey() : door.onStep())}
+              disabled={door.state === 'stepping' || state === 'checking'}
+              data-gate="step"
+              autoFocus={door.only}
+            >
               {t.stepThrough}
             </button>
           )}
