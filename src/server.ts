@@ -69,9 +69,14 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
     const forget = () => {
       const { turns, gaps } = store.forget(config.retention);
       if (turns || gaps) console.log(`portal: let go of ${turns} message(s) and ${gaps} question(s) past what it keeps`);
+      // the guest room ends by absence, whatever the retention of the team says
+      if (config.guests) {
+        const ended = store.forgetEmptyGuestRooms(config.guests.forgetAfterMinutes * 60_000);
+        if (ended.turns || ended.guests) console.log(`portal: the guest room ended: let go of ${ended.turns} message(s) and ${ended.guests} guest(s)`);
+      }
     };
     forget();
-    forgetting = setInterval(forget, 10 * 60_000);
+    forgetting = setInterval(forget, config.guests ? Math.min(10, config.guests.forgetAfterMinutes) * 60_000 : 10 * 60_000);
     forgetting.unref();
 
     const live = new Hub(store, { graceMs: options.graceMs });

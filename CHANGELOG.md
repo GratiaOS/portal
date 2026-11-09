@@ -8,6 +8,8 @@
 - **The page for a visitor.** The gate offers *Step through* when the portal has a door, and `/guest` steps through by itself, asking nothing. The visitor
   lands in the one room: no list of rooms, no team, no sign, no notifications, only how many others are there. `/api/health` says `guests: true` only when there
   is a door, and `/api/hints` gives a guest their companion's examples and never the team's.
+- **The guest room ends by absence** (`guests.forgetAfterMinutes`, 5): once the last guest's time is over and those minutes have passed, what was said
+  there, the guests, their keys and their bindings are let go, and the next visitors find an empty room. The questions' ledger stays, as the portal's ceiling per hour.
 - **Nova for guests, off until chosen** (`guests.nova`): an engine of her own, a public folder of her own, facts made without the team's names, a
   budget of questions per guest and per hour counted before the model is called, and no entry in the list of what the knowledge lacked. Not on
   Cloudflare yet. The database moves to version 8 at the next start.

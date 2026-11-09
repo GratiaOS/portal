@@ -511,6 +511,44 @@ export class RoomStore {
     return forgotten;
   }
 
+  /**
+   * A guest room ends by absence: when no guest of it has a binding in its time, and the last binding ended `afterMs` ago or more, what was
+   * said there is let go, and so are the guests of it, their keys and their bindings, so the next visitors find an empty room and no one of
+   * the last ones on the roster. A room with someone in it is never touched, and neither is a team room. The ledger of questions stays (it
+   * is the portal's ceiling per hour, and it holds no one's name): it is forgotten by its own clock. Returns how many turns and guests.
+   */
+  forgetEmptyGuestRooms(afterMs: number): { turns: number; guests: number } {
+    const now = this.now().getTime();
+    const total = { turns: 0, guests: 0 };
+    for (const room of this.listConversations().filter((r) => r.kind === 'guest')) {
+      const span = this.one('SELECT MAX(expires_at) AS last, MAX(CASE WHEN expires_at > ? THEN 1 ELSE 0 END) AS live FROM bindings WHERE room_id = ?', now, room.id) as {
+        last: number | null;
+        live: number | null;
+      };
+      if (span.last === null || span.live || now - span.last < afterMs) continue;
+      const gone = this.transaction(() => {
+        const guests = (this.db.all("SELECT DISTINCT participant_id AS id FROM bindings WHERE room_id = ?", room.id) as { id: string }[]).map((g) => g.id);
+        const turns = this.db.run('DELETE FROM turns WHERE conversation_id = ?', room.id).changes;
+        for (const id of guests) {
+          this.db.run('DELETE FROM guest_keys WHERE participant_id = ?', id);
+          this.db.run('DELETE FROM bindings WHERE participant_id = ?', id);
+          this.db.run("DELETE FROM turns WHERE speaker_id = ?", id);
+          this.db.run("DELETE FROM participants WHERE id = ? AND kind = 'guest'", id);
+        }
+        return { turns, guests: guests.length };
+      });
+      total.turns += gone.turns;
+      total.guests += gone.guests;
+    }
+    if (total.turns || total.guests) this.db.afterForget();
+    return total;
+  }
+
+  /** Whether a turn is still kept: `seq` is never given again, so a turn that is gone stays gone. */
+  hasTurn(seq: number): boolean {
+    return this.one('SELECT 1 AS yes FROM turns WHERE seq = ?', seq) !== undefined;
+  }
+
   /** The last `seq` given, even when that turn has since been forgotten: the order goes on, it does not start again. */
   lastSeq(): number {
     const row = this.one("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'turns'), 0) AS seq") as { seq: number };
