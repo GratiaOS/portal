@@ -80,7 +80,7 @@ const CONFIG = {
     maxActive: 5,
     minutes: 30,
     perCaller: { count: 3, perMinutes: 10 },
-    nova: { enabled: true, questions: 3, perHour: 20, knowledgeDir: guestDir, llm: { baseUrl: `http://127.0.0.1:${guestModel.address().port}/v1`, model: 'guests-stand-in', apiKeyEnv: 'PORTAL_GUESTS_LLM_API_KEY' } },
+    nova: { enabled: true, questions: 3, perHour: 20, knowledgeDir: guestDir, examples: ['what is a portal?'], llm: { baseUrl: `http://127.0.0.1:${guestModel.address().port}/v1`, model: 'guests-stand-in', apiKeyEnv: 'PORTAL_GUESTS_LLM_API_KEY' } },
   },
   retention: { days: 14, messages: 50 },
   rateLimit: { messages: 1000, perSeconds: 10 },
@@ -88,6 +88,7 @@ const CONFIG = {
     alias: 'Nova',
     knowledgeDir,
     exclude: ['private'],
+    examples: ['what do the gods eat?'],
     llm: { baseUrl: `http://127.0.0.1:${model.address().port}/v1`, model: 'stand-in', apiKeyEnv: 'PORTAL_LLM_API_KEY' },
   },
 };
@@ -254,6 +255,8 @@ try {
   check((await asGuest('/api/rooms/guests/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'salut' }) })).status === 201, 'and they speak in their own');
 
   console.log('\n— the companion for guests, on an engine and from a folder of her own');
+  const hints = await (await asGuest('/api/hints')).json();
+  check(hints.companion === 'Nova' && JSON.stringify(hints.examples) === '["what is a portal?"]', `a guest is told of her companion with her examples, and never the team's: ${JSON.stringify(hints.examples)}`);
   const teamAsked = asked.length;
   await asGuest('/api/rooms/guests/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: '@Nova ce este un portal?' }) });
   const answered = await until(async () => (await (await asGuest('/api/rooms/guests/messages')).json()).turns.some((t) => t.speakerId === 'companion:nova' && /chat de echipa/.test(t.text)), 10_000);

@@ -77,6 +77,8 @@ export class Portal extends DurableObject<Env> {
       callerFromHome: true,
       guests: config.guests,
       hints: config.nova ? { companion: config.nova.alias, examples: config.nova.examples } : undefined,
+      // a guest is told of her companion, with her examples and never the team's, as in Node
+      guestHints: config.guests?.nova.enabled && config.guests.nova.nova ? { companion: config.guests.nova.nova.alias, examples: config.guests.nova.nova.examples } : undefined,
     });
     return this.handler;
   }
