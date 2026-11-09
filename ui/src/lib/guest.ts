@@ -18,6 +18,12 @@ export const GUEST_PATH = '/guest';
 
 export const isGuestPath = (pathname: string): boolean => pathname.replace(/\/+$/, '') === GUEST_PATH;
 
+/**
+ * What *Step through* means, by what is in the field: a key there is the person's own, and they go in as themselves, to their place (a wrong
+ * one is said to be wrong, and never turned into a visit); nothing there, and it is the door for visitors.
+ */
+export const stepThroughMeans = (field: string): 'key' | 'visitor' => (field.trim() ? 'key' : 'visitor');
+
 /** Whether this portal has a door for visitors at all (it says so in its health, and says nothing when it has none). */
 export async function opensToGuests(fetchImpl: typeof fetch = fetch): Promise<boolean> {
   try {
