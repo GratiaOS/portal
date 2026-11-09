@@ -96,7 +96,7 @@ budget she keeps.
 ```
 
 - **`llm` is required to turn her on**, and is not inherited from the team's `nova.llm`: the engine that answers strangers is chosen on purpose.
-- **`knowledgeDir`** is a folder written for visitors, apart from the team's. It is never a filter on the team's folder: what is not in what is sent
+- **`knowledgeDir`** is a folder written for visitors, apart from the team's. The repository gives one to start from, `guest-docs/`: five short documents about the portal as a program (what it is, what a portal keeps, who Nova is, how to run your own, what a visit is), the same for anyone who runs one. Point at it (`"knowledgeDir": "guest-docs"`, beside a config at the root), extend it with what *your* visitors should know, or replace it; a test keeps its figures equal to the program's defaults, so if you change a default, change them. It is never a filter on the team's folder: what is not in what is sent
   to the model cannot be got out of it. What she may say about the portal is made for guests too (no name of the team, no server).
 - **`questions`** is how many each guest may ask in their visit (5), and **`perHour`** how many all the guests together may ask in an hour (60).
   Both are counted when the question is asked, before the model is called, so a model that fails still costs one; past either, the portal says so
