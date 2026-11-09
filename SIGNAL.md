@@ -2,7 +2,7 @@
 
 Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
-**Verified:** 2026-11-09, against `main@9c0cef9`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
+**Verified:** 2026-11-09, against `main@6099722`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
 
 ## Now
 
@@ -13,14 +13,16 @@ Where El portal is, for whoever starts work on it next. Short on purpose: what c
 - A starter folder of documents for the companion for guests, `guest-docs/`, the same for anyone who runs a portal ([#13](https://github.com/GratiaOS/portal/pull/13)).
 - The page tells a visitor, under the box and in their language, who reads the room ([#16](https://github.com/GratiaOS/portal/pull/16)).
 - The companion for guests on Cloudflare too: her own engine and secret, her own bundled folder ([#17](https://github.com/GratiaOS/portal/pull/17)).
+- A visitor who leaves ends their own time at the portal: the key stops opening anything, the stream closes, the slot is free ([#19](https://github.com/GratiaOS/portal/pull/19)).
+- The gate: the doorway is as tall as what is in it, the key is in the field (`🗝️ your token`), and *Step through* goes by the field: a key goes in as the person, nothing is the door for visitors ([#20](https://github.com/GratiaOS/portal/pull/20)).
 
 ## Next, in this order
 
 1. **A welcome for visitors** that is a whisper of the place, never a line in Nova's mouth.
-2. **`Leave` ends a visitor's time.** Today "the last one to leave" is counted by the binding's time, so a guest who left stays on the roster until it ends.
 
 ## Known limits
 
+- Closing the tab is not leaving: a visit runs out its time, as before. A landscape phone (375 px high) puts "Run your own" below the fold.
 - Taking a message out sooner, on request, is not built: messages are kept until the portal forgets them, and nothing else removes one.
 - A person with no `locale` gets the page in their browser's language and Nova's fixed sentences in English; there is no language for the portal as a whole.
 - It is not decided whether the gate at `/` offers *Step through* beside the key, or only `/guest` does.
