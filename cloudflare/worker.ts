@@ -50,6 +50,7 @@ export class Portal extends DurableObject<Env> {
   private handler?: (request: Request) => Promise<Response>;
   private store?: RoomStore;
   private retention?: Retention;
+  private guestsForgetAfterMs?: number;
 
   /** Opened once each time the object wakes: who and where from the config, what is past keeping let go, and the handler. */
   private open(): (request: Request) => Promise<Response> {
@@ -62,8 +63,9 @@ export class Portal extends DurableObject<Env> {
     store.syncConversations(config.rooms);
     this.store = store;
     this.retention = config.retention;
+    this.guestsForgetAfterMs = config.guests ? config.guests.forgetAfterMinutes * 60_000 : undefined;
     this.forget();
-    if (config.retention !== 'forever') void this.ctx.storage.getAlarm().then((at) => (at === null ? this.ctx.storage.setAlarm(Date.now() + this.every()) : undefined));
+    if (config.retention !== 'forever' || this.guestsForgetAfterMs) void this.ctx.storage.getAlarm().then((at) => (at === null ? this.ctx.storage.setAlarm(Date.now() + this.every()) : undefined));
 
     const hub = new Hub(store);
     if (config.nova) this.wakeNova(config, config.nova, store, hub);
@@ -111,6 +113,11 @@ export class Portal extends DurableObject<Env> {
     if (!this.store || !this.retention) return;
     const { turns, gaps } = this.store.forget(this.retention);
     if (turns || gaps) console.log(`portal: let go of ${turns} message(s) and ${gaps} question(s) past what it keeps`);
+    // the guest room ends by absence, whatever the retention of the team says
+    if (this.guestsForgetAfterMs) {
+      const ended = this.store.forgetEmptyGuestRooms(this.guestsForgetAfterMs);
+      if (ended.turns || ended.guests) console.log(`portal: the guest room ended: let go of ${ended.turns} message(s) and ${ended.guests} guest(s)`);
+    }
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -126,7 +133,7 @@ export class Portal extends DurableObject<Env> {
   async alarm(): Promise<void> {
     this.open();
     this.forget();
-    if (this.retention !== 'forever') await this.ctx.storage.setAlarm(Date.now() + this.every());
+    if (this.retention !== 'forever' || this.guestsForgetAfterMs) await this.ctx.storage.setAlarm(Date.now() + this.every());
   }
 }
 

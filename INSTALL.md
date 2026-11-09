@@ -55,13 +55,16 @@ A portal can let visitors in without a key of their own, into one room. Declare 
   { "id": "general", "title": "General" },
   { "id": "guests", "title": "Guests", "kind": "guest" }
 ],
-"guests": { "room": "guests", "maxActive": 20, "minutes": 60, "perCaller": { "count": 5, "perMinutes": 10 } }
+"guests": { "room": "guests", "maxActive": 20, "minutes": 60, "forgetAfterMinutes": 5, "perCaller": { "count": 5, "perMinutes": 10 } }
 ```
 
 `POST /api/guest` (no key) then gives a visitor a name of the hour (`owl`, `fox`…), a key and the room, for `minutes`. What a guest may do is
 what that binding gives them, in that room: they read and write there, and nothing else exists for them (no other room, none of your people,
 not what the knowledge lacked), and they cannot ask the companion. `maxActive` is how many guests the portal hosts at once (past it the
 door answers `503`); `perCaller` is how many one address may bring in per window (`429`), and counts by the address the connection has (see `clientIpHeader`).
+The room **ends by absence**: `forgetAfterMinutes` (5) after the last guest's time is over, what was said there, the guests of it, their keys and
+their bindings are let go, so the next visitors find an empty room and nothing of the last ones. A room with someone still in their time is never
+touched, and the team's rooms never are. It is checked every few minutes (at most ten; on Cloudflare, at the object's alarm), so the end can come a little late.
 Without `guests`, there is no door. Only the digest of a guest's key is kept.
 
 **The page for a visitor.** When the portal has a door, its gate offers **Step through** under the field for a key. A link to `/guest` (on your own
