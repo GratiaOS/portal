@@ -2,7 +2,7 @@
 
 Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
-**Verified:** 2026-11-09, against `main@6099722`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
+**Verified:** 2026-11-09, against `main@24c3e79`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
 
 ## Now
 
@@ -14,11 +14,12 @@ Where El portal is, for whoever starts work on it next. Short on purpose: what c
 - The page tells a visitor, under the box and in their language, who reads the room ([#16](https://github.com/GratiaOS/portal/pull/16)).
 - The companion for guests on Cloudflare too: her own engine and secret, her own bundled folder ([#17](https://github.com/GratiaOS/portal/pull/17)).
 - A visitor who leaves ends their own time at the portal: the key stops opening anything, the stream closes, the slot is free ([#19](https://github.com/GratiaOS/portal/pull/19)).
+- A whisper of the place for a visitor in the empty room, *Many wings, same flight.*, in Romanian, English and Spanish ([#22](https://github.com/GratiaOS/portal/pull/22)).
 - The gate: the doorway is as tall as what is in it, the key is in the field (`🗝️ your token`), and *Step through* goes by the field: a key goes in as the person, nothing is the door for visitors ([#20](https://github.com/GratiaOS/portal/pull/20)).
 
-## Next, in this order
+## Next
 
-1. **A welcome for visitors** that is a whisper of the place, never a line in Nova's mouth.
+Nothing is lined up in the repository. What is left is a deploy: a portal that opens a guest room needs its own engine for guests, its secret and its folder (`guest-docs/` or one's own) in its config, which is the config of whoever runs it and not a matter of this repository (INSTALL.md says how).
 
 ## Known limits
 
