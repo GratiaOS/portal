@@ -18,6 +18,12 @@ export const GUEST_PATH = '/guest';
 
 export const isGuestPath = (pathname: string): boolean => pathname.replace(/\/+$/, '') === GUEST_PATH;
 
+/**
+ * Whether leaving ends a visit at the portal. Who they are is known from the stream's first word; until it comes, what the page kept of how they
+ * came in (`remembered`) decides, so that a visitor who leaves in that first moment does not leave their slot behind.
+ */
+export const leavingEndsAVisit = (kind: string | undefined, remembered: boolean): boolean => (kind === undefined ? remembered : kind === 'guest');
+
 /** Whether this portal has a door for visitors at all (it says so in its health, and says nothing when it has none). */
 export async function opensToGuests(fetchImpl: typeof fetch = fetch): Promise<boolean> {
   try {

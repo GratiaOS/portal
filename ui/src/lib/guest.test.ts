@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isGuestPath, opensToGuests, stepThrough } from './guest.ts';
+import { isGuestPath, leavingEndsAVisit, opensToGuests, stepThrough } from './guest.ts';
 
 const answer = (status: number, body?: unknown) => () => Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
 const down = () => Promise.reject(new TypeError('network down'));
@@ -41,4 +41,11 @@ test('each way the door can say no is told apart', async () => {
   assert.deepEqual(await stepThrough(answer(500)), { ok: false, reason: 'away' });
   assert.deepEqual(await stepThrough(down), { ok: false, reason: 'away' });
   assert.deepEqual(await stepThrough(() => Promise.resolve(new Response('not json', { status: 201 }))), { ok: false, reason: 'away' });
+});
+
+test('leaving ends a visit when they are a visitor, and before the stream has said who they are, by how the page kept that they came in', () => {
+  assert.equal(leavingEndsAVisit('guest', false), true);
+  assert.equal(leavingEndsAVisit('human', true), false, 'who they are, once known, beats what was remembered');
+  assert.equal(leavingEndsAVisit(undefined, true), true, 'before the first word of the stream, the page remembers');
+  assert.equal(leavingEndsAVisit(undefined, false), false);
 });
