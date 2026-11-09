@@ -14,3 +14,9 @@ test('a stamp that cannot be checked, or none at all, is said and never an error
   assert.match(report(TEXT, undefined, '2026-11-12'), /not known/);
   assert.match(report('no stamp here', 3, '2026-11-12'), /says nothing of how current/);
 });
+
+test('when main could not be fetched, a count is said to be from what the clone has, whatever it finds', () => {
+  assert.match(report(TEXT, 0, '2026-11-12', false), /is current.*could not be fetched/);
+  assert.match(report(TEXT, 2, '2026-11-12', false), /is behind.*could not be fetched/);
+  assert.doesNotMatch(report(TEXT, 0, '2026-11-12', true), /fetched/);
+});

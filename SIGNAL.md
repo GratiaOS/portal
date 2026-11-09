@@ -2,14 +2,14 @@
 
 Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
-**Verified:** 2026-11-09, against `main@0f7dea3`. `pnpm signal` says how far `main` has moved since. It warns, it never blocks.
+**Verified:** 2026-11-09, against `main@29742d3`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
 
 ## Now
 
 - `v0.1.0` is out (2026-11-05). On `main` since, not released:
   - the guest room: a door with no key ([#4](https://github.com/GratiaOS/portal/pull/4)), Nova for guests, off until chosen ([#5](https://github.com/GratiaOS/portal/pull/5)), the page for a visitor ([#6](https://github.com/GratiaOS/portal/pull/6)), a room that ends by absence ([#7](https://github.com/GratiaOS/portal/pull/7));
   - three languages, Romanian, English and Spanish, and English for the rest ([#8](https://github.com/GratiaOS/portal/pull/8)).
-- Open: [#9](https://github.com/GratiaOS/portal/pull/9), Nova gives one step when asked what is next.
+- Nova gives one step when asked what is next ([#9](https://github.com/GratiaOS/portal/pull/9)).
 
 ## Next, in this order
 
@@ -22,7 +22,7 @@ Where El portal is, for whoever starts work on it next. Short on purpose: what c
 - Taking a message out sooner, on request, is not built: messages are kept until the portal forgets them, and nothing else removes one.
 - A person with no `locale` gets the page in their browser's language and Nova's fixed sentences in English; there is no language for the portal as a whole.
 - It is not decided whether the gate at `/` offers *Step through* beside the key, or only `/guest` does.
-- Not measured: Spanish by eye, in the page and on a phone; Nova's one-step habit with a real model; contrast of the faint text by skin; Android Chrome notifications.
+- Not measured: Spanish by eye, in the page and on a phone; Nova's one-step habit with a real model (it is only a line of her prompt); contrast of the faint text by skin; Android Chrome notifications.
 
 ## How this stays true
 
