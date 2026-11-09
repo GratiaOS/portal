@@ -8,7 +8,7 @@ No central accounts. No telemetry. No presence tracking by time.
 
 MPL-2.0. Written new, with its origins documented in [TRACES.md](TRACES.md).
 
-To run one, [INSTALL.md](INSTALL.md). To take part, [CONTRIBUTING.md](CONTRIBUTING.md). To report a vulnerability, [SECURITY.md](SECURITY.md). The license is in [LICENSE](LICENSE).
+Where it is and what comes next: [SIGNAL.md](SIGNAL.md). To run one, [INSTALL.md](INSTALL.md). To take part, [CONTRIBUTING.md](CONTRIBUTING.md). To report a vulnerability, [SECURITY.md](SECURITY.md). The license is in [LICENSE](LICENSE).
 
 ## What you get
 
