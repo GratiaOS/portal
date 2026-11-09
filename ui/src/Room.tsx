@@ -173,6 +173,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             loading={loadingFor === selected.id}
             onOlder={older}
             onSend={send}
+            notice={guest ? t.guestNotPrivate : undefined}
             note={note}
             whispers={whispers}
             thinking={thinking}
