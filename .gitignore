@@ -1,5 +1,6 @@
 .env
 *.local.json
+*.local.json.bak
 data/
 *.db
 *.db-*

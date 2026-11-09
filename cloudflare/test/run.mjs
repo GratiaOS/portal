@@ -253,6 +253,11 @@ try {
   check(JSON.stringify((await (await asGuest('/api/rooms')).json()).rooms.map((r) => r.id)) === '["guests"]', 'the guest is told of the guest room only');
   check((await asGuest('/api/rooms/general/messages')).status === 404, 'the team room does not exist for them');
   check((await asGuest('/api/rooms/guests/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'salut' }) })).status === 201, 'and they speak in their own');
+  // the guest's stream ends with their time, which asks a timer of the runtime: on Cloudflare it is a number, with nothing to let go of
+  const guestHeard = listen(guest.token);
+  check(await until(() => guestHeard.text.includes('event: hello')), 'a guest\'s stream opens and says hello');
+  check(guestHeard.text.includes('"id":"guests"') && !guestHeard.text.includes('"id":"general"'), 'and tells them of their room and of no other');
+  guestHeard.abort();
 
   console.log('\n— the companion for guests, on an engine and from a folder of her own');
   const hints = await (await asGuest('/api/hints')).json();

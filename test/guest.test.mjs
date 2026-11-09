@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Hub, RoomStore, createApp, createAuthenticator, nodeSqlite, parseConfig } from '../dist/index.js';
-import { fakeSink } from './helpers.mjs';
+import { fakeSink, sleep } from './helpers.mjs';
 
 // A portal with a team (Zeus, Hera, Nova) in two team rooms, and one guest room: and a guest, bound to that room only, for an hour.
 const T0 = Date.parse('2026-11-06T12:00:00Z');
@@ -204,4 +204,43 @@ test('those already here hear of a guest who has come in: the visitors, and the 
   assert.equal(sink.frames().filter((f) => f.event === 'participant').at(-1)?.data.id, 'guest:wren'); // a visitor hears of the one who came
   assert.equal(team.frames().filter((f) => f.event === 'participant').at(-1)?.data.id, 'guest:wren');
   hub.close();
+});
+
+// On Cloudflare a timer is a plain number, with nothing to `unref`: a guest's stream (which ends with their time) and the leaving of a person
+// (shown as not here after a grace) must work there as in Node. A Node timer is turned into its number for these two tests.
+async function withNumberTimers(run) {
+  const real = globalThis.setTimeout;
+  const made = [];
+  globalThis.setTimeout = (fn, ms, ...args) => {
+    const id = real(fn, ms, ...args)[Symbol.toPrimitive]();
+    made.push(id);
+    return id;
+  };
+  try {
+    await run();
+  } finally {
+    globalThis.setTimeout = real;
+    for (const id of made) clearTimeout(id); // a number cannot be let go of, so the test clears what it made: it must not keep the process for an hour
+  }
+}
+
+test('a guest\'s stream opens and ends with their time where a timer is a plain number', async () => {
+  await withNumberTimers(async () => {
+    const { hub, owl } = setup();
+    const sink = fakeSink();
+    assert.doesNotThrow(() => hub.subscribe(owl, sink));
+    assert.ok(sink.events().includes('hello'), 'the guest is told who they are');
+    assert.equal(sink.closed, false);
+  });
+});
+
+test('a person who leaves is shown as not here, after the grace, where a timer is a plain number', async () => {
+  await withNumberTimers(async () => {
+    const { hub, zeus } = setup();
+    const close = hub.subscribe(zeus, fakeSink());
+    assert.equal(hub.snapshot().find((p) => p.participantId === zeus.id).state, 'online');
+    assert.doesNotThrow(() => close());
+    await sleep(60); // the grace is 20 ms here
+    assert.equal(hub.snapshot().find((p) => p.participantId === zeus.id).state, 'offline');
+  });
 });
