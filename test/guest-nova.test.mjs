@@ -43,7 +43,7 @@ function setup({ questions = 3, perHour = 100, minutes = 30, guestAnswer, teamAn
     { ...base, scope: 'guest', guestsPerHour: perHour },
   );
   const config = { ...GUESTS, minutes, nova: { enabled: true, questions, perHour } };
-  const admit = () => admitGuest(store, config, now);
+  const admit = (locale) => admitGuest(store, config, now, locale);
   const said = (room) => store.listTurns(room).map((t) => `${store.getParticipant(t.speakerId).alias}: ${t.text}`);
   const ask = (who, room, text = '@Nova what is this?') => hub.publish({ conversationId: room, speakerId: who.id, text });
   return { store, hub, teamLlm, guestLlm, team, guests, admit, said, ask, advance: (ms) => (now += ms), zeus: store.getParticipant('human:zeus'), config };
@@ -203,4 +203,16 @@ test('an answer still on its way when the guest room ends by absence is never sa
   await s.guests.idle();
   assert.deepEqual(s.said('guests'), [], 'nothing of the last visit reaches the next');
   assert.ok(next.guest);
+});
+
+test('what the portal says in her place, when a guest has used their questions, is in their language', async () => {
+  for (const [locale, want] of [['es', /límite de preguntas/], ['ro', /limita de întrebări/], ['en', /limit of questions/], [undefined, /limit of questions/]]) {
+    const s = setup({ questions: 1 });
+    const { guest } = s.admit(locale);
+    s.ask(guest, 'guests');
+    await s.guests.idle();
+    s.ask(guest, 'guests');
+    await s.guests.idle();
+    assert.match(s.said('guests').at(-1), want, `${locale}`);
+  }
 });

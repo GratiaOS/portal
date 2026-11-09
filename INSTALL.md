@@ -46,6 +46,14 @@ pnpm --filter portal tokens portal.local.json new Zeus
 pnpm --filter portal tokens portal.local.json show Zeus | pbcopy   # hand it over in person or through a channel you trust
 ```
 
+### Languages
+
+The page and what the portal says in Nova's place come in Romanian, English and Spanish (`ro`, `en`, `es`), and Nova answers in
+whatever language she is written to. A person's language is their `locale` in `participants` (`"es"`, `"ro"`, `"en-GB"`…); without it, the page follows
+the browser, and what the portal says in her place follows nothing and is in English. A visitor's is the first of the three their browser asks for
+(`Accept-Language`), or English, kept only as long as their name is. Any other language falls to English. Adding a fourth is a file of the page
+(`ui/src/lib/strings.ts`) and one of the portal (`src/nova.ts`).
+
 ### A guest room (optional)
 
 A portal can let visitors in without a key of their own, into one room. Declare a room of kind `guest` and name it in `guests`:

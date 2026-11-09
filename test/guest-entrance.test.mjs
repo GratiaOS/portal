@@ -148,3 +148,12 @@ test('a visitor who steps through is announced to those already in the room, so 
   assert.deepEqual(heard, [second.participant.id]);
   hub.close();
 });
+
+test('a visitor is given the language their browser asks for, among ours, or English', async () => {
+  const { call } = setup({ guests: { room: 'guests', maxActive: 10, minutes: 30, perCaller: { count: 100, perMinutes: 10 } } });
+  const enter = async (acceptLanguage) => (await (await call('/api/guest', { method: 'POST', headers: acceptLanguage ? { 'accept-language': acceptLanguage } : {} })).json()).participant.locale;
+  assert.equal(await enter('es-AR,es;q=0.9,en;q=0.5'), 'es');
+  assert.equal(await enter('ro-RO,ro;q=0.9'), 'ro');
+  assert.equal(await enter('fr-FR,fr;q=0.9'), 'en', 'not one of ours: English');
+  assert.equal(await enter(undefined), 'en');
+});

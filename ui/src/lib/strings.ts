@@ -1,4 +1,4 @@
-// What the page says, in the two languages of the people who use it. The portal's own sentences (Nova's, the errors)
+// What the page says, in the three languages of the people who use it (Romanian, English, Spanish: no order between them). The portal's own sentences (Nova's, the errors)
 // come from the portal; these are the page's.
 
 import type { BuiltInSkin } from './skin.ts';
@@ -210,7 +210,82 @@ const en: Strings = {
   signPlotTwist: (why) => `Plot twist: the sign did not go${why ? ` (${why})` : ''}. Try again.`,
 };
 
-/** Romanian unless the person's language says English. */
+const es: Strings = {
+  signInTitle: 'Entra al portal',
+  signInHint: 'Pega el token que recibiste.',
+  tokenLabel: 'Token',
+  gateKey: '¿Tienes una llave? 🗝️',
+  gatePlaceholder: 'tu token',
+  gateEnter: 'Enter lo envía.',
+  runYourOwn: 'Ejecuta el tuyo',
+  stepThrough: 'Entra',
+  stepping: 'Entrando…',
+  guestFull: 'La sala está llena ahora mismo. Inténtalo de nuevo en un rato.',
+  guestSlow: 'Demasiados visitantes desde aquí ahora mismo. Espera un poco.',
+  guestClosed: 'Este portal no recibe visitantes.',
+  guestAway: 'No llego al portal ahora. Inténtalo de nuevo en un momento.',
+  guestAlone: 'Por ahora, no hay nadie más aquí.',
+  guestOthers: (count) => (count === 1 ? 'Hay alguien más aquí.' : `Hay ${count} personas más aquí.`),
+  guestLeave: 'Salir',
+  visitEnded: 'Tu visita ha terminado.',
+  enter: 'Entrar',
+  checking: 'Comprobando…',
+  tokenUnknown: 'No se reconoce el token. Revísalo e inténtalo de nuevo.',
+  roomAway: 'No llego al portal ahora. Inténtalo de nuevo en un momento.',
+  tooManyKeys: 'Demasiadas llaves incorrectas seguidas. Espera un poco e inténtalo de nuevo.',
+  channels: 'Salas',
+  people: 'Personas',
+  here: 'está aquí',
+  notHere: 'no está aquí',
+  signOut: 'Cerrar sesión',
+  notifyOn: 'Activar notificaciones',
+  whispers: (c) => [`Llama a @${c} como llamarías a una colega.`, `@${c}, ¿me ayudas con algo?`, `@${c}, ¿tú qué opinas?`],
+  fieldLabel: 'Susurros',
+  fieldActive: ['Respira primero.', 'No vas con retraso.', 'Todo se está desplegando.', 'Una verdad a la vez.', 'Deja que la memoria te encuentre.', 'No falta nada.'],
+  fieldIdle: ['Está bien quedarse en calma.', 'El silencio es una lengua.', 'El campo escucha.', 'El descanso es parte de recordar.', 'Sin prisa, sin preocupación.', 'La quietud echa raíces más hondas.'],
+  skin: 'Aspecto',
+  skinNames: { bubbles: 'Burbujas', bank: 'Banco', radar: 'Radar' },
+  copy: 'Copiar',
+  copied: 'Copiado',
+  newMessages: (n) => `${n} mensajes nuevos`,
+  say: 'Escribe un mensaje…',
+  send: 'Enviar',
+  toYou: 'Para ti',
+  lineBreak: 'Shift+Enter: nueva línea',
+  older: 'Mensajes anteriores',
+  loading: 'Cargando…',
+  empty: 'Aún no se ha dicho nada aquí.',
+  sources: 'Fuentes',
+  slowDown: (s) => `Demasiado rápido. Espera ${s} s.`,
+  thinking: (names) => `${names.join(', ')} ${names.length > 1 ? 'piensan' : 'piensa'}…`,
+  couldNotSend: 'El mensaje no salió. Inténtalo de nuevo.',
+  live: 'Conectado',
+  reconnecting: 'Reconectando',
+  refused: 'Sesión terminada',
+  signSlot: (sign) => (sign ? `Tu signo, ${sign}: cámbialo` : 'Elige un signo'),
+  signHelp: '↑↓ cambia, Enter guarda, Esc lo deja como estaba; un clic abre todos los signos',
+  signPrevious: 'El signo anterior',
+  signNext: 'El siguiente signo',
+  signGrid: 'Todos los signos',
+  signAdd: (max) => `Añade el tuyo: cualquier emoji (quedan los últimos ${max})`,
+  signLetGo: 'Soltar el signo',
+  signKept: (sign) => `¡Choca esos cinco! Ahora eres ${sign}`,
+  signLetGoDone: 'Listo, sin signo propio',
+  signNotOne: 'Giro inesperado: un solo emoji, por favor.',
+  signPlotTwist: (why) => `Giro inesperado: el signo no salió${why ? ` (${why})` : ''}. Inténtalo de nuevo.`,
+};
+
+export const LOCALES = ['ro', 'en', 'es'] as const;
+export type Locale = (typeof LOCALES)[number];
+
+/** The language of a tag (`es-AR`, `EN`, `ro_RO`), or English when it is none of ours or there is none: the same rule as the portal's own (`src/locale.ts`). */
+export function pickLocale(tag: string | undefined | null): Locale {
+  const primary = tag?.trim().toLowerCase().split(/[-_]/)[0];
+  return (LOCALES as readonly string[]).includes(primary ?? '') ? (primary as Locale) : 'en';
+}
+
+const BY_LOCALE: Record<Locale, Strings> = { ro, en, es };
+
 export function stringsFor(locale: string | undefined): Strings {
-  return locale?.toLowerCase().startsWith('en') ? en : ro;
+  return BY_LOCALE[pickLocale(locale)];
 }

@@ -5,7 +5,7 @@
   "tokensFile": "portal.tokens.local.json",
   "participants": [
     { "kind": "human", "alias": "Zeus", "locale": "ro", "sign": "🦁" },
-    { "kind": "human", "alias": "Hera", "locale": "ro" },
+    { "kind": "human", "alias": "Hera", "locale": "es" },
     { "kind": "companion", "alias": "Nova", "capabilities": ["answer"] }
   ],
   "rooms": [

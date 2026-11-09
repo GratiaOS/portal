@@ -288,11 +288,11 @@ export class RoomStore {
   // --- guests: made while the portal runs, bound to one room, never written by the config ---
 
   /** Makes a guest, who can do nothing until a binding gives them something. The alias is the name of the hour (`owl`). */
-  addGuest(alias: string): Participant {
+  addGuest(alias: string, locale?: string): Participant {
     if (!ALIAS_PATTERN.test(alias)) throw new RoomError('invalid', `"${alias}" is not a valid alias`);
     const id = participantId('guest', alias);
     if (this.one('SELECT id FROM participants WHERE alias = ?', alias)) throw new RoomError('invalid', `alias "${alias}" is taken`);
-    this.db.run('INSERT INTO participants (id, kind, alias, capabilities, created_at) VALUES (?, ?, ?, ?, ?)', id, 'guest', alias, '[]', this.now().toISOString());
+    this.db.run('INSERT INTO participants (id, kind, alias, locale, capabilities, created_at) VALUES (?, ?, ?, ?, ?, ?)', id, 'guest', alias, locale ?? null, '[]', this.now().toISOString());
     return this.getParticipant(id) as Participant;
   }
 
@@ -317,9 +317,9 @@ export class RoomStore {
    * Makes a guest, binds them to a room, and keeps the digest of their key, all or nothing. The key itself is the caller's to hand over
    * once; it is not kept. Only a guest room takes a guest.
    */
-  createGuest(input: { alias: string; room: string; activeFrom: number; expiresAt: number; budget: number; keyDigest: string }): Participant {
+  createGuest(input: { alias: string; room: string; activeFrom: number; expiresAt: number; budget: number; keyDigest: string; locale?: string }): Participant {
     return this.transaction(() => {
-      const guest = this.addGuest(input.alias);
+      const guest = this.addGuest(input.alias, input.locale);
       this.addBinding({
         id: randomUUID(),
         roomId: input.room,
