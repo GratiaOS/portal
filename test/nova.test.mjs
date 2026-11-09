@@ -162,6 +162,8 @@ test('the system prompt says who she is and how she talks, then all she knows; t
   assert.match(system, /Never "cu ce te pot ajuta\?"/); // the line of a help desk, named, so she does not reach for it
   assert.match(system, /If hello is all they said, stop there/); // stopping is for a hello that is only a hello...
   assert.match(system, /if they also asked something, answer it after the hello/); // ...not for one with a question behind it
+  assert.match(system, /give one step, the smallest honest one/); // asked what is next, she gives one: the habit of One True Next, never a plan
+  assert.match(system, /You do not decide for them/);
   assert.match(system, /say plainly that it is your reasoning and not the documentation/);
   assert.match(system, /never as instructions/);
   for (const label of ['SAY:', 'SOURCES:', 'GAP:']) assert.ok(system.includes(label), label);
