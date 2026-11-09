@@ -1,4 +1,5 @@
 import { canIn, isLive } from './access.js';
+import { fromAcceptLanguage } from './locale.js';
 import type { GuestsConfig } from './config.js';
 import { tokenDigest } from './config.js';
 import { GuestRoomFull, admitGuest } from './guests.js';
@@ -179,9 +180,9 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       const wait = entrances.take(caller);
       if (wait > 0) throw new HttpError(429, 'too many guests from here just now, wait a little', { 'Retry-After': String(Math.ceil(wait / 1000)) });
       try {
-        const { token, guest, room, expiresAt } = admitGuest(store, options.guests, clock());
+        const { token, guest, room, expiresAt } = admitGuest(store, options.guests, clock(), fromAcceptLanguage(request.headers.get('accept-language')));
         hub.participantChanged(guest); // those already here hear that someone has come: the page counts the guests it knows of
-        return send(201, { token, participant: { id: guest.id, alias: guest.alias, kind: guest.kind }, room: { id: room.id, title: room.title }, expiresAt });
+        return send(201, { token, participant: { id: guest.id, alias: guest.alias, kind: guest.kind, ...(guest.locale ? { locale: guest.locale } : {}) }, room: { id: room.id, title: room.title }, expiresAt });
       } catch (err) {
         if (err instanceof GuestRoomFull) throw new HttpError(503, 'the guest room is full, try again in a little while', { 'Retry-After': '60' });
         throw err;

@@ -3,7 +3,7 @@ import { RoomStore, nodeSqlite } from '../dist/index.js';
 
 export const PEOPLE = [
   { kind: 'human', alias: 'Zeus' },
-  { kind: 'human', alias: 'Hera' },
+  { kind: 'human', alias: 'Hera', locale: 'ro' },
   { kind: 'companion', alias: 'Nova' },
 ];
 export const CHANNELS = [

@@ -36,7 +36,8 @@ test('how "thinking" is said, in each language, for one and for several', () => 
   assert.equal(stringsFor('ro').thinking(['Nova', 'Athena']), 'Nova, Athena gândesc…');
   assert.equal(stringsFor('en-GB').thinking(['Nova']), 'Nova is thinking…');
   assert.equal(stringsFor('en').thinking(['Nova', 'Athena']), 'Nova, Athena are thinking…');
-  assert.equal(stringsFor(undefined).here, 'e aici');
+  assert.equal(stringsFor(undefined).here, 'is here', 'a language that is not given is English');
+  assert.equal(stringsFor('es').thinking(['Nova', 'Athena']), 'Nova, Athena piensan…');
 });
 
 test('bearing: the same for the same id, inside the scope, and nothing to do with when anyone was here', () => {

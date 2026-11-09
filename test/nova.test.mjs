@@ -606,7 +606,7 @@ const configWithNova = (dir, nova = {}) =>
       dbPath: ':memory:',
       participants: [
         { kind: 'human', alias: 'Zeus', token: TOKENS.zeus },
-        { kind: 'human', alias: 'Hera', token: TOKENS.hera },
+        { kind: 'human', alias: 'Hera', locale: 'ro', token: TOKENS.hera },
         { kind: 'companion', alias: 'Nova' },
       ],
       rooms: [{ id: 'olympus', title: 'Olympus' }],

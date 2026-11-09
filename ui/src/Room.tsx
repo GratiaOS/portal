@@ -11,6 +11,7 @@ import { rowsOf } from './lib/format.ts';
 import { peopleOf, thinkingIn } from './lib/people.ts';
 import { useArrived } from './lib/arrivals.ts';
 import { useSpoke } from './lib/spoke.ts';
+import { useLang } from './lib/lang.ts';
 import { stringsFor } from './lib/strings.ts';
 import type { Hints, SkinInfo } from './lib/types.ts';
 import { useNotify } from './lib/useNotify.ts';
@@ -25,7 +26,9 @@ const channelFromHash = () => decodeURIComponent(location.hash.replace(/^#/, '')
 
 export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?: boolean) => void }) {
   const { state, dispatch, api } = useRoom(token, () => onSignOut(true)); // the portal stopped opening to this key
-  const t = stringsFor(state.you?.locale ?? navigator.language);
+  const locale = state.you?.locale ?? navigator.language;
+  const t = stringsFor(locale);
+  useLang(locale);
   // a visitor has one room and no one to look up: no list of rooms, no team, no sign, no notifications; only who else is here
   const guest = state.you?.kind === 'guest';
 

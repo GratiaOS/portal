@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Three languages, everywhere** (`ro`, `en`, `es`, in no order): the page, the sentences the portal says in Nova's place, her prompt, `<html lang>`. One rule
+  picks the language (`src/locale.ts`, the same in `ui/src/lib/strings.ts`), and what it does not know falls to English, no longer to Romanian. A visitor gets the
+  first of the three their browser asks for, and keeps it only as long as their name.
 - **A guest room, optional.** A room can be of kind `guest`, and `guests` in the config opens a door (`POST /api/guest`) where a visitor is given a
   name of the hour, a key and that room, for a while, with limits on how many at once and per address. A guest does what their binding gives
   them in that room and nothing else; the team is unchanged.

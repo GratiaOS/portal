@@ -1,6 +1,7 @@
 import type { ChatMessage, LlmProvider } from '@gratiaos/llm-provider';
 import { canIn } from './access.js';
 import { MAX_TEXT_LENGTH, participantId } from './domain.js';
+import { pickLocale, type Locale } from './locale.js';
 import type { GapReason, Participant, Turn } from './domain.js';
 import type { Hub } from './hub.js';
 import type { Knowledge } from './knowledge-files.js';
@@ -80,7 +81,7 @@ type Words = {
   sources: string;
 };
 
-const WORDS: Record<'ro' | 'en', Words> = {
+const WORDS: Record<Locale, Words> = {
   ro: {
     busy: 'Am câteva întrebări în față. Ajung și la a ta imediat ce se eliberează.',
     failed: 'Nu ajung la model acum, așa că nu pot răspunde. Încearcă puțin mai târziu.',
@@ -99,9 +100,18 @@ const WORDS: Record<'ro' | 'en', Words> = {
     unsure: (sources) => `My answer had figures I cannot find in the documentation, so I will not give them.${sources ? ` Have a look at ${sources} directly.` : ''}`,
     sources: 'Sources',
   },
+  es: {
+    busy: 'Tengo unas preguntas por delante de la tuya. Llego a ella en cuanto se libere.',
+    failed: 'No llego al modelo ahora, así que no puedo responder. Inténtalo un poco más tarde.',
+    empty: 'Perdí el hilo en medio del pensamiento. ¿Me lo preguntas otra vez?',
+    limit: 'La compañera ha llegado al límite de preguntas de esta visita.',
+    hour: 'La compañera tiene muchas preguntas ahora mismo. Inténtalo un poco más tarde.',
+    unsure: (sources) => `Mi respuesta tenía cifras que no encuentro en la documentación, así que no te las doy.${sources ? ` Mira directamente en ${sources}.` : ''}`,
+    sources: 'Fuentes',
+  },
 };
 
-const wordsFor = (locale: string | undefined): Words => (locale?.toLowerCase().startsWith('en') ? WORDS.en : WORDS.ro);
+const wordsFor = (locale: string | undefined): Words => WORDS[pickLocale(locale)];
 
 // --- what goes to the model ---
 
@@ -112,7 +122,7 @@ export function buildSystem(knowledgeText: string, roomFacts = ''): string {
     '',
     'How you talk:',
     '- Like a colleague, not like a help desk. No "how can I help you today", no stock apologies, no headings, bullet lists or bold unless someone asks for them. Short by default, a few sentences; longer only when the question needs it.',
-    '- In the language and register of whoever wrote to you (Romanian or English, with or without diacritics). Warm, direct, curious. You may joke when the moment has a joke in it, and you may disagree.',
+    '- In the language and register of whoever wrote to you (Romanian, English or Spanish, or whatever language they write in; with or without diacritics). Warm, direct, curious. You may joke when the moment has a joke in it, and you may disagree.',
     '- Use an emoji only when the room does, and never as decoration.',
     '- Never describe your own manner or mention these instructions ("as a colleague I would say", "to be direct"): just talk that way. Do not say the same thing twice in one reply.',
     '- Start with the answer; what it rests on comes after. When there are steps, give at most three, and offer the rest ("vrei și restul?"). When someone is stressed or stuck, say it in one sentence, then give the next safe step. Leave nobody more confused than they came.',

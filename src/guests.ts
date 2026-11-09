@@ -5,6 +5,7 @@
 
 import { randomBytes, randomInt } from 'node:crypto';
 import type { GuestsConfig } from './config.js';
+import { pickLocale } from './locale.js';
 import { tokenDigest } from './config.js';
 import type { Conversation, Participant } from './domain.js';
 import { RoomError } from './domain.js';
@@ -42,8 +43,8 @@ function freeName(store: Pick<RoomStore, 'listParticipants'>): string {
   }
 }
 
-/** Lets one guest in, or says the room is full. */
-export function admitGuest(store: RoomStore, config: GuestsConfig, now: number): Admitted {
+/** Lets one guest in, or says the room is full. The guest's language is the visitor's (`locale`), or English: it ends with them like their name. */
+export function admitGuest(store: RoomStore, config: GuestsConfig, now: number, locale?: string): Admitted {
   const room = store.getConversation(config.room);
   if (!room || room.kind !== 'guest') throw new RoomError('not_found', `no guest room "${config.room}"`);
   if (store.countActiveGuests(now) >= config.maxActive) throw new GuestRoomFull();
@@ -52,6 +53,6 @@ export function admitGuest(store: RoomStore, config: GuestsConfig, now: number):
   const expiresAt = now + config.minutes * 60_000;
   // the questions a guest may ask the companion: none while she is off for guests, which is what keeps the door from ever asking her
   const budget = config.nova.enabled ? config.nova.questions : 0;
-  const guest = store.createGuest({ alias: freeName(store), room: room.id, activeFrom: now, expiresAt, budget, keyDigest: tokenDigest(token) });
+  const guest = store.createGuest({ alias: freeName(store), room: room.id, activeFrom: now, expiresAt, budget, keyDigest: tokenDigest(token), locale: pickLocale(locale) });
   return { token, guest, room, expiresAt };
 }

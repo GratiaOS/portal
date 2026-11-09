@@ -13,6 +13,7 @@ import type { Refused } from '../lib/guest.ts';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiError, createApi } from '../lib/client.ts';
+import { useLang } from '../lib/lang.ts';
 import { stringsFor } from '../lib/strings.ts';
 
 /** The place the "run your own" link leads to: the repository of the portal, public since 0.1.0. */
@@ -109,6 +110,7 @@ export type GuestDoor = { state: 'idle' | 'stepping' | Refused; onStep: () => vo
 
 export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: string) => void; door?: GuestDoor; ended?: boolean }) {
   const t = stringsFor(navigator.language);
+  useLang(navigator.language);
   const [token, setToken] = useState('');
   const [state, setState] = useState<'idle' | 'checking' | 'unknown' | 'slow' | 'away'>('idle');
 
