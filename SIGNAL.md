@@ -2,7 +2,7 @@
 
 Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
-**Verified:** 2026-11-09, against `main@708288e`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
+**Verified:** 2026-11-09, against `main@9c0cef9`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
 
 ## Now
 
@@ -11,18 +11,20 @@ Where El portal is, for whoever starts work on it next. Short on purpose: what c
   - three languages, Romanian, English and Spanish, and English for the rest ([#8](https://github.com/GratiaOS/portal/pull/8)).
 - Nova gives one step when asked what is next ([#9](https://github.com/GratiaOS/portal/pull/9)).
 - A starter folder of documents for the companion for guests, `guest-docs/`, the same for anyone who runs a portal ([#13](https://github.com/GratiaOS/portal/pull/13)).
+- The page tells a visitor, under the box and in their language, who reads the room ([#16](https://github.com/GratiaOS/portal/pull/16)).
+- The companion for guests on Cloudflare too: her own engine and secret, her own bundled folder ([#17](https://github.com/GratiaOS/portal/pull/17)).
 
 ## Next, in this order
 
-1. **The companion for guests on Cloudflare.** A portal there refuses to open with her turned on: the bundle holds only the team's folder, so the guests' folder (`guest-docs/` or one's own) is not packed yet.
-2. **A welcome for visitors** that is a whisper of the place, never a line in Nova's mouth.
-3. **`Leave` ends a visitor's time.** Today "the last one to leave" is counted by the binding's time, so a guest who left stays on the roster until it ends.
+1. **A welcome for visitors** that is a whisper of the place, never a line in Nova's mouth.
+2. **`Leave` ends a visitor's time.** Today "the last one to leave" is counted by the binding's time, so a guest who left stays on the roster until it ends.
 
 ## Known limits
 
 - Taking a message out sooner, on request, is not built: messages are kept until the portal forgets them, and nothing else removes one.
 - A person with no `locale` gets the page in their browser's language and Nova's fixed sentences in English; there is no language for the portal as a whole.
 - It is not decided whether the gate at `/` offers *Step through* beside the key, or only `/guest` does.
+- The companion for guests on Cloudflare was checked locally with stand-in models (`pnpm cloudflare:check`), not on a deployed Worker.
 - Measured once, not enough: `guest-docs/` with a real model (eight questions, three languages, one run); not measured: Spanish by eye, in the page and on a phone; Nova's one-step habit with a real model (it is only a line of her prompt); contrast of the faint text by skin; Android Chrome notifications.
 
 ## How this stays true
