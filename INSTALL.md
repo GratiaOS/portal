@@ -101,7 +101,7 @@ budget she keeps.
 - **`questions`** is how many each guest may ask in their visit (5), and **`perHour`** how many all the guests together may ask in an hour (60).
   Both are counted when the question is asked, before the model is called, so a model that fails still costs one; past either, the portal says so
   in a plain line. What a visitor asks is never put on the list of what the knowledge lacked.
-- Not on Cloudflare yet: there the portal refuses to open with `guests.nova.enabled` true, rather than open without her folder.
+- On Cloudflare she is the same, with her own secret for the engine's key (the name `guests.nova.llm.apiKeyEnv` gives; set it with `wrangler secret put`, as for the team's) and her folder bundled apart from the team's at each `pnpm cloudflare:deploy`. Without the secret she does not answer guests, and the log says so; a folder changed after the deploy waits for the next one.
 
 ## Run
 
@@ -149,7 +149,7 @@ page), with these differences, for now:
 
 - **Nova's knowledge is a bundle, not a folder.** It is read from `nova.knowledgeDir` with the same rules as in Node (what
   `nova.exclude` names left out), and goes up with the Worker to your Cloudflare account; a change to the folder needs a new
-  deploy.
+  deploy. The folder of the companion for guests is a bundle of its own, made the same way, and goes up beside it: nothing of the team's is in it.
 - **No skins from a folder**: the looks built into the page only.
 - **Forgetting overwrites less.** A forgotten message is deleted, but whether its old bytes are overwritten in Cloudflare's
   storage is Cloudflare's to say: `secure_delete` is refused there.

@@ -36,12 +36,34 @@ const model = createServer((req, res) => {
 });
 await new Promise((r) => model.listen(0, '127.0.0.1', r));
 
+// and another for guests, which is not the team's: its own engine, its own key, its own answers
+const askedForGuests = [];
+const guestModel = createServer((req, res) => {
+  let body = '';
+  req.on('data', (c) => (body += c));
+  req.on('end', () => {
+    askedForGuests.push({ authorization: req.headers.authorization, body: JSON.parse(body) });
+    res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+    const chunk = (delta, finish = null) => res.write(`data: ${JSON.stringify({ model: 'guests-stand-in', choices: [{ delta, finish_reason: finish }] })}\n\n`);
+    chunk({ content: 'SAY: Un portal este un chat de echipa, cu o companioana.\n' });
+    chunk({ content: 'SOURCES: about.md' });
+    chunk({}, 'stop');
+    res.end('data: [DONE]\n\n');
+  });
+});
+await new Promise((r) => guestModel.listen(0, '127.0.0.1', r));
+
 // her folder: one file to read, one kept out of what she reads
 const knowledgeDir = join(state, 'knowledge');
 mkdirSync(join(knowledgeDir, 'olympus'), { recursive: true });
 mkdirSync(join(knowledgeDir, 'private'), { recursive: true });
 writeFileSync(join(knowledgeDir, 'olympus', 'food.md'), '# Food\n\nAmbrozia este hrana zeilor.\n');
 writeFileSync(join(knowledgeDir, 'private', 'contract.md'), '# Contract\n\nSECRET-7f3a\n');
+
+// the folder of public documents for guests: apart from hers, and holding nothing of the team's
+const guestDir = join(state, 'public-docs');
+mkdirSync(guestDir, { recursive: true });
+writeFileSync(join(guestDir, 'about.md'), '# About\n\nUn portal este un chat de echipa, cu o companioana.\n');
 
 const CONFIG = {
   participants: [
@@ -53,13 +75,20 @@ const CONFIG = {
     { id: 'general', title: 'General' },
     { id: 'guests', title: 'Guests', kind: 'guest' },
   ],
-  guests: { room: 'guests', maxActive: 5, minutes: 30, perCaller: { count: 3, perMinutes: 10 } },
+  guests: {
+    room: 'guests',
+    maxActive: 5,
+    minutes: 30,
+    perCaller: { count: 3, perMinutes: 10 },
+    nova: { enabled: true, questions: 3, perHour: 20, knowledgeDir: guestDir, examples: ['what is a portal?'], llm: { baseUrl: `http://127.0.0.1:${guestModel.address().port}/v1`, model: 'guests-stand-in', apiKeyEnv: 'PORTAL_GUESTS_LLM_API_KEY' } },
+  },
   retention: { days: 14, messages: 50 },
   rateLimit: { messages: 1000, perSeconds: 10 },
   nova: {
     alias: 'Nova',
     knowledgeDir,
     exclude: ['private'],
+    examples: ['what do the gods eat?'],
     llm: { baseUrl: `http://127.0.0.1:${model.address().port}/v1`, model: 'stand-in', apiKeyEnv: 'PORTAL_LLM_API_KEY' },
   },
 };
@@ -71,7 +100,7 @@ const check = (ok, line) => {
 
 function start() {
   const [command, ...pre] = process.env.WRANGLER ? [process.env.WRANGLER] : ['npx', '--yes', 'wrangler@4.136.2'];
-  const vars = { PORTAL_CONFIG: JSON.stringify(CONFIG), PORTAL_TOKENS: JSON.stringify({ Zeus: ZEUS, Hera: HERA }), PORTAL_FORGET_EVERY_MS: '1000', PORTAL_LLM_API_KEY: 'stand-in-key' };
+  const vars = { PORTAL_CONFIG: JSON.stringify(CONFIG), PORTAL_TOKENS: JSON.stringify({ Zeus: ZEUS, Hera: HERA }), PORTAL_FORGET_EVERY_MS: '1000', PORTAL_LLM_API_KEY: 'stand-in-key', PORTAL_GUESTS_LLM_API_KEY: 'guests-stand-in-key' };
   const args = [...pre, 'dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', state, '--log-level', 'error', '--show-interactive-dev-session=false'];
   for (const [name, value] of Object.entries(vars)) args.push('--var', `${name}:${value}`);
   // its own process group, so that stopping it stops what `npx` started under it too (on Linux the SIGINT that reached only `npx` left the rest running)
@@ -158,13 +187,16 @@ writeFileSync(bundle, '{"files":{"untouched.md":"x"}}\n');
 const refused = spawnSync(process.execPath, [join(here, 'bundle-knowledge.mjs'), badFile], { encoding: 'utf8' });
 const untouched = readFileSync(bundle, 'utf8').includes('untouched.md');
 const bundled = spawnSync(process.execPath, [join(here, 'bundle-knowledge.mjs'), configFile], { encoding: 'utf8' });
-const files = JSON.parse(readFileSync(bundle, 'utf8')).files;
+const bundledJson = JSON.parse(readFileSync(bundle, 'utf8'));
+const files = bundledJson.files;
+const guestFiles = bundledJson.guestFiles;
 
 const dev = start();
 try {
   console.log('\n— her knowledge, bundled');
   check(refused.status !== 0 && untouched && /nova\.exclude/.test(refused.stderr), 'a config the Worker would refuse is refused before anything is bundled');
   check(bundled.status === 0 && Object.keys(files).join() === 'olympus/food.md', `the folder is read as in Node, what is excluded left out: ${Object.keys(files).join(', ')}`);
+  check(bundled.status === 0 && Object.keys(guestFiles ?? {}).join() === 'about.md', `the folder for guests is bundled apart, and holds nothing of hers: ${Object.keys(guestFiles ?? {}).join(', ')}`);
   await ready();
 
   console.log('\n— the page, from the assets, with the headers it has in Node');
@@ -222,6 +254,21 @@ try {
   check((await asGuest('/api/rooms/general/messages')).status === 404, 'the team room does not exist for them');
   check((await asGuest('/api/rooms/guests/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'salut' }) })).status === 201, 'and they speak in their own');
 
+  console.log('\n— the companion for guests, on an engine and from a folder of her own');
+  const hints = await (await asGuest('/api/hints')).json();
+  check(hints.companion === 'Nova' && JSON.stringify(hints.examples) === '["what is a portal?"]', `a guest is told of her companion with her examples, and never the team's: ${JSON.stringify(hints.examples)}`);
+  const teamAsked = asked.length;
+  await asGuest('/api/rooms/guests/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: '@Nova ce este un portal?' }) });
+  const answered = await until(async () => (await (await asGuest('/api/rooms/guests/messages')).json()).turns.some((t) => t.speakerId === 'companion:nova' && /chat de echipa/.test(t.text)), 10_000);
+  check(answered, 'she answers the guest, in the guest room');
+  const forGuests = askedForGuests.at(-1);
+  const guestSystem = forGuests?.body.messages?.[0]?.content ?? '';
+  check(forGuests?.authorization === 'Bearer guests-stand-in-key', 'the guests\' engine is asked with the key of its own secret, not the team\'s');
+  check(asked.length === teamAsked, 'the team\'s engine is not asked for a guest');
+  check(guestSystem.includes('### FILE: about.md') && !guestSystem.includes('olympus/food.md') && !guestSystem.includes('SECRET-7f3a'), 'she reads the folder for guests, and nothing of the team\'s');
+  check(!guestSystem.includes('Zeus') && !guestSystem.includes('Hera'), 'and no name of the team went to the guests\' engine');
+  check(!(await (await zeus('/api/gaps')).text().catch(() => '')).includes('ce este un portal'), 'what the guest asked is not among what the knowledge lacked');
+
   console.log('\n— wrong keys, counted in the object (last: it turns this caller away)');
   const wrong = [];
   for (let i = 0; i < 12; i += 1) wrong.push((await fetch(`${base}/api/me`, { headers: { Authorization: `Bearer wrong${i}` } })).status);
@@ -235,6 +282,7 @@ try {
 } finally {
   await stop(dev);
   model.close();
+  guestModel.close();
   if (before) writeFileSync(bundle, before);
   else rmSync(bundle, { force: true });
   rmSync(state, { recursive: true, force: true });

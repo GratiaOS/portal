@@ -1,5 +1,6 @@
 // Makes cloudflare/knowledge.json, what Nova reads on Cloudflare: read from the folder the config names, by the same rules as in
-// Node (KnowledgeBase: what is excluded left out, canvases as text, no more than fits in a prompt). The Worker carries it; it is
+// Node (KnowledgeBase: what is excluded left out, canvases as text, no more than fits in a prompt), and the folder of the companion for
+// guests, apart from hers and never a filter on it. The Worker carries it; it is
 // made again before each `pnpm cloudflare:dev` and `pnpm cloudflare:deploy`, and kept out of git.
 // Usage: node cloudflare/bundle-knowledge.mjs [config]     (default: $PORTAL_CONFIG_FILE, else portal.cloudflare.local.json)
 
@@ -12,6 +13,7 @@ const out = join(dirname(fileURLToPath(import.meta.url)), 'knowledge.json');
 const config = process.argv[2] ?? process.env.PORTAL_CONFIG_FILE ?? 'portal.cloudflare.local.json';
 
 let files = {};
+let guestFiles = {};
 if (!existsSync(config)) {
   console.log(`portal: no ${config}, so no knowledge for Nova on Cloudflare`);
 } else {
@@ -21,7 +23,7 @@ if (!existsSync(config)) {
   // stand-in for this reading only; it is never written anywhere.
   const people = Array.isArray(raw?.participants) ? raw.participants : [];
   const standIn = people.map((p, i) => (p && typeof p === 'object' && p.kind === 'human' ? { ...p, token: `stand-in-${i}-${'x'.repeat(24)}` } : p));
-  const { nova } = parseConfig({ ...raw, participants: standIn }, baseDir);
+  const { nova, guests } = parseConfig({ ...raw, participants: standIn }, baseDir);
   if (nova && !nova.knowledgeDir) {
     console.log(`portal: ${nova.alias} has no knowledgeDir, so nothing is bundled: she talks without knowledge`);
   } else if (nova) {
@@ -31,5 +33,14 @@ if (!existsSync(config)) {
   } else {
     console.log(`portal: ${config} has no nova, so no knowledge on Cloudflare`);
   }
+  // the companion for guests: her own folder, read by the same rules, and nothing of the team's
+  const novaForGuests = guests?.nova.enabled ? guests.nova.nova : undefined;
+  if (novaForGuests?.knowledgeDir) {
+    const knowledge = new KnowledgeBase(novaForGuests.knowledgeDir, undefined, { exclude: novaForGuests.exclude });
+    guestFiles = Object.fromEntries(knowledge.files);
+    for (const line of knowledge.describe()) console.log(`portal: on Cloudflare, ${novaForGuests.alias} for guests ${line}`);
+  } else if (novaForGuests) {
+    console.log(`portal: ${novaForGuests.alias} for guests has no knowledgeDir, so nothing is bundled for her: she talks without documents`);
+  }
 }
-writeFileSync(out, `${JSON.stringify({ files })}\n`, { mode: 0o600 });
+writeFileSync(out, `${JSON.stringify({ files, guestFiles })}\n`, { mode: 0o600 });

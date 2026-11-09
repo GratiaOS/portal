@@ -8,8 +8,8 @@ import pkg from '../package.json';
 import knowledge from './knowledge.json';
 import { CALLER_HEADER, createApp } from '../src/app.ts';
 import { ConfigError, createAuthenticator, parseConfig, putTokens } from '../src/config.ts';
-import type { NovaConfig, RoomConfig } from '../src/config.ts';
-import { roomFacts } from '../src/facts.ts';
+import type { GuestsConfig, NovaConfig, RoomConfig } from '../src/config.ts';
+import { guestFacts, roomFacts } from '../src/facts.ts';
 import { Hub } from '../src/hub.ts';
 import { fixedKnowledge } from '../src/knowledge-files.ts';
 import { createNova } from '../src/nova.ts';
@@ -56,8 +56,6 @@ export class Portal extends DurableObject<Env> {
   private open(): (request: Request) => Promise<Response> {
     if (this.handler) return this.handler;
     const config = configFrom(this.env);
-    // her folder of public documents is not bundled on Cloudflare yet: a portal that asks for her there says so, and does not open with her missing
-    if (config.guests?.nova.enabled) throw new ConfigError('guests.nova is not available on Cloudflare yet: leave guests.nova.enabled false there');
     const store = new RoomStore(objectSqlite(this.ctx.storage));
     store.syncParticipants(config.participants.map(({ kind, alias, locale, capabilities, sign }) => ({ kind, alias, locale, capabilities, sign })));
     store.syncConversations(config.rooms);
@@ -69,6 +67,7 @@ export class Portal extends DurableObject<Env> {
 
     const hub = new Hub(store);
     if (config.nova) this.wakeNova(config, config.nova, store, hub);
+    if (config.guests?.nova.enabled && config.guests.nova.nova) this.wakeGuestNova(config.guests, config.guests.nova.nova, store, hub);
 
     this.handler = createApp(store, hub, {
       version: pkg.version,
@@ -78,6 +77,8 @@ export class Portal extends DurableObject<Env> {
       callerFromHome: true,
       guests: config.guests,
       hints: config.nova ? { companion: config.nova.alias, examples: config.nova.examples } : undefined,
+      // a guest is told of her companion, with her examples and never the team's, as in Node
+      guestHints: config.guests?.nova.enabled && config.guests.nova.nova ? { companion: config.guests.nova.nova.alias, examples: config.guests.nova.nova.examples } : undefined,
     });
     return this.handler;
   }
@@ -100,6 +101,29 @@ export class Portal extends DurableObject<Env> {
     createNova(
       { hub, store, llm: createChatCompletionsProvider({ baseUrl, model, apiKey, maxTokens, timeoutMs, reasoningEffort, body }), knowledge: known, facts: () => roomFacts({ ...config, nova }, known.files.size, 'cloudflare') },
       { alias: nova.alias, contextTurns: nova.contextTurns, maxQueue: nova.maxQueue },
+    );
+  }
+
+  /**
+   * Nova for guests, as in Node: another of her, on her own engine (its key a secret under the name `guests.nova.llm.apiKeyEnv`), reading
+   * her own bundle (the folder of public documents, never the team's), answering only in the guest room, with a budget she keeps.
+   */
+  private wakeGuestNova(guests: GuestsConfig, nova: NovaConfig, store: RoomStore, hub: Hub): void {
+    const files = (knowledge as { guestFiles?: Record<string, string> }).guestFiles ?? {};
+    if (!Object.keys(files).length) {
+      if (nova.knowledgeDir) console.warn(`portal: the config names a folder of public documents for ${nova.alias} for guests, and nothing was bundled; she talks without it until the next deploy bundles it`);
+      else console.log(`portal: ${nova.alias} for guests has no folder of public documents yet; she talks, and says what she does not know`);
+    }
+    const { apiKeyEnv, baseUrl, model, maxTokens, timeoutMs, reasoningEffort, body } = nova.llm;
+    const apiKey = apiKeyEnv ? (this.env[apiKeyEnv] as string | undefined) : undefined;
+    if (apiKeyEnv && !apiKey) {
+      console.warn(`portal: the secret ${apiKeyEnv} is not set; it holds the model's key for guests, so ${nova.alias} does not answer them`);
+      return;
+    }
+    const known = fixedKnowledge(files);
+    createNova(
+      { hub, store, llm: createChatCompletionsProvider({ baseUrl, model, apiKey, maxTokens, timeoutMs, reasoningEffort, body }), knowledge: known, facts: () => guestFacts({ questions: guests.nova.questions, nova }, known.files.size) },
+      { alias: nova.alias, contextTurns: nova.contextTurns, maxQueue: nova.maxQueue, scope: 'guest', guestsPerHour: guests.nova.perHour },
     );
   }
 
