@@ -102,7 +102,7 @@ export class Hub {
         this.drop(connection);
         connection.sink.close?.();
       }, Math.max(0, end - this.now()));
-      connection.endTimer.unref();
+      (connection.endTimer as { unref?: () => void }).unref?.(); // Node's timer can be let go of; on Cloudflare a timer is a number
     }
 
     // what a connection is told is what its participant may know: a guest hears of their own room and of no one on the team
@@ -213,7 +213,7 @@ export class Hub {
       this.leaving.delete(participant.id);
       if (!this.hasConnection(participant.id)) this.setPresence(participant.id, 'offline');
     }, this.graceMs);
-    timer.unref();
+    (timer as { unref?: () => void }).unref?.(); // as above
     this.leaving.set(participant.id, timer);
   }
 
