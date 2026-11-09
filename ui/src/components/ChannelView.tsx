@@ -28,6 +28,8 @@ export default function ChannelView(props: {
   note: string;
   /** Said under the box all the time: in the guest room, who reads what is written there. */
   notice?: string;
+  /** In the guest room: the whisper of the place, said where the room is empty, in place of the plain note. */
+  welcome?: string;
   /** What the box says while it is empty. */
   whispers: string[];
   /** Names of those working on an answer in this channel. */
@@ -35,7 +37,7 @@ export default function ChannelView(props: {
   connection: Connection;
   t: Strings;
 }) {
-  const { channelId, channelIds, title, rows, meId, hasMore, loading, onOlder, onSend, note, notice, whispers, thinking, connection, t } = props;
+  const { channelId, channelIds, title, rows, meId, hasMore, loading, onOlder, onSend, note, notice, welcome, whispers, thinking, connection, t } = props;
   return (
     <section aria-label={title} data-part="channel-view">
       <header data-part="channel-head">
@@ -44,7 +46,7 @@ export default function ChannelView(props: {
         </h2>
         <SignalQuality connection={connection} t={t} />
       </header>
-      <MemoryStream rows={rows} meId={meId} channelIds={channelIds} hasMore={hasMore} loading={loading} onOlder={onOlder} thinking={thinking} t={t} />
+      <MemoryStream rows={rows} meId={meId} channelIds={channelIds} hasMore={hasMore} loading={loading} onOlder={onOlder} thinking={thinking} welcome={welcome} t={t} />
       <SeedPortal key={channelId} channel={channelId} onSend={onSend} note={note} notice={notice} whispers={whispers} t={t} />
     </section>
   );
