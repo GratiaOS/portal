@@ -327,6 +327,10 @@ export function createNova(
   }
 
   async function run(job: Job): Promise<void> {
+    // in a guest room, a question whose turn has been let go (the room ended by absence) is not answered, and an answer that is still on its way is not
+    // said: the next visitors must not read what was meant for the last ones
+    const gone = () => options.scope === 'guest' && !store.hasTurn(job.turn.seq);
+    if (gone()) return;
     let text: string;
     try {
       text = await reply(job);
@@ -335,6 +339,7 @@ export function createNova(
       console.error('portal: Nova could not get an answer', err);
       text = wordsFor(job.asker.locale).failed;
     }
+    if (gone()) return;
     say(job.turn.conversationId, addressed(job.asker.alias, text));
   }
 

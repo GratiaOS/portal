@@ -544,6 +544,11 @@ export class RoomStore {
     return total;
   }
 
+  /** Whether a turn is still kept: `seq` is never given again, so a turn that is gone stays gone. */
+  hasTurn(seq: number): boolean {
+    return this.one('SELECT 1 AS yes FROM turns WHERE seq = ?', seq) !== undefined;
+  }
+
   /** The last `seq` given, even when that turn has since been forgotten: the order goes on, it does not start again. */
   lastSeq(): number {
     const row = this.one("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'turns'), 0) AS seq") as { seq: number };

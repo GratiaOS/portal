@@ -188,3 +188,19 @@ test('a guest let in by the door has a budget only when she is on for guests', a
   assert.equal(s.store.bindingsOf(entered.guest.id)[0].budget, 0);
   assert.ok(createApp);
 });
+
+test('an answer still on its way when the guest room ends by absence is never said to the next visitors', async () => {
+  let release;
+  const gate = new Promise((resolve) => (release = resolve));
+  const s = setup({ guestAnswer: async () => (await gate, 'SAY: a word for the last visitor.') });
+  const { guest } = s.admit();
+  s.ask(guest, 'guests');
+  while (!s.guestLlm.calls.length) await new Promise((r) => setTimeout(r, 5)); // the model has the question and is slow
+  s.advance(30 * 60_000 + 5 * 60_000); // their time is over, and the minutes more
+  assert.deepEqual(s.store.forgetEmptyGuestRooms(5 * 60_000), { turns: 1, guests: 1 });
+  const next = s.admit();
+  release();
+  await s.guests.idle();
+  assert.deepEqual(s.said('guests'), [], 'nothing of the last visit reaches the next');
+  assert.ok(next.guest);
+});
