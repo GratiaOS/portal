@@ -66,6 +66,8 @@ A portal can let visitors in without a key of their own, into one room. Declare 
 "guests": { "room": "guests", "maxActive": 20, "minutes": 60, "forgetAfterMinutes": 5, "perCaller": { "count": 5, "perMinutes": 10 } }
 ```
 
+A visitor who leaves (`POST /api/guest/leave`, with their key) ends their own time at once: the key stops opening anything, their stream closes, and the room has a slot free. What they said stays until the room ends by absence.
+
 `POST /api/guest` (no key) then gives a visitor a name of the hour (`owl`, `fox`…), a key and the room, for `minutes`. What a guest may do is
 what that binding gives them, in that room: they read and write there, and nothing else exists for them (no other room, none of your people,
 not what the knowledge lacked), and they cannot ask the companion. `maxActive` is how many guests the portal hosts at once (past it the

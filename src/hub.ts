@@ -146,6 +146,17 @@ export class Hub {
     this.broadcast(frame('participant', participant), (to) => mayKnow(to, participant));
   }
 
+  /** A guest's visit ends now, because they left: their connections close at once and they are not here, with no wait to see if they come back. */
+  endVisit(participant: Participant): void {
+    for (const connection of [...this.connections]) {
+      if (connection.participant.id !== participant.id) continue;
+      this.drop(connection);
+      connection.sink.close?.();
+    }
+    this.cancelLeaving(participant.id);
+    if (this.presenceOf(participant).state !== 'offline') this.setPresence(participant.id, 'offline');
+  }
+
   /** Who is here, for everyone the room knows. */
   snapshot(): Presence[] {
     return this.store.listParticipants().map((p) => this.presenceOf(p));

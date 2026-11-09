@@ -196,6 +196,15 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       return send(200, me);
     }
 
+    // a guest who leaves ends their own time: the key stops opening anything, the stream closes, and the room has one guest fewer
+    if (path === '/api/guest/leave') {
+      only(request, 'POST');
+      if (me.kind !== 'guest') throw new HttpError(404, 'not found');
+      store.endGuestBindings(me.id, clock());
+      hub.endVisit(me);
+      return send(200, { left: true });
+    }
+
     if (path === '/api/me/sign') {
       only(request, 'PUT');
       const wait = signs.take(me.id);

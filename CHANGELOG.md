@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **A starter folder for the companion for guests** (`guest-docs/`): five short documents about the portal as a program, written for visitors and the same for anyone who runs one, to point `guests.nova.knowledgeDir` at, extend or replace. A test keeps the figures they give equal to the defaults in the code.
+- **A visitor who leaves ends their time** (`POST /api/guest/leave`, and the page's *Leave* does it): the key stops opening anything, the stream closes, the guest is not shown as here, and the slot is free for the next one. What was said stays until the room ends by absence, counted from the leaving.
 - **The companion for guests on Cloudflare.** The Worker wakes her as Node does, on her own engine (a secret of her own) and from her own bundle (`guestFiles` in `cloudflare/knowledge.json`, made by `bundle-knowledge.mjs` from `guests.nova.knowledgeDir`, apart from the team's); a portal there no longer refuses to open with her turned on. The Cloudflare check runs a guest through it with two stand-in models.
 - **Asked what is next, Nova gives one step.** A line of her prompt, no new code and no state: the smallest honest step and what it rests on, never a plan or a list, and she does not decide for them (the habit of One True Next in `gratia.space`).
 - **Three languages, everywhere** (`ro`, `en`, `es`, in no order): the page, the sentences the portal says in Nova's place, her prompt, `<html lang>`. One rule

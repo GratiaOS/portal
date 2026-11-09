@@ -154,7 +154,15 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             {state.you && !guest && <SignSlot name={state.you.alias} current={state.you.sign} onChoose={chooseSign} t={t} />}
             <SkinSwitch t={t} extra={skins} />
             {!guest && <NotifyButton t={t} />}
-            <button type="button" onClick={() => onSignOut()} data-part="signout">
+            <button
+              type="button"
+              onClick={() => {
+                // a visitor's leaving ends their time at the portal too (asked before the key is let go; if it cannot be, the time runs out as it would have)
+                if (guest) void api.leave().catch(() => undefined);
+                onSignOut();
+              }}
+              data-part="signout"
+            >
               {guest ? t.guestLeave : t.signOut}
             </button>
           </div>

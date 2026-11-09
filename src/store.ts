@@ -335,6 +335,19 @@ export class RoomStore {
     });
   }
 
+  /**
+   * Ends a guest's time now: every binding of theirs that is still running ends at `now`, so their key opens nothing and the room has one
+   * guest fewer. What they said stays, and so does the guest, until the room ends by absence. Returns how many bindings ended.
+   */
+  endGuestBindings(participantId: string, now: number): number {
+    return this.db.run(
+      "UPDATE bindings SET expires_at = ? WHERE participant_id = ? AND expires_at > ? AND participant_id IN (SELECT id FROM participants WHERE kind = 'guest')",
+      now,
+      participantId,
+      now,
+    ).changes;
+  }
+
   /** The guest a key (by its digest) belongs to, if any. */
   participantByGuestKey(keyDigest: string): string | undefined {
     return (this.one('SELECT participant_id FROM guest_keys WHERE digest = ?', keyDigest) as { participant_id: string } | undefined)?.participant_id;
