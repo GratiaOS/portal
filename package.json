@@ -15,6 +15,7 @@
     "gaps": "node dist/gaps.js",
     "tokens": "node dist/tokens.js",
     "traces": "node scripts/verify-traces.mjs",
+    "signal": "node scripts/signal-check.mjs",
     "demo": "pnpm run build && node scripts/demo.mjs",
     "test": "pnpm run build && node --test \"test/*.test.mjs\"",
     "cloudflare:dev": "pnpm run build && pnpm --filter portal-ui build && node cloudflare/bundle-knowledge.mjs && npx --yes wrangler@4.136.2 dev -c cloudflare/wrangler.jsonc",
