@@ -27,11 +27,17 @@ test('the figures the documents give are the defaults the portal has, so they ca
   const { files } = read();
   const said = (name) => files.get(name);
   assert.match(said('what-a-portal-keeps.md'), new RegExp(`last ${config.retention.days} days or its last ${config.retention.messages} messages`));
-  assert.match(said('what-a-portal-keeps.md'), new RegExp(`${config.guests.forgetAfterMinutes} minutes after the last visitor`));
+  assert.match(said('what-a-portal-keeps.md'), new RegExp(`${config.guests.forgetAfterMinutes} minutes after the last visit`));
   assert.match(said('what-a-portal-keeps.md'), new RegExp(`lasts ${config.guests.minutes} minutes by default`));
   assert.match(said('for-visitors.md'), new RegExp(`By default it lasts ${config.guests.minutes} minutes`));
   assert.match(said('for-visitors.md'), new RegExp(`\\(${config.guests.forgetAfterMinutes} by default\\)`));
   assert.match(said('about-nova.md'), new RegExp(`ask her ${config.guests.nova.questions} questions during a visit, and all visitors together may ask ${config.guests.nova.perHour} in an hour`));
+});
+
+test('the documents say the defaults are not what this portal does, and when the visitor room ends', () => {
+  const { files } = read();
+  assert.match(files.get('what-a-portal-keeps.md'), /do not say how long \*this\* portal keeps/);
+  assert.match(files.get('what-a-portal-keeps.md'), /not when someone leaves/);
 });
 
 test('the documents never promise that what a visitor writes or asks is hidden from whoever runs the portal, who can read every room', () => {
