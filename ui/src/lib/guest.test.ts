@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isGuestPath, opensToGuests, stepThrough } from './guest.ts';
+import { isGuestPath, opensToGuests, stepThrough, stepThroughMeans } from './guest.ts';
 
 const answer = (status: number, body?: unknown) => () => Promise.resolve(new Response(body === undefined ? null : JSON.stringify(body), { status }));
 const down = () => Promise.reject(new TypeError('network down'));
@@ -41,4 +41,11 @@ test('each way the door can say no is told apart', async () => {
   assert.deepEqual(await stepThrough(answer(500)), { ok: false, reason: 'away' });
   assert.deepEqual(await stepThrough(down), { ok: false, reason: 'away' });
   assert.deepEqual(await stepThrough(() => Promise.resolve(new Response('not json', { status: 201 }))), { ok: false, reason: 'away' });
+});
+
+test('Step through goes by what is in the field: a key is the person\'s own, nothing is the door for visitors', () => {
+  assert.equal(stepThroughMeans('a-long-key-0123456789'), 'key');
+  assert.equal(stepThroughMeans('  a-long-key-0123456789  '), 'key');
+  assert.equal(stepThroughMeans(''), 'visitor');
+  assert.equal(stepThroughMeans('   '), 'visitor');
 });

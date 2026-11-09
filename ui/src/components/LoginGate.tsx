@@ -9,6 +9,7 @@
  *             card around it. Enter in the field sends; there is no button.
  * Not copied: written new for Room (MPL-2.0); Firegate is AGPL-3.0.
  */
+import { stepThroughMeans } from '../lib/guest.ts';
 import type { Refused } from '../lib/guest.ts';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -129,8 +130,8 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
   const [token, setToken] = useState('');
   const [state, setState] = useState<'idle' | 'checking' | 'unknown' | 'slow' | 'away'>('idle');
 
-  async function enter(event: FormEvent) {
-    event.preventDefault();
+  /** Goes in with the key in the field: as themselves, to their place. Enter does this, and *Step through* when there is a key. */
+  async function enterWithKey() {
     const candidate = token.trim();
     if (!candidate || state === 'checking') return;
     // A key is plain visible characters. Anything else (a pasted ellipsis, a line break) cannot even be sent
@@ -148,10 +149,15 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
     }
   }
 
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    void enterWithKey();
+  }
+
   return (
     <main data-gate="page">
       <Sky />
-      <form onSubmit={enter} data-gate="doorway" aria-labelledby="gate-title">
+      <form onSubmit={onSubmit} data-gate="doorway" aria-labelledby="gate-title">
         <Fence />
         <Lantern />
         <div data-gate="opening">
@@ -209,7 +215,13 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
                         : ''}
           </p>
           {door && door.state !== 'closed' && (
-            <button type="button" onClick={door.onStep} disabled={door.state === 'stepping'} data-gate="step" autoFocus={door.only}>
+            <button
+              type="button"
+              onClick={() => (stepThroughMeans(token) === 'key' ? void enterWithKey() : door.onStep())}
+              disabled={door.state === 'stepping' || state === 'checking'}
+              data-gate="step"
+              autoFocus={door.only}
+            >
               {t.stepThrough}
             </button>
           )}
