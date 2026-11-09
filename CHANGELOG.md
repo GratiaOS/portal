@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A starter folder for the companion for guests** (`guest-docs/`): five short documents about the portal as a program, written for visitors and the same for anyone who runs one, to point `guests.nova.knowledgeDir` at, extend or replace. A test keeps the figures they give equal to the defaults in the code.
 - **Asked what is next, Nova gives one step.** A line of her prompt, no new code and no state: the smallest honest step and what it rests on, never a plan or a list, and she does not decide for them (the habit of One True Next in `gratia.space`).
 - **Three languages, everywhere** (`ro`, `en`, `es`, in no order): the page, the sentences the portal says in Nova's place, her prompt, `<html lang>`. One rule
   picks the language (`src/locale.ts`, the same in `ui/src/lib/strings.ts`), and what it does not know falls to English, no longer to Romanian. A visitor gets the
