@@ -172,7 +172,7 @@ The third is the model's key, under the name the config gives in `nova.llm.apiKe
 section it is not needed. `pnpm cloudflare:deploy` (and `:dev`) first bundles Nova's knowledge from the config in
 `portal.cloudflare.local.json`, or the file `PORTAL_CONFIG_FILE` names, into `cloudflare/knowledge.json` (kept out of git).
 
-After a deploy the previous version of the object can keep answering for a few minutes: look again before concluding that a change did not arrive.
+After a deploy, or after a secret changes, the object that is the portal keeps running what it was started with while it is busy: by Cloudflare's default (deferred code updates) an active object adopts the new code when it goes idle, or after at most 300 seconds, so the previous code or config can answer for up to five minutes. Look again, after those minutes, before concluding that a change did not arrive. A newer `wrangler` can apply a code update at once (`--durable-objects-code-update-mode immediate`); the version pinned here does not have that flag.
 
 Give it a domain of your own in the Cloudflare dashboard (the Worker, Settings, Domains). To try it on this machine first, put
 both secrets in `cloudflare/.dev.vars` (`PORTAL_CONFIG='…'` and `PORTAL_TOKENS='…'`, kept out of git) and run
