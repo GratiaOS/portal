@@ -23,6 +23,8 @@ export type Strings = {
   guestAlone: string;
   guestOthers: (count: number) => string;
   guestLeave: string;
+  /** Under it, always: what is written in the room is read by those in it, and by whoever runs the portal. */
+  guestNotPrivate: string;
   /** Said when a visit has ended, on the gate it returns to. */
   visitEnded: string;
   enter: string;
@@ -97,6 +99,7 @@ const ro: Strings = {
   guestAlone: 'Ești singur aici, deocamdată.',
   guestOthers: (count) => (count === 1 ? 'Mai e cineva aici.' : `Mai sunt ${count} aici.`),
   guestLeave: 'Pleacă',
+  guestNotPrivate: 'Ce scrii aici poate fi citit de oricine e în cameră și de cine rulează portalul.',
   visitEnded: 'Vizita ta s-a încheiat.',
   enter: 'Intră',
   checking: 'Verific…',
@@ -162,6 +165,7 @@ const en: Strings = {
   guestAlone: 'You are the only one here, for now.',
   guestOthers: (count) => (count === 1 ? 'Someone else is here.' : `${count} others are here.`),
   guestLeave: 'Leave',
+  guestNotPrivate: 'What you write here can be read by everyone in the room, and by whoever runs the portal.',
   visitEnded: 'Your visit has ended.',
   enter: 'Enter',
   checking: 'Checking…',
@@ -227,6 +231,7 @@ const es: Strings = {
   guestAlone: 'Por ahora, no hay nadie más aquí.',
   guestOthers: (count) => (count === 1 ? 'Hay alguien más aquí.' : `Hay ${count} personas más aquí.`),
   guestLeave: 'Salir',
+  guestNotPrivate: 'Lo que escribes aquí puede leerlo cualquiera que esté en la sala, y quien administra el portal.',
   visitEnded: 'Tu visita ha terminado.',
   enter: 'Entrar',
   checking: 'Comprobando…',

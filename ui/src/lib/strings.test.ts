@@ -23,3 +23,9 @@ test('every sentence the page has is in all three languages, with the same shape
   assert.equal(es.guestOthers(1), 'Hay alguien más aquí.');
   assert.equal(es.thinking(['Nova']), 'Nova piensa…');
 });
+
+test('a visitor is told, in their language, that the room is read by those in it and by whoever runs the portal', () => {
+  assert.match(stringsFor('en').guestNotPrivate, /everyone in the room, and by whoever runs the portal/);
+  assert.match(stringsFor('ro').guestNotPrivate, /oricine e în cameră și de cine rulează portalul/);
+  assert.match(stringsFor('es').guestNotPrivate, /cualquiera que esté en la sala, y quien administra el portal/);
+});

@@ -24,7 +24,7 @@ const WHISPER_MS = 7000;
 const finePointer = () => window.matchMedia('(pointer: fine)').matches;
 
 /** Mounted once for each channel (the page gives it the channel as its `key`), so that what is written belongs to one. */
-export default function SeedPortal({ channel, onSend, note, whispers, t }: { channel: string; onSend: (text: string) => Promise<void>; note: string; whispers: string[]; t: Strings }) {
+export default function SeedPortal({ channel, onSend, note, notice, whispers, t }: { channel: string; onSend: (text: string) => Promise<void>; note: string; notice?: string; whispers: string[]; t: Strings }) {
   const [text, setText] = useState(() => readDraft(channel));
   const [line, setLine] = useState(0);
   const [reading, setReading] = useState(false); // the mouse is over the box, or it has focus: leave the line where it is
@@ -88,8 +88,8 @@ export default function SeedPortal({ channel, onSend, note, whispers, t }: { cha
     }
   }
 
-  // under the box, when there is no refusal to say: how to break a line (only where Enter sends), and how far it is from the limit
-  const hint = [text && finePointer() ? t.lineBreak : '', counter(text.length) ?? ''].filter(Boolean).join(' · ');
+  // under the box, when there is no refusal to say: what a visitor must know of who reads the room (always, there), how to break a line (only where Enter sends), and how far it is from the limit
+  const hint = [notice ?? '', text && finePointer() ? t.lineBreak : '', counter(text.length) ?? ''].filter(Boolean).join(' · ');
 
   return (
     <div data-part="composer">
