@@ -333,6 +333,10 @@
     padding: 0.125rem 0.1875rem;
     font-size: 1rem;
     line-height: 1;
+    display: grid;
+    place-items: center;
+    min-width: 2.25rem;
+    height: 2.25rem;
     background: transparent;
     border-radius: 0;
   }
@@ -345,12 +349,18 @@
   [data-part='sign-steps'] {
     display: inline-flex;
     flex-direction: column;
+    justify-content: space-between;
+    height: 2.25rem;
   }
 
   [data-part='sign-step'] {
     padding: 0 0.25rem;
     font-size: 0.75rem;
-    line-height: 1.1;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    min-width: 1.75rem;
+    height: 1.0625rem;
     color: var(--ink-faint);
     background: transparent;
   }
@@ -363,10 +373,10 @@
   [data-part='sign-grid'] {
     flex-basis: 100%;
     display: grid;
-    grid-template-columns: repeat(4, 2rem);
-    gap: 0.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr));
+    gap: 0.375rem;
     margin-top: 0.25rem;
-    padding: 0.375rem;
+    padding: 0.5rem;
     background: var(--glass-strong);
     border: 1px solid var(--rule);
     border-radius: 0;
@@ -376,9 +386,9 @@
   [data-part='sign-add'] {
     display: grid;
     place-items: center;
-    width: 2rem;
-    height: 2rem;
-    font-size: 1.05rem;
+    width: 100%;
+    height: 2.25rem;
+    font-size: 1.15rem;
     line-height: 1;
     background: transparent;
     border: 1px solid transparent;
@@ -408,7 +418,7 @@
   [data-part='sign-input'] {
     grid-column: span 2;
     width: 100%;
-    height: 2rem;
+    height: 2.25rem;
     font-size: 1.05rem;
     text-align: center;
     color: inherit;
@@ -835,6 +845,17 @@
     color: var(--ink-soft);
   }
 
+  /* the sheet's own parts are for a narrow page; on a wide one the side is as it was */
+  [data-part='sheet-head'],
+  [data-part='label'][data-sheet-only],
+  [data-part='skin-name'] {
+    display: none;
+  }
+
+  [data-part='self-group'] {
+    display: contents;
+  }
+
   /* the portal as an app: the button, for the browsers that give the means, and a line for those that do not */
   [data-part='install'] {
     font-size: 0.8125rem;
@@ -916,8 +937,8 @@
       bottom: 0;
       left: 0;
       z-index: 30;
-      max-height: 80vh;
-      max-height: 80dvh;
+      max-height: 88vh;
+      max-height: 88dvh;
       overflow-y: auto;
       padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
       transform: translateY(100%);
@@ -933,6 +954,272 @@
       align-items: center;
       gap: 0.5rem;
     }
+
+    /* the sheet: the same in every look (a head, then titled sections: rooms, who is here, you, the look, the app, the way out); a look gives
+       it colour, edge and type, never another order or another size. Every press is 48 px or more, and 56 for the rows. */
+    [data-part='side'] {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 0 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    [data-part='sheet-head'] {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      min-height: 56px;
+      margin: 0 -1rem;
+      padding: 0 0.5rem;
+      background: var(--paper);
+    }
+
+    [data-part='sheet-handle'] {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      width: 40px;
+      height: 4px;
+      margin-left: -20px;
+      border-radius: 2px;
+      background: var(--ink-faint);
+      opacity: 0.5;
+    }
+
+    [data-part='sheet-close'] {
+      min-width: 48px;
+      min-height: 48px;
+      font-size: 1.125rem;
+      color: inherit;
+    }
+
+    [data-part='side'] [data-part='label'] {
+      display: block;
+      margin: 1.25rem 0 0.5rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+
+    /* a visitor's "who is here" is a sentence, not a title */
+    [data-part='side'] [data-part='label'][role='status'] {
+      margin-top: 0.5rem;
+      font-size: 0.9375rem;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    [data-part='side'] [data-part='channels'] [data-part='label'] {
+      margin-top: 0.25rem;
+    }
+
+    /* rooms: a row each, as wide as the sheet */
+    [data-part='side'] [data-part='channel-list'] {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0;
+      margin: 0;
+      overflow: visible;
+    }
+
+    [data-part='side'] [data-part='channel'] {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      min-height: 56px;
+      padding: 0 1rem;
+      font-size: 1rem;
+      text-align: left;
+      background: transparent;
+      border: 1px solid var(--rule-soft);
+      border-radius: 0.25rem;
+    }
+
+    [data-part='side'] [data-part='channel'][aria-current='true'] {
+      border-color: var(--calm);
+      background: oklch(0.85 0.2 150 / 0.12);
+    }
+
+    /* who is here: a row of names (in the radar, the scope, which is that look's way of saying it) */
+    [data-part='side'] [data-part='person'] {
+      display: flex;
+      align-items: center;
+      min-height: 48px;
+      font-size: 1rem;
+    }
+
+    /* the scope keeps its own shape, and sits in the middle of its section */
+    [data-part='side'] [data-part='people'] {
+      grid-column: auto;
+      grid-row: auto;
+      justify-self: center;
+      align-self: center;
+      width: min(100%, 11rem);
+    }
+
+    /* you: the name, the sign and its steps in a row, the grid under them */
+    [data-part='side'] [data-part='self'] {
+      display: block;
+      align-self: stretch;
+      grid-column: auto;
+    }
+
+    [data-part='side'] [data-part='self-group'] {
+      display: block;
+    }
+
+    [data-part='side'] [data-part='sign-slot-wrap'] {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    [data-part='side'] [data-part='self-name'] {
+      display: block;
+      flex-basis: 100%;
+      font-size: 1rem;
+    }
+
+    [data-part='side'] [data-part='sign-steps'] {
+      flex-direction: row;
+      gap: 0.5rem;
+      height: auto;
+    }
+
+    [data-part='side'] [data-part='sign-slot'],
+    [data-part='side'] [data-part='sign-step'] {
+      display: grid;
+      place-items: center;
+      min-width: 56px;
+      min-height: 56px;
+      height: 56px;
+      background: transparent;
+      border: 1px solid var(--rule-soft);
+      border-radius: 0.25rem;
+    }
+
+    [data-part='side'] [data-part='sign-slot'] {
+      font-size: 1.75rem;
+    }
+
+    [data-part='side'] [data-part='sign-step'] {
+      font-size: 1rem;
+      color: var(--ink);
+    }
+
+    [data-part='side'] [data-part='sign-grid'] {
+      grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+      gap: 0.5rem;
+      padding: 0.75rem;
+    }
+
+    [data-part='side'] [data-part='sign-tile'],
+    [data-part='side'] [data-part='sign-add'],
+    [data-part='side'] [data-part='sign-input'] {
+      min-height: 48px;
+      height: 48px;
+      font-size: 1.5rem;
+    }
+
+    [data-part='side'] [data-part='visit-as'],
+    [data-part='side'] [data-part='visit-time'] {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    /* the look: one big button each, with its name */
+    [data-part='side'] [data-part='skin-switch'] {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+      gap: 0.5rem;
+    }
+
+    [data-part='side'] [data-part='skin-option'] {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      min-height: 72px;
+      margin: 0;
+      opacity: 1;
+      background: transparent;
+      border: 1px solid var(--rule-soft);
+      border-radius: 0.25rem;
+    }
+
+    [data-part='side'] [data-part='skin-option'][aria-pressed='true'] {
+      border-color: var(--calm);
+      background: oklch(0.85 0.2 150 / 0.12);
+    }
+
+    [data-part='side'] [data-part='skin-emoji'] {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    [data-part='side'] [data-part='skin-name'] {
+      display: block;
+      font-size: 0.8125rem;
+    }
+
+    /* the app, and the way out */
+    [data-part='side'] [data-part='notify'],
+    [data-part='side'] [data-part='install'] {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      min-height: 56px;
+      margin-bottom: 0.5rem;
+      padding: 0 1rem;
+      font-size: 1rem;
+      text-align: left;
+      text-decoration: none;
+      color: var(--ink);
+      background: transparent;
+      border: 1px solid var(--rule-soft);
+      border-radius: 0.25rem;
+    }
+
+    [data-part='side'] [data-part='install-hint'] {
+      margin: 0.25rem 0 0.5rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    /* the app has nothing to say where the browser gives nothing (no install, no notices): then it has no title either */
+    [data-part='self-group'][data-group='app']:not(:has([data-part='notify'], [data-part='install'], [data-part='install-hint'])) {
+      display: none;
+    }
+
+    [data-part='self-group'][data-group='end'] {
+      margin-top: 1.25rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    [data-part='side'] [data-part='signout'] {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      min-height: 56px;
+      padding: 0 1rem;
+      font-size: 1rem;
+      text-decoration: none;
+      color: var(--ink-soft);
+    }
+
 
     [data-part='room'][data-sheet] [data-part='side'] {
       transform: none;
@@ -997,10 +1284,6 @@
 
     [data-part='sign-steps'] {
       flex-direction: row;
-    }
-
-    [data-part='sign-grid'] {
-      grid-template-columns: repeat(4, 44px);
     }
 
     [data-part='sign-input'] {

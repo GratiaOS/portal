@@ -206,6 +206,12 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
       </header>
       <button type="button" data-part="sheet-backdrop" aria-label={t.closeSheet} tabIndex={-1} onClick={() => setSheet(false)} />
       <aside data-part="side" id="side" ref={side} tabIndex={-1}>
+        <div data-part="sheet-head">
+          <span aria-hidden data-part="sheet-handle" />
+          <button type="button" data-part="sheet-close" aria-label={t.closeSheet} onClick={() => setSheet(false)}>
+            ✕
+          </button>
+        </div>
         {!guest && (
           <div data-part="channels">
             <p data-part="label">
@@ -215,12 +221,6 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
           </div>
         )}
         <div data-part="side-foot">
-          {guest && state.you && (
-            <>
-              <p data-part="visit-as">{t.guestAs(state.you.alias)}</p>
-              {left !== undefined && <p data-part="visit-time">{t.guestEndsIn(left)}</p>}
-            </>
-          )}
           {guest ? (
             <p data-part="label" role="status">
               {othersHere === 0 ? t.guestAlone : t.guestOthers(othersHere)}
@@ -228,28 +228,51 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
           ) : (
             <PeopleList people={people} meId={state.you?.id} thinking={thinkingIds} spoke={spoke} arrived={arrived} t={t} />
           )}
-          {install.showIosHint && <p data-part="install-hint">{t.installIos}</p>}
-          {install.installed && !guest && <p data-part="install-hint">{t.installedNote}</p>}
           <div data-part="self">
-            {state.you && !guest && <SignSlot name={state.you.alias} current={state.you.sign} onChoose={chooseSign} t={t} />}
-            <SkinSwitch t={t} extra={skins} />
-            {!guest && <NotifyButton t={t} />}
-            {install.canPrompt && (
-              <button type="button" onClick={() => void install.ask()} data-part="install">
-                {t.install}
+            <div data-part="self-group" data-group="you">
+              <p data-part="label" data-sheet-only="">
+                {t.sheetYou}
+              </p>
+              {guest && state.you && (
+                <>
+                  <p data-part="visit-as">{t.guestAs(state.you.alias)}</p>
+                  {left !== undefined && <p data-part="visit-time">{t.guestEndsIn(left)}</p>}
+                </>
+              )}
+              {state.you && !guest && <SignSlot name={state.you.alias} current={state.you.sign} onChoose={chooseSign} t={t} />}
+            </div>
+            <div data-part="self-group" data-group="look">
+              <p data-part="label" data-sheet-only="">
+                {t.skin}
+              </p>
+              <SkinSwitch t={t} extra={skins} />
+            </div>
+            <div data-part="self-group" data-group="app">
+              <p data-part="label" data-sheet-only="">
+                {t.sheetApp}
+              </p>
+              {!guest && <NotifyButton t={t} />}
+              {install.canPrompt && (
+                <button type="button" onClick={() => void install.ask()} data-part="install">
+                  {t.install}
+                </button>
+              )}
+              {install.showIosHint && <p data-part="install-hint">{t.installIos}</p>}
+              {install.installed && !guest && <p data-part="install-hint">{t.installedNote}</p>}
+            </div>
+            <div data-part="self-group" data-group="end">
+              <button
+                type="button"
+                onClick={() => {
+                  // a visitor's leaving ends their time at the portal too (asked before the key is let go; if it cannot be, the time runs out as it would have)
+                  if (leavingEndsAVisit(state.you?.kind, readGuest())) void api.leave().catch(() => undefined);
+                  onSignOut();
+                }}
+                data-part="signout"
+              >
+                {guest ? t.guestLeave : t.signOut}
               </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                // a visitor's leaving ends their time at the portal too (asked before the key is let go; if it cannot be, the time runs out as it would have)
-                if (leavingEndsAVisit(state.you?.kind, readGuest())) void api.leave().catch(() => undefined);
-                onSignOut();
-              }}
-              data-part="signout"
-            >
-              {guest ? t.guestLeave : t.signOut}
-            </button>
+            </div>
           </div>
         </div>
       </aside>

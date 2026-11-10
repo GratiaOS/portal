@@ -41,6 +41,9 @@ export type Strings = {
   installedNote: string;
   settings: string;
   closeSheet: string;
+  /** The titles of what is under your name in the sheet of a narrow page: you, and the app. */
+  sheetYou: string;
+  sheetApp: string;
   hereCount: (count: number) => string;
   /** In a visitor's sheet: who they are writing as, and how long the visit has left. */
   guestAs: (alias: string) => string;
@@ -131,6 +134,8 @@ const ro: Strings = {
   installedNote: 'Aplicația instalată te ține conectat pe acest dispozitiv, până la Sign out.',
   settings: 'Setări',
   closeSheet: 'Închide',
+  sheetYou: 'Tu',
+  sheetApp: 'Aplicația',
   hereCount: (count) => `${count} aici`,
   guestAs: (alias) => `Scrii ca ${alias}.`,
   guestEndsIn: (minutes) => `Vizita ta se încheie în ${minutesRo(minutes)}.`,
@@ -210,6 +215,8 @@ const en: Strings = {
   installedNote: 'The installed app keeps you signed in on this device, until you sign out.',
   settings: 'Settings',
   closeSheet: 'Close',
+  sheetYou: 'You',
+  sheetApp: 'App',
   hereCount: (count) => `${count} here`,
   guestAs: (alias) => `You are writing as ${alias}.`,
   guestEndsIn: (minutes) => `Your visit ends in ${minutesEn(minutes)}.`,
@@ -289,6 +296,8 @@ const es: Strings = {
   installedNote: 'La app instalada te mantiene conectado en este dispositivo, hasta que cierres sesión.',
   settings: 'Ajustes',
   closeSheet: 'Cerrar',
+  sheetYou: 'Tú',
+  sheetApp: 'App',
   hereCount: (count) => `${count} aquí`,
   guestAs: (alias) => `Escribes como ${alias}.`,
   guestEndsIn: (minutes) => `Tu visita termina en ${minutesEs(minutes)}.`,
