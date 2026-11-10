@@ -5,6 +5,7 @@ import ChannelView from './components/ChannelView.tsx';
 import NotifyButton from './components/NotifyButton.tsx';
 import PeopleList from './components/PeopleList.tsx';
 import FieldWhispers from './components/FieldWhispers.tsx';
+import GuestWelcome from './components/GuestWelcome.tsx';
 import SignSlot from './components/SignSlot.tsx';
 import SkinSwitch from './components/SkinSwitch.tsx';
 import { ApiError } from './lib/client.ts';
@@ -204,7 +205,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             onOlder={older}
             onSend={send}
             notice={guest ? t.guestNotPrivate : undefined}
-            welcome={guest ? t.guestWelcome : undefined}
+            welcome={guest ? <GuestWelcome companion={hints?.companion} example={hints?.examples[0]} trailMinutes={state.trailMinutes} t={t} /> : undefined}
             note={note}
             whispers={whispers}
             thinking={thinking}

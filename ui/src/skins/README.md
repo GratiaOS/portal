@@ -141,6 +141,9 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `older` | holds the button for older messages | |
 | `older-button` | the button | `disabled` while loading |
 | `empty` | the line for a channel where nothing has been said | |
+| `welcome` | what a visitor finds at the top of the room: a whisper and a small map; made by the page, no message, and it does not fade | |
+| `welcome-whisper` | its first line, the whisper of the place | |
+| `welcome-map` | the list of next steps under it; a link inside it leads to the portal's source | |
 | `messages` | the list of messages, a `log` for screen readers | |
 | `message` | one message | `data-head` when it is the first of a run by the same person; `data-from="mine \| companion \| other"`; `data-to-you` when it names the reader and the reader did not write it |
 | `time` | the time it was said | |

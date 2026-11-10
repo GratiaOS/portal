@@ -10,6 +10,7 @@
  * Not copied: written new for Room (MPL-2.0); Firegate is AGPL-3.0.
  */
 import { useEffect, useLayoutEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { nearBottom } from '../lib/scroll.ts';
 import { useOccurrences } from '../lib/useOccurrences.ts';
 import MessageBubble from './MessageBubble.tsx';
@@ -17,7 +18,7 @@ import ThinkingPill from './ThinkingPill.tsx';
 import type { Row } from '../lib/format.ts';
 import type { Strings } from '../lib/strings.ts';
 
-export default function MemoryStream({ rows, meId, channelIds, hasMore, loading, onOlder, thinking, welcome, t }: { welcome?: string; rows: Row[]; meId: string | undefined; channelIds: string[]; hasMore: boolean; loading: boolean; onOlder: () => void; thinking: string[]; t: Strings }) {
+export default function MemoryStream({ rows, meId, channelIds, hasMore, loading, onOlder, thinking, welcome, t }: { welcome?: ReactNode; rows: Row[]; meId: string | undefined; channelIds: string[]; hasMore: boolean; loading: boolean; onOlder: () => void; thinking: string[]; t: Strings }) {
   const scroller = useRef<HTMLDivElement>(null);
   useOccurrences(scroller);
   const before = useRef({ height: 0, firstSeq: 0, atBottom: true });
@@ -69,6 +70,7 @@ export default function MemoryStream({ rows, meId, channelIds, hasMore, loading,
 
   return (
     <div ref={scroller} data-part="log">
+      {welcome}
       {hasMore && (
         <div data-part="older">
           <button type="button" onClick={onOlder} disabled={loading} data-part="older-button">
@@ -76,11 +78,7 @@ export default function MemoryStream({ rows, meId, channelIds, hasMore, loading,
           </button>
         </div>
       )}
-      {rows.length === 0 && !loading && (
-        <p data-part="empty">
-          {welcome ?? t.empty}
-        </p>
-      )}
+      {rows.length === 0 && !loading && !welcome && <p data-part="empty">{t.empty}</p>}
       <ol role="log" aria-live="polite" data-part="messages">
         {rows.map((row) => (
           <MessageBubble key={row.turn.seq} row={row} mine={row.turn.speakerId === meId} meId={meId} channelIds={channelIds} t={t} />
