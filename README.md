@@ -75,7 +75,7 @@ Add a room for them to your config:
 
 A visitor at `/guest` is given a name, a key and that room, for 60 minutes, and does only what that gives them.
 
-What is said fades from the page and is let go after 15 minutes, one message at a time. When the last visitor has gone, the visitors and their keys go too.
+What is said fades from the page and is let go after 15 minutes, one message at a time (the portal checks every few minutes, and a visitor is not given a message past its time in the meantime). When the last visitor has gone, the visitors and their keys go too.
 
 You can limit how many come in at once and per address, give them a companion of their own, and point her at the starter documents in `guest-docs/`. The whole of it is in [INSTALL.md](INSTALL.md), under *A guest room*.
 
@@ -116,7 +116,7 @@ Each of these is backed by a test or by the code:
 
 - **Your portal runs where you put it.** Nothing phones home. The model is the one you named, and it hears only what is described in checkpoint 3.
 - **A turn is never edited.** A team room keeps the last 14 days or 999 messages, whichever ends first, and what is let go is overwritten in the file. A portal that keeps more says so in its config, and its people are told.
-- **A visitor leaves no trace on their device** beyond the tab, and none in the room past the trail (give or take the few minutes between two checks).
+- **A visitor leaves no trace on their device** beyond the tab. And a visitor cannot read a message once its trail has passed; the stored turn is removed at a later check (a few minutes at most), and whoever runs the portal, or reads the guest room as one of its team, can still read it in that interval.
 - **Who is here is a dot, and never when.**
 - **Whoever runs the machine can read the room** while it is kept. Visitors are told so, under the box where they write.
 
@@ -155,8 +155,8 @@ What not to break, and why:
 
 - **A turn is never changed**, and the database enforces it. Forgetting removes; nothing edits.
 - **Presence never says when.** Not on the wire, not on the page.
-- **Nothing a visitor says is kept past its trail.** A visitor is not given it once it has passed, and the portal lets it go at its next check, a few minutes at most. That holds in the store and on their device (`sessionStorage` for their key, memory for what they read). The service worker (`ui/public/sw.js`) never touches `/api`.
+- **A visitor is never given what has outlived its trail**, and the portal lets it go at its next check, a few minutes at most; until then it is still in the store, and whoever runs the portal can read it. On the visitor's device nothing is kept past the tab (`sessionStorage` for their key, memory for what they read). The service worker (`ui/public/sw.js`) never touches `/api`.
 - **The page names what a thing is (`data-part`), never how it looks.** A new part is a change to `ui/src/skins/README.md` and to every look, together; a test keeps them in step.
 - **Say what was and was not checked.** A change that is not looked at where it matters is not done. Write the commit and the PR so that the next one can tell which is which. Commits carry a whisper line and a DCO sign-off ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
-*The portal forgets what was said. The garden remembers what was understood.*
+🌬️ whisper: _"the portal forgets what was said; the garden remembers what was understood."_
