@@ -371,17 +371,23 @@
     color: var(--ink-faint);
   }
 
+  /* the room speaking before you came in: a bubble that is no one's, set apart from the glass bubbles of people by a dashed edge, no name, no time, centred and quieter */
   [data-part='welcome'] {
+    width: fit-content;
+    max-width: min(26rem, calc(100% - 2rem));
     margin: 2.5rem auto 1.5rem;
-    max-width: 28rem;
-    padding: 0 1rem;
+    padding: 0.875rem 1.5rem;
     text-align: center;
     color: var(--ink-faint);
+    background: var(--glass);
+    border: 1px dashed var(--glass-edge);
+    border-radius: 1.5rem;
+    opacity: 0.85;
   }
 
   [data-part='welcome-whisper'] {
     font-style: italic;
-    margin-bottom: 0.75rem;
+    margin: 0 0 0.5rem;
   }
 
   [data-part='welcome-map'] {
