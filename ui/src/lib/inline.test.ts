@@ -54,3 +54,23 @@ test('emoji: one to three of them and nothing else make a message worth showing 
   assert.equal(emojiOnly(''), 0);
   assert.equal(emojiOnly('   '), 0);
 });
+
+test('inline: an address is a link, as written, and nothing inside it is a tag or a mention', () => {
+  assert.deepEqual(kinds('https://www.youtube.com/watch?v=H1pIG0VkSZA'), ['link:https://www.youtube.com/watch?v=H1pIG0VkSZA']);
+  assert.deepEqual(kinds('uite https://example.com/a#section și @nova', [nova]), ['text:uite ', 'link:https://example.com/a#section', 'text: și ', 'mention:@nova']);
+  assert.deepEqual(kinds('vezi (https://example.com/x). Mulțumesc!'), ['text:vezi (', 'link:https://example.com/x', 'text:). Mulțumesc!']);
+  assert.deepEqual(kinds('https://en.wikipedia.org/wiki/Foo_(bar)'), ['link:https://en.wikipedia.org/wiki/Foo_(bar)']); // a bracket that opens inside it stays
+  assert.deepEqual(kinds('la https://example.com, apoi'), ['text:la ', 'link:https://example.com', 'text:, apoi']);
+});
+
+test('inline: only http and https are links; a code span keeps an address as written', () => {
+  assert.deepEqual(kinds('javascript:alert(1) și ftp://x.y/z și data:text/html,hi'), ['text:javascript:alert(1) și ftp://x.y/z și data:text/html,hi']);
+  assert.deepEqual(kinds('`https://example.com` e cod'), ['code:https://example.com', 'text: e cod']);
+  assert.deepEqual(kinds('https://'), ['text:https://']);
+});
+
+test('inline: an address in the middle of words is still all there, in order', () => {
+  const text = 'a https://example.com/p?q=1&r=2#x, b';
+  const back = inlineOf(text, []).map((p) => p.text).join('');
+  assert.equal(back, text);
+});

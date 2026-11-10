@@ -11,6 +11,7 @@ import MemoryStream from './MemoryStream.tsx';
 import SeedPortal from './SeedPortal.tsx';
 import SignalQuality from './SignalQuality.tsx';
 import type { ReactNode } from 'react';
+import { startsWithPicture } from '../lib/format.ts';
 import type { Connection } from '../lib/client.ts';
 import type { Row } from '../lib/format.ts';
 import type { Strings } from '../lib/strings.ts';
@@ -43,7 +44,12 @@ export default function ChannelView(props: {
     <section aria-label={title} data-part="channel-view">
       <header data-part="channel-head">
         <h2 data-part="channel-title">
-          <span data-part="hash">#</span> {title}
+          {!startsWithPicture(title) && (
+            <>
+              <span data-part="hash">#</span>{' '}
+            </>
+          )}
+          {title}
         </h2>
         <SignalQuality connection={connection} t={t} />
       </header>

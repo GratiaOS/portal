@@ -8,7 +8,9 @@ export type Piece =
   /** `#decizie`: a word someone marked. */
   | { kind: 'tag'; text: string }
   /** `` `kill switch` ``: a few words that are code, or must be taken as written. */
-  | { kind: 'code'; text: string };
+  | { kind: 'code'; text: string }
+  /** `https://…`: an address someone wrote; the text is the address itself, so what is shown is where it goes. Only http and https. */
+  | { kind: 'link'; text: string; href: string };
 
 // a run of backticks, then something that does not begin with one, then the same run again; not across lines
 const CODE = /(?<!`)(`+)(?!`)([^\n]*?[^`\n])\1(?!`)/g;
@@ -16,6 +18,29 @@ const CODE = /(?<!`)(`+)(?!`)([^\n]*?[^`\n])\1(?!`)/g;
 // the same rule as the room's (`@` after a space or punctuation, so an e-mail address is not a mention), and `#` the same way, followed by a
 // letter: "#78" is a number, and "&#39;" is not a tag
 const MARK = /(?<![\p{L}\p{N}_.-])@(?<mention>[\p{L}\p{N}][\p{L}\p{N}_.-]{0,31})|(?<![\p{L}\p{N}_&/#.-])#(?<tag>\p{L}[\p{L}\p{N}_-]{1,31})/gu;
+
+// an address that begins with http:// or https://, up to a space or a mark that cannot be in one; what ends a sentence is taken off its end below
+const URL_RE = /https?:\/\/[^\s<>"'`]+/gi;
+
+/** The end of an address, without what ends the sentence around it: "https://a.b/c)." is "https://a.b/c", but "https://a.b/(c)" keeps its bracket. */
+function trimmed(address: string): string {
+  let end = address;
+  for (;;) {
+    const last = end.at(-1) ?? '';
+    const unbalanced = (open: string, close: string) => last === close && end.split(close).length > end.split(open).length;
+    if (/[.,;:!?'"]/.test(last) || unbalanced('(', ')') || unbalanced('[', ']') || unbalanced('{', '}')) end = end.slice(0, -1);
+    else return end;
+  }
+}
+
+function webAddress(text: string): string | undefined {
+  try {
+    const url = new URL(text);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * One line or paragraph of a message as pieces, in order. Only the people the room says were mentioned (`mentioned`, from the
@@ -32,7 +57,21 @@ export function inlineOf(text: string, mentioned: readonly Participant[], channe
     else if (piece.text) pieces.push(piece);
   };
 
+  // an address is read first, so that a `#` or an `@` inside it is never a tag or a mention
   const prose = (segment: string) => {
+    let at = 0;
+    for (const match of segment.matchAll(URL_RE)) {
+      const found = trimmed(match[0]);
+      const start = match.index ?? 0;
+      if (!webAddress(found)) continue;
+      marks(segment.slice(at, start));
+      push({ kind: 'link', text: found, href: webAddress(found) as string });
+      at = start + found.length;
+    }
+    marks(segment.slice(at));
+  };
+
+  const marks = (segment: string) => {
     let from = 0;
     for (const match of segment.matchAll(MARK)) {
       const at = match.index ?? 0;

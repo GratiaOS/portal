@@ -491,6 +491,18 @@
     color: hsl(var(--hue) 45% 34%);
   }
 
+  /* an address someone wrote: the text is the address, underlined, and it breaks anywhere so that a long one does not push the page */
+  [data-part='link'] {
+    color: var(--quiet);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+  }
+
+  [data-part='link']:hover {
+    text-decoration-thickness: 2px;
+  }
+
   [data-part='mention'][data-you] {
     background: hsl(var(--hue) 80% 62% / 0.22);
   }
