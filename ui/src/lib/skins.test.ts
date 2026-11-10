@@ -71,7 +71,7 @@ test('skins: the third column, which came after contract 1, is hidden until a sk
 test('skins: the contract lists no part the page does not have', () => {
   const listed = new Set<string>();
   for (const [, part] of readme.matchAll(/`([a-z][a-z-]+)`/g)) listed.add(part!);
-  const known = new Set([...used, 'live', 'connecting', 'reconnecting', 'refused', 'mine', 'companion', 'other', 'pre', 'figure', 'log', 'disabled', 'data-here', 'data-popping', 'data-thinking', 'data-spoke', 'data-arrived', 'data-you', 'data-to-you', 'data-jumbo', 'room-occurrence', 'data-head', 'data-from', 'data-connection', 'data-part', 'data-gate', 'data-skin', 'data-skin-base', 'font-family', 'aria-current', 'aria-hidden', 'display', 'grid', 'order', 'left', 'width', 'height', 'text', 'data-idle', 'data-first', 'data-preview', 'data-own', 'data-welcome', 'data-fading']);
+  const known = new Set([...used, 'live', 'connecting', 'reconnecting', 'refused', 'mine', 'companion', 'other', 'pre', 'figure', 'log', 'disabled', 'data-here', 'data-popping', 'data-thinking', 'data-spoke', 'data-arrived', 'data-you', 'data-to-you', 'data-jumbo', 'room-occurrence', 'data-head', 'data-from', 'data-connection', 'data-part', 'data-gate', 'data-skin', 'data-skin-base', 'font-family', 'aria-current', 'aria-hidden', 'display', 'grid', 'order', 'left', 'width', 'height', 'text', 'data-idle', 'data-first', 'data-preview', 'data-own', 'data-welcome', 'data-fading', 'data-sheet', 'aria-expanded']);
   const stray = [...listed].filter((word) => !known.has(word) && /^[a-z]+(-[a-z]+)+$/.test(word));
   assert.deepEqual(stray, []);
 });
@@ -92,5 +92,15 @@ for (const { id } of SKINS) {
     for (const part of ['skin-option', 'channel', 'signout', 'code-copy', 'sign-slot', 'sign-step', 'composer-send']) assert.ok(coarse.includes(`[data-part='${part}']`), `${id}: ${part} is not made 44 px for a finger`);
     assert.match(coarse, /min-height: 44px/);
     assert.match(coarse, /\[data-part='composer-input'\] \{[^}]*font-size: 16px/, `${id}: the box for writing is not 16 px (iOS zooms the page below it)`);
+  });
+}
+
+for (const { id } of SKINS) {
+  test(`skins: ${id} keeps what is said and where it is written to a reading column on a wide page`, () => {
+    const css = skinCss(id).replace(/\/\*[\s\S]*?\*\//g, '');
+    const block = /@media \(min-width: 48rem\) \{\s*\[data-part='log'\] \{([^}]*)\}\s*\[data-part='channel-head'\],\s*\[data-part='channel-view'\] \[data-part='composer'\] \{([^}]*)\}/.exec(css);
+    assert.ok(block, `${id}.css has no reading column`);
+    assert.match(block![1]!, /calc\(\(100% - 44rem\) \/ 2\)/);
+    assert.match(block![2]!, /calc\(\(100% - 44rem\) \/ 2/);
   });
 }

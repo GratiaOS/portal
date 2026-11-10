@@ -96,8 +96,8 @@ parts keeps working everywhere else; those rules simply find nothing now.
 
 | part | what it is | state |
 | --- | --- | --- |
-| `room` | the side and the channel next to it | |
-| `side` | channels, people, you | |
+| `room` | the side and the channel next to it | `data-sheet` while the sheet of a narrow page is open |
+| `side` | channels, people, you; on a narrow page it is the sheet that comes up from the foot (`position: fixed`, `visibility: hidden` while closed, so that it cannot be tabbed into) | |
 | `channels` | the group of channels, with its `label` | |
 | `label` | a small heading in the side (channels, people) | |
 | `channel-list` | the list of channels | |
@@ -141,6 +141,16 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `older` | holds the button for older messages | |
 | `older-button` | the button | `disabled` while loading |
 | `empty` | the line for a channel where nothing has been said | |
+| `topbar` | on a narrow page (under 48 rem), the bar above the room: where you are, who is here, how the line is, the settings; hidden on a wide one | |
+| `topbar-room` | the button that opens the sheet, with the name of the room | `aria-expanded` |
+| `topbar-title` | the name of the room in it | |
+| `topbar-caret` | its little arrow | |
+| `topbar-people` | how many are here | |
+| `topbar-time` | a visitor's minutes left, only in the last ten | |
+| `topbar-settings` | the second button that opens the sheet | |
+| `sheet-backdrop` | the cover behind the open sheet; a press on it closes it | |
+| `visit-as` | in a visitor's side: who they are writing as | |
+| `visit-time` | in a visitor's side: how long the visit has left | |
 | `welcome` | what a visitor finds at the top of the room: a whisper and two lines; made by the page, no message, and it does not fade | |
 | `welcome-whisper` | its first line, the whisper of the place | |
 | `welcome-map` | the two lines under it: nothing follows you, nothing is asked of you | |

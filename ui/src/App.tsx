@@ -34,7 +34,7 @@ export default function App() {
       return;
     }
     keepToken(result.entered.token);
-    keepGuest();
+    keepGuest(result.entered.expiresAt);
     // the visit goes on at the root: a reload there reuses the key and does not make another guest
     if (byLink) history.replaceState(null, '', '/');
     setDoor('idle');

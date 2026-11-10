@@ -710,6 +710,155 @@
     color: var(--quiet);
   }
 
+  /* the top bar and the sheet of a narrow page: the rooms, the people and the settings are behind the bar, so that what is said has the page */
+  [data-part='topbar'],
+  [data-part='sheet-backdrop'] {
+    display: none;
+  }
+
+  [data-part='visit-as'],
+  [data-part='visit-time'] {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 47.99rem) {
+    [data-part='topbar'] {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 56px;
+      padding: 0 0.5rem 0 0.75rem;
+      font-size: 0.875rem;
+      color: var(--ink);
+      background: var(--paper);
+      border-bottom: 2px solid var(--ink);
+    }
+
+    [data-part='topbar-room'] {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      min-height: 44px;
+      align-items: center;
+      gap: 0.375rem;
+      text-align: left;
+      font-weight: 600;
+      color: inherit;
+      font-family: var(--serif);
+    }
+
+    [data-part='topbar-title'] {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    [data-part='topbar-caret'] {
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+    }
+
+    [data-part='topbar-people'],
+    [data-part='topbar-time'] {
+      flex-shrink: 0;
+      font-size: 0.8125rem;
+      color: var(--ink-soft);
+    }
+
+    /* only the dot of the connection: the words stay for a screen reader */
+    [data-part='topbar'] [data-part='signal'] {
+      font-size: 0;
+      gap: 0;
+    }
+
+    [data-part='topbar-settings'] {
+      flex-shrink: 0;
+      min-width: 44px;
+      min-height: 44px;
+      font-size: 1.125rem;
+      color: inherit;
+    }
+
+    [data-part='channel-head'] {
+      display: none;
+    }
+
+    [data-part='side'] {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 30;
+      max-height: 80vh;
+      max-height: 80dvh;
+      overflow-y: auto;
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      transform: translateY(100%);
+      visibility: hidden;
+      transition: transform 0.2s ease, visibility 0s linear 0.2s;
+      background: var(--paper);
+      border-top: 2px solid var(--ink);
+    }
+
+    [data-part='self'] {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    [data-part='side-foot'] {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    [data-part='room'][data-sheet] [data-part='side'] {
+      transform: none;
+      visibility: visible;
+      transition: transform 0.2s ease;
+    }
+
+    [data-part='sheet-backdrop'] {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      border: 0;
+      background: oklch(0.2 0.02 250 / 0.4);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    [data-part='room'][data-sheet] [data-part='sheet-backdrop'] {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-part='side'],
+      [data-part='sheet-backdrop'] {
+        transition: none;
+      }
+    }
+  }
+
+  /* the reading column: what is said and where it is written keep to about 44 rem and sit in the middle of the room, so that on a wide screen a line does not run from one end of it to the other */
+  @media (min-width: 48rem) {
+    [data-part='log'] {
+      padding-inline: max(0px, calc((100% - 44rem) / 2));
+    }
+
+    [data-part='channel-head'],
+    [data-part='channel-view'] [data-part='composer'] {
+      padding-inline: max(var(--pad), calc((100% - 44rem) / 2 + var(--pad)));
+    }
+  }
+
   /* touch: on a phone or a tablet what is pressed is at least 44 px, and what is written is 16 px so that iOS does not zoom the page at the focus; with a mouse the look is as it was */
   @media (pointer: coarse) {
     [data-part='skin-option'],
@@ -852,7 +1001,7 @@
   /* the third column, only where the channel keeps room for its rows: a ruled margin with a line in it, still (after the rules of the wide page, so that it wins over their two columns) */
   @media (min-width: 64rem) {
     [data-part='room'] {
-      grid-template-columns: 15rem minmax(0, 1fr) 13rem;
+      grid-template-columns: 15rem minmax(0, 1fr) 10.5rem;
     }
 
     [data-part='field'] {

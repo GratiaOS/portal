@@ -3,6 +3,10 @@
 
 import type { BuiltInSkin } from './skin.ts';
 
+const minutesRo = (n: number) => (n === 1 ? 'un minut' : `${n} ${n % 100 >= 1 && n % 100 <= 19 ? '' : 'de '}minute`);
+const minutesEn = (n: number) => (n === 1 ? '1 minute' : `${n} minutes`);
+const minutesEs = (n: number) => (n === 1 ? '1 minuto' : `${n} minutos`);
+
 export type Strings = {
   signInTitle: string;
   signInHint: string;
@@ -29,6 +33,14 @@ export type Strings = {
   guestWelcome: string;
   /** Under the whisper, three things said to someone who has just come in and knows nothing: nothing follows you (and, when the portal says how long, that everything fades), and nothing is asked of you. */
   guestFade: (minutes?: number) => string;
+  /** The top bar of a narrow page and the sheet behind it: where the rooms, the people and the settings are. */
+  menu: string;
+  settings: string;
+  closeSheet: string;
+  hereCount: (count: number) => string;
+  /** In a visitor's sheet: who they are writing as, and how long the visit has left. */
+  guestAs: (alias: string) => string;
+  guestEndsIn: (minutes: number) => string;
   guestRest: string;
   /** Said when a visit has ended, on the gate it returns to. */
   visitEnded: string;
@@ -108,6 +120,12 @@ const ro: Strings = {
   guestWelcome: 'Multe aripi, același zbor.',
   guestFade: (minutes) => (minutes === undefined ? 'Nicio istorie nu te urmează aici.' : `Nicio istorie nu te urmează aici. Totul se estompează în ${minutes === 1 ? 'un minut' : `${minutes} ${minutes % 100 >= 1 && minutes % 100 <= 19 ? '' : 'de '}minute`}.`),
   guestRest: 'Vorbește cu camera, sau doar odihnește-te.',
+  menu: 'Camere și setări',
+  settings: 'Setări',
+  closeSheet: 'Închide',
+  hereCount: (count) => `${count} aici`,
+  guestAs: (alias) => `Scrii ca ${alias}.`,
+  guestEndsIn: (minutes) => `Vizita ta se încheie în ${minutesRo(minutes)}.`,
   visitEnded: 'Vizita ta s-a încheiat.',
   enter: 'Intră',
   checking: 'Verific…',
@@ -177,6 +195,12 @@ const en: Strings = {
   guestWelcome: 'Many wings, same flight.',
   guestFade: (minutes) => (minutes === undefined ? 'No history follows you here.' : `No history follows you here. Everything fades in ${minutes === 1 ? '1 minute' : `${minutes} minutes`}.`),
   guestRest: 'Speak to the room, or just rest.',
+  menu: 'Rooms and settings',
+  settings: 'Settings',
+  closeSheet: 'Close',
+  hereCount: (count) => `${count} here`,
+  guestAs: (alias) => `You are writing as ${alias}.`,
+  guestEndsIn: (minutes) => `Your visit ends in ${minutesEn(minutes)}.`,
   visitEnded: 'Your visit has ended.',
   enter: 'Enter',
   checking: 'Checking…',
@@ -246,6 +270,12 @@ const es: Strings = {
   guestWelcome: 'Muchas alas, un mismo vuelo.',
   guestFade: (minutes) => (minutes === undefined ? 'Aquí no te sigue ningún historial.' : `Aquí no te sigue ningún historial. Todo se desvanece en ${minutes === 1 ? '1 minuto' : `${minutes} minutos`}.`),
   guestRest: 'Habla con la sala, o simplemente descansa.',
+  menu: 'Salas y ajustes',
+  settings: 'Ajustes',
+  closeSheet: 'Cerrar',
+  hereCount: (count) => `${count} aquí`,
+  guestAs: (alias) => `Escribes como ${alias}.`,
+  guestEndsIn: (minutes) => `Tu visita termina en ${minutesEs(minutes)}.`,
   visitEnded: 'Tu visita ha terminado.',
   enter: 'Entrar',
   checking: 'Comprobando…',

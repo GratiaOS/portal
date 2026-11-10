@@ -2,7 +2,7 @@
 
 Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
-**Verified:** 2026-11-10, against `main@1a5220c`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
+**Verified:** 2026-11-10, against `main@c88154b`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that only move this file). It warns, it never blocks.
 
 ## Now
 
@@ -19,6 +19,7 @@ Where El portal is, for whoever starts work on it next. Short on purpose: what c
 - A whisper of the place for a visitor, *Many wings, same flight.*, in Romanian, English and Spanish ([#22](https://github.com/GratiaOS/portal/pull/22)); since [#29](https://github.com/GratiaOS/portal/pull/29) it is a bubble that is no one's at the foot of the room, with two lines under it (nothing follows you, everything fades; nothing is asked of you), made on the visitor's page and kept nowhere.
 - **The guest room has a trail** ([#29](https://github.com/GratiaOS/portal/pull/29)): each message fades on the page and is let go after `guests.trailMinutes` (15), one at a time, in one statement at the check that already runs; a guest is not given a turn past it by history, replay or the companion's context. The end by absence stays for the guests, their keys and what is left.
 - A person can be renamed (`renamedFrom` in `participants`, [#31](https://github.com/GratiaOS/portal/pull/31)): what they said and their place move to the new alias once. It was used on the first portal (`magni` to `rdm`) and then taken out of its config; that portal's rooms are titled ⛲ PlazaDelSol and 🅿️ Parking (titles only: the ids are still `general` and `guests`).
+- On a narrow page (under 48 rem) the rooms, the people and the settings are a sheet behind a top bar, and a visitor's sheet says who they write as and how long the visit has left ([#35](https://github.com/GratiaOS/portal/pull/35)); on a wide page what is said keeps to a reading column of about 44 rem, and the side on the left is the anchor, unchanged ([#36](https://github.com/GratiaOS/portal/pull/36)). A rail for desktop was weighed and left out: it would add state for little.
 - Touch screens ([#32](https://github.com/GratiaOS/portal/pull/32)): what is pressed is 44 px and the box for writing is 16 px, in the three looks, measured at 375 px, not yet on a real phone. An address in a message is a link, `http(s)` only, nothing fetched ([#33](https://github.com/GratiaOS/portal/pull/33)).
 - The gate: the doorway is as tall as what is in it, the key is in the field (`🗝️ your token`), and *Step through* goes by the field: a key goes in as the person, nothing is the door for visitors ([#20](https://github.com/GratiaOS/portal/pull/20)).
 

@@ -39,9 +39,22 @@ export function readGuest(): boolean {
   }
 }
 
-export function keepGuest(): void {
+const UNTIL_KEY = 'portal.guest.until';
+
+/** When the visit ends (ms since the epoch), kept for the tab so that a reload still knows; `undefined` when it was not kept. */
+export function readGuestUntil(): number | undefined {
+  try {
+    const value = Number(sessionStorage.getItem(UNTIL_KEY));
+    return Number.isFinite(value) && value > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function keepGuest(until?: number): void {
   try {
     sessionStorage.setItem(GUEST_KEY, '1');
+    if (until !== undefined) sessionStorage.setItem(UNTIL_KEY, String(until));
   } catch {
     /* in memory only */
   }
@@ -50,6 +63,7 @@ export function keepGuest(): void {
 export function forgetGuest(): void {
   try {
     sessionStorage.removeItem(GUEST_KEY);
+    sessionStorage.removeItem(UNTIL_KEY);
   } catch {
     /* nothing kept */
   }
