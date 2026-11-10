@@ -77,6 +77,7 @@ export class Portal extends DurableObject<Env> {
       rateLimit: { messages: config.rateLimit.messages, windowMs: config.rateLimit.perSeconds * 1000 },
       maxStreamsPerParticipant: config.maxStreamsPerParticipant,
       callerFromHome: true,
+      name: config.name,
       guests: config.guests,
       hints: config.nova ? { companion: config.nova.alias, examples: config.nova.examples } : undefined,
       // a guest is told of her companion, with her examples and never the team's, as in Node
@@ -171,7 +172,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     // one portal, one object: everything it answers goes there, skins included (none from a folder here, so a calm 404)
-    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/skins/')) {
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/skins/') || url.pathname === '/manifest.webmanifest') {
       // who is calling, from Cloudflare, under the name the handler counts wrong keys by; whatever the client sent there is replaced
       const forwarded = new Request(request);
       forwarded.headers.set(CALLER_HEADER, request.headers.get('cf-connecting-ip') ?? 'unknown');

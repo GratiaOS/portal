@@ -85,6 +85,8 @@ export type RoomConfig = {
   host: string;
   /** A file, or `:memory:`. */
   dbPath: string;
+  /** What this portal is called where it is installed or named (`Firegate`); without it, `El portal`. */
+  name?: string;
   participants: ConfigParticipant[];
   rooms: ConversationInput[];
   rateLimit: { messages: number; perSeconds: number };
@@ -213,6 +215,13 @@ function renamedFromOf(value: unknown, alias: string, kind: string, index: numbe
   return from;
 }
 
+/** The name of the portal: one line of words, up to 40 characters (it is a name on a home screen, not a sentence). */
+function portalName(value: unknown): string {
+  const name = text(value, 'name');
+  if (name.length > 40 || /[\n\r<>]/.test(name)) throw new ConfigError('name must be one line of up to 40 characters, without < or >');
+  return name;
+}
+
 export function parseConfig(raw: unknown, baseDir: string = process.cwd()): RoomConfig {
   if (!isRecord(raw)) throw new ConfigError('the config must be a JSON object');
 
@@ -287,6 +296,7 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
     port: whole(raw.port, 3100, 'port', { min: 0, max: 65535 }),
     host: raw.host === undefined ? '127.0.0.1' : text(raw.host, 'host'),
     dbPath: dbPath === ':memory:' ? dbPath : resolve(baseDir, dbPath),
+    ...(raw.name === undefined ? {} : { name: portalName(raw.name) }),
     participants,
     rooms,
     rateLimit: {

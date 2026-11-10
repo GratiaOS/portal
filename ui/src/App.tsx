@@ -68,7 +68,7 @@ export default function App() {
             ended={ended}
             door={opens ? { state: door, onStep: () => void step(), only: byLink } : undefined}
             onEnter={(entered) => {
-              keepToken(entered);
+              keepToken(entered, true); // a person of the team: kept on the device when the page is the installed app
               setEnded(false);
               setToken(entered);
             }}
