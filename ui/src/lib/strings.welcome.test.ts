@@ -20,3 +20,12 @@ test('minutes are said right in each language, at one and at many', () => {
   assert.match(stringsFor('ro').guestFade(20), /în 20 de minute\./);
   assert.match(stringsFor('es').guestFade(15), /en 15 minutos\./);
 });
+
+test('the sheet of a visitor says who they write as and how long the visit has left, in each language', () => {
+  assert.equal(stringsFor('en').guestAs('swift'), 'You are writing as swift.');
+  assert.equal(stringsFor('en').guestEndsIn(1), 'Your visit ends in 1 minute.');
+  assert.equal(stringsFor('ro').guestEndsIn(8), 'Vizita ta se încheie în 8 minute.');
+  assert.equal(stringsFor('ro').guestEndsIn(20), 'Vizita ta se încheie în 20 de minute.');
+  assert.equal(stringsFor('es').guestEndsIn(8), 'Tu visita termina en 8 minutos.');
+  assert.equal(stringsFor('en').hereCount(3), '3 here');
+});

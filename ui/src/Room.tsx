@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import SignalQuality from './components/SignalQuality.tsx';
 import { fadeOf, inTrail, opacityOf } from './lib/trail.ts';
 import ChannelList from './components/ChannelList.tsx';
 import ChannelView from './components/ChannelView.tsx';
@@ -15,7 +16,8 @@ import { useArrived } from './lib/arrivals.ts';
 import { useSpoke } from './lib/spoke.ts';
 import { leavingEndsAVisit } from './lib/guest.ts';
 import { useLang } from './lib/lang.ts';
-import { readGuest } from './lib/session.ts';
+import { readGuest, readGuestUntil } from './lib/session.ts';
+import { SAY_FROM, minutesLeft } from './lib/visit.ts';
 import { stringsFor } from './lib/strings.ts';
 import type { Hints, SkinInfo } from './lib/types.ts';
 import { useNotify } from './lib/useNotify.ts';
@@ -130,6 +132,36 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
       .finally(() => setLoadingFor(undefined));
   }, [api, channelId, dispatch, olderThan]);
 
+  // on a narrow page the rooms, the people and the settings are a sheet behind the top bar, closed by the backdrop, by Escape and by choosing a room
+  const [sheet, setSheet] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const side = useRef<HTMLElement>(null);
+  const opened = useRef(false);
+  useEffect(() => setSheet(false), [channelId]);
+  useEffect(() => {
+    if (sheet) {
+      opened.current = true;
+      side.current?.focus({ preventScroll: true });
+    } else if (opened.current) {
+      opened.current = false;
+      trigger.current?.focus({ preventScroll: true });
+    }
+    if (!sheet) return;
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setSheet(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sheet]);
+
+  // a visitor's visit, counted on their own clock: said aloud only in its last minutes, always in the sheet
+  const until = guest ? readGuestUntil() : undefined;
+  const [clockNow, setClockNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (until === undefined) return;
+    const every = setInterval(() => setClockNow(Date.now()), 30_000);
+    return () => clearInterval(every);
+  }, [until]);
+  const left = minutesLeft(until, clockNow);
+
   const [note, setNote] = useState('');
   const send = useCallback(
     async (text: string) => {
@@ -155,8 +187,23 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
   );
 
   return (
-    <div data-part="room">
-      <aside data-part="side">
+    <div data-part="room" data-sheet={sheet ? '' : undefined}>
+      <header data-part="topbar">
+        <button type="button" data-part="topbar-room" ref={trigger} aria-expanded={sheet} aria-controls="side" aria-label={t.menu} onClick={() => setSheet((open) => !open)}>
+          <span data-part="topbar-title">{selected?.title}</span>
+          <span aria-hidden data-part="topbar-caret">
+            ▾
+          </span>
+        </button>
+        <span data-part="topbar-people">{t.hereCount(guest ? othersHere + 1 : people.filter((p) => p.here).length)}</span>
+        {guest && left !== undefined && left <= SAY_FROM && <span data-part="topbar-time">⏱ {left} min</span>}
+        <SignalQuality connection={state.connection} t={t} />
+        <button type="button" data-part="topbar-settings" aria-label={t.settings} onClick={() => setSheet(true)}>
+          ⚙
+        </button>
+      </header>
+      <button type="button" data-part="sheet-backdrop" aria-label={t.closeSheet} tabIndex={-1} onClick={() => setSheet(false)} />
+      <aside data-part="side" id="side" ref={side} tabIndex={-1}>
         {!guest && (
           <div data-part="channels">
             <p data-part="label">
@@ -166,6 +213,12 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
           </div>
         )}
         <div data-part="side-foot">
+          {guest && state.you && (
+            <>
+              <p data-part="visit-as">{t.guestAs(state.you.alias)}</p>
+              {left !== undefined && <p data-part="visit-time">{t.guestEndsIn(left)}</p>}
+            </>
+          )}
           {guest ? (
             <p data-part="label" role="status">
               {othersHere === 0 ? t.guestAlone : t.guestOthers(othersHere)}
