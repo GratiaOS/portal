@@ -40,7 +40,7 @@ A portal that opens a guest room needs its own config for it (and an engine, if 
 - The guest room on Cloudflare is checked locally with stand-in models (`pnpm cloudflare:check`); its first real opening found a defect the check had not looked for (#24), so what the check does not open is not known to work.
 - Measured once, not enough: `guest-docs/` with a real model (eight questions, three languages, one run); not measured: Spanish by eye, in the page and on a phone; Nova's one-step habit with a real model (it is only a line of her prompt); contrast of the faint text by skin; Android Chrome notifications.
 
-- A turn past the trail stays in the object's storage until the next check (at most the least of ten minutes, `trailMinutes` and `forgetAfterMinutes`): guests are not given it, but the team's readers of the guest room are, in that window.
+- A turn past the trail stays in the object's storage until the next check (about the least of ten minutes, `trailMinutes` and `forgetAfterMinutes`, and later by the delay of the alarm itself, which Cloudflare says can be a minute during maintenance or failover: a guide, not a ceiling): guests are not given it, but the team's readers of the guest room are, in that window.
 
 ## How this stays true
 
