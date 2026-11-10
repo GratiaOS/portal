@@ -45,3 +45,19 @@ test('a team room is never touched by the trail', () => {
   assert.equal(store.forgetGuestTrail(TRAIL), 0);
   assert.equal(store.listTurns('general').length, 1);
 });
+
+test('a guest who reconnects is not replayed a turn past the trail, even before the portal lets it go', async () => {
+  const { Hub } = await import('../dist/index.js');
+  const { fakeSink } = await import('./helpers.mjs');
+  const { store, clock, owl, say } = setup();
+  const hub = new Hub(store, { graceMs: 20, now: () => clock.now, trailMinutes: 15 });
+  say(owl.id, 'guests', 'old');
+  clock.now += 10 * MIN;
+  say(owl.id, 'guests', 'recent');
+  clock.now += 6 * MIN; // the first is 16 minutes old (past the trail), the second 6; nothing has been let go yet
+  const sink = fakeSink();
+  hub.subscribe(store.getParticipant(owl.id), sink, '0');
+  const said = sink.frames().filter((f) => f.event === 'message').map((f) => f.data.text);
+  assert.deepEqual(said, ['recent']);
+  assert.equal(sink.frames()[0].data.trailMinutes, 15, 'and the hello tells the guest how long what is said lasts');
+});

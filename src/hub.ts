@@ -228,10 +228,13 @@ export class Hub {
     let cursor = Number.parseInt(String(lastEventId ?? ''), 10);
     if (!Number.isInteger(cursor) || cursor < 0) return; // nothing asked for; history comes from the REST side
 
+    // a guest is not given what has outlived the trail, even in the minutes before the portal lets it go
+    const since = connection.participant.kind === 'guest' && this.trailMinutes ? new Date(this.now() - this.trailMinutes * 60_000).toISOString() : undefined;
     for (;;) {
       const page = this.store.turnsAfter(cursor, REPLAY_PAGE);
       for (const turn of page) {
         if (!this.mayRead(connection.participant, turn.conversationId)) continue;
+        if (since && turn.createdAt < since) continue;
         if (!this.deliver(connection, frame('message', turn, turn.seq))) return;
       }
       if (page.length < REPLAY_PAGE) return;
