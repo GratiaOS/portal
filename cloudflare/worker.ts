@@ -131,7 +131,9 @@ export class Portal extends DurableObject<Env> {
 
   private every(): number {
     const ms = Number(this.env.PORTAL_FORGET_EVERY_MS);
-    return Number.isFinite(ms) && ms >= 1000 ? ms : 10 * 60_000;
+    const base = Number.isFinite(ms) && ms >= 1000 ? ms : 10 * 60_000;
+    // never slower than what the guest room lets go of: a trail of one minute is not checked every ten
+    return Math.min(base, this.guestsTrailMs ?? base, this.guestsForgetAfterMs ?? base);
   }
 
   // what the portal no longer keeps goes now, and then at every alarm; a number in the log, never a message
