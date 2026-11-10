@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.2.0 (2026-11-10)
+
+A room that is open to visitors, the page on a phone, and the portal as an app. Whoever runs a portal: the database moves to version 8 at the next start (and does not go back), and what is new in the config is all optional (`name`, `guests` with its `trailMinutes`, `forgetAfterMinutes`, `minutes`, `maxActive`, `perCaller` and `nova`, and `renamedFrom` on a person); a portal that does not use them is as it was. The contract for skins is still `1`; the parts that were added are listed in `ui/src/skins/README.md`, and a look that does not answer them still works. Running one: [INSTALL.md](INSTALL.md).
+
 - **A starter folder for the companion for guests** (`guest-docs/`): five short documents about the portal as a program, written for visitors and the same for anyone who runs one, to point `guests.nova.knowledgeDir` at, extend or replace. A test keeps the figures they give equal to the defaults in the code.
 - **A visitor who leaves ends their time** (`POST /api/guest/leave`, and the page's *Leave* does it): the key stops opening anything, the stream closes, the guest is not shown as here, and the slot is free for the next one. What was said stays until the room ends by absence, counted from the leaving.
 - **The companion for guests on Cloudflare.** The Worker wakes her as Node does, on her own engine (a secret of her own) and from her own bundle (`guestFiles` in `cloudflare/knowledge.json`, made by `bundle-knowledge.mjs` from `guests.nova.knowledgeDir`, apart from the team's); a portal there no longer refuses to open with her turned on. The Cloudflare check runs a guest through it with two stand-in models.
@@ -30,8 +36,8 @@
   the trail, even before it is let go. The end by absence stays for the guests, their keys and what is left.
 - **A welcome for a visitor, three lines.** Above the room, for someone who has just come in and knows nothing: the whisper of the place, that no history follows them and everything fades (after `trailMinutes`, when the portal says), and that nothing is asked of them. No instructions, no link, nothing about the companion. It is made on the visitor's page: no turn, no row in the database, nothing kept, and it does not fade with the trail. Three new parts for skins (`welcome`, `welcome-whisper`, `welcome-map`), listed in the contract; the contract number is unchanged, since a skin that does not answer them still works.
 - **Nova for guests, off until chosen** (`guests.nova`): an engine of her own, a public folder of her own, facts made without the team's names, a
-  budget of questions per guest and per hour counted before the model is called, and no entry in the list of what the knowledge lacked. Not on
-  Cloudflare yet. The database moves to version 8 at the next start.
+  budget of questions per guest and per hour counted before the model is called, and no entry in the list of what the knowledge lacked. On Cloudflare too
+  (see above). The database moves to version 8 at the next start.
 
 ## 0.1.0 (2026-11-05)
 
