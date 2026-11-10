@@ -8,19 +8,16 @@ Written new, [MPL-2.0](LICENSE), with where its parts come from in [TRACES.md](T
 
 ## 🗺️ MAP
 
-You are at the start. This is the road, and where to read more at each stop.
+Your way into the portal. Start here, and take it one step at a time.
 
-```
- 🗺️ here ─► ⛰️ where you are going
-              │
-              ├─ 📍 1  See it         a portal on your machine in a minute      pnpm dev
-              ├─ 📍 2  Keep one       your people, your tokens, your database   INSTALL.md
-              ├─ 📍 3  Give it a companion   Nova, from a folder, on your model docs/nova.md
-              ├─ 📍 4  Open a door    a room for visitors, that forgets         INSTALL.md › A guest room
-              ├─ 📍 5  Put it online  Cloudflare or Node, and an app            INSTALL.md › On Cloudflare
-              ├─ 📍 6  Make it yours  a new look in two minutes                 skins/template
-              └─ 🏕️ rest              what you can rely on, and what is not yet
-```
+1. **See it.** Run the portal on your machine: `pnpm dev`.
+2. **Run your own.** Set up your people, their tokens and your database: [INSTALL.md](INSTALL.md).
+3. **Add a companion.** Meet Nova: give her a folder and connect your model: [docs/nova.md](docs/nova.md).
+4. **Invite visitors.** Open a guest room that forgets when they are gone: [INSTALL.md](INSTALL.md), *A guest room*.
+5. **Put it online.** Deploy it on Cloudflare or Node, then add it to a phone or a PC as an app, straight from the browser: [INSTALL.md](INSTALL.md), *On Cloudflare*.
+6. **Make it yours.** Give the portal another look, with a skin: [`skins/template`](skins/template).
+
+Then 🏕️ rest: what you can rely on, and what is still taking shape.
 
 | If you want to… | read |
 | --- | --- |
@@ -62,7 +59,7 @@ It prints a link and a key for each person, and nothing else is needed: the room
 
 A look at the whole thing played out, with a stand-in Nova: `pnpm demo`.
 
-## 📍 Checkpoint 2: keep one
+## 📍 Checkpoint 2: run your own
 
 ```bash
 cp portal.example.json portal.local.json                      # your config; gitignored
@@ -73,11 +70,11 @@ pnpm start
 
 You should see the version and the address it listens on (`127.0.0.1`: anything wider belongs behind TLS). The config says who is in, in which rooms and for how long things are kept (`"retention"`); the tokens are kept apart so the config can be shared. More, and two portals on one machine (one to try things on): [docs/running.md](docs/running.md) and [INSTALL.md](INSTALL.md).
 
-## 📍 Checkpoint 3: give it a companion
+## 📍 Checkpoint 3: add a companion
 
 Add a `nova` section to the config: the model (any OpenAI-compatible endpoint, with the *name* of the variable that holds its key) and `knowledgeDir`, a folder of markdown outside this repo. She says what she read, what she left out, and what she did not know. When someone asks her, that model's server receives the last messages of that room and the folder, less what `nova.exclude` names, so point it at a model you are willing to send them to. All of it: [docs/nova.md](docs/nova.md). To try your endpoint first: `node --env-file=.env scripts/smoke.mjs`.
 
-## 📍 Checkpoint 4: open a door
+## 📍 Checkpoint 4: invite visitors
 
 ```json
 "rooms": [{ "id": "general", "title": "General" }, { "id": "guests", "title": "Guests", "kind": "guest" }],
@@ -88,7 +85,7 @@ A visitor at `/guest` is given a name, a key and that room, for 60 minutes, and 
 
 ## 📍 Checkpoint 5: put it online
 
-On Cloudflare, `pnpm cloudflare:deploy` puts the page on the Worker's assets and the portal in one Durable Object (the config and the tokens are secrets; the steps are in [INSTALL.md](INSTALL.md#on-cloudflare)). On Node, behind a TLS proxy you choose. Either way, `name` in the config is what the portal is called, and the page can be installed as an app: ⚙ offers it where the browser gives the means, and says how on iOS. A person of the team who signs in *in the installed app* stays signed in on that device until they sign out; a visitor never does. A deploy or a new secret can take five minutes to reach a running object.
+On Cloudflare, `pnpm cloudflare:deploy` puts the page on the Worker's assets and the portal in one Durable Object (the config and the tokens are secrets; the steps are in [INSTALL.md](INSTALL.md#on-cloudflare)). On Node, behind a TLS proxy you choose. Either way, `name` in the config is what the portal is called. There is no separate app to build or configure: the portal's own page can be installed from the browser, on a phone or a PC (⚙ offers it where the browser gives the means, and says how on iOS). A person of the team who signs in *in the installed app* stays signed in on that device until they sign out; a visitor never does. A deploy or a new secret can take five minutes to reach a running object.
 
 ## 📍 Checkpoint 6: make it yours
 
