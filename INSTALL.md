@@ -1,5 +1,7 @@
 # Install
 
+To see one first, with nothing to set up: `pnpm install && pnpm dev` (the [README](README.md#-checkpoint-1-see-it) says what you get). What follows is a portal that is kept.
+
 For whoever runs a portal for their people: one process, one config, one database file, on a machine you choose.
 
 ## What it needs

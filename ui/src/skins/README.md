@@ -37,7 +37,7 @@ Every part below has a rule in each of them (a test checks it). Read one as the 
 
 ## Skins from a folder (a room's own)
 
-A room can offer looks of its own, next to the three built in. Put a folder of skins next to the config and name it in `skinsDir`; the
+A room can offer looks of its own, next to the three built in. [`skins/template`](../../../skins/template) in the repository is one to copy: five colours to change, and a look in two minutes (`pnpm dev` offers the folder). Put a folder of skins next to the config and name it in `skinsDir`; the
 room serves it and offers each good skin as one more button in the side.
 
 ```
