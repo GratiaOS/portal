@@ -2,17 +2,21 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { stringsFor } from './strings.ts';
 
-test('the map says what the portal told and nothing it did not: no companion, no line about her', () => {
+test('the welcome says three things and no more: the whisper, that nothing follows and all fades, that nothing is asked', () => {
   const t = stringsFor('en');
-  assert.match(t.guestMapAsk('Nova', 'what is a portal?'), /@Nova, what is a portal\?/);
-  assert.match(t.guestMapAsk('Nova'), /start with @Nova/);
+  assert.equal(t.guestFade(15), 'No history follows you here. Everything fades in 15 minutes.');
+  assert.equal(t.guestRest, 'Speak to the room, or just rest.');
+});
+
+test('a portal that does not say how long still says that nothing follows, and promises no time', () => {
+  for (const locale of ['en', 'ro', 'es']) assert.doesNotMatch(stringsFor(locale).guestFade(undefined), /\d/, locale);
 });
 
 test('minutes are said right in each language, at one and at many', () => {
-  assert.match(stringsFor('en').guestMapTrail(1), /after 1 minute\./);
-  assert.match(stringsFor('en').guestMapTrail(15), /after 15 minutes\./);
-  assert.match(stringsFor('ro').guestMapTrail(1), /după un minut\./);
-  assert.match(stringsFor('ro').guestMapTrail(15), /după 15 minute\./);
-  assert.match(stringsFor('ro').guestMapTrail(20), /după 20 de minute\./);
-  assert.match(stringsFor('es').guestMapTrail(15), /a los 15 minutos\./);
+  assert.match(stringsFor('en').guestFade(1), /in 1 minute\./);
+  assert.match(stringsFor('en').guestFade(15), /in 15 minutes\./);
+  assert.match(stringsFor('ro').guestFade(1), /în un minut\./);
+  assert.match(stringsFor('ro').guestFade(15), /în 15 minute\./);
+  assert.match(stringsFor('ro').guestFade(20), /în 20 de minute\./);
+  assert.match(stringsFor('es').guestFade(15), /en 15 minutos\./);
 });

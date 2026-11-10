@@ -15,8 +15,10 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiError, createApi } from '../lib/client.ts';
 import { useLang } from '../lib/lang.ts';
-import { RUN_YOUR_OWN } from '../lib/links.ts';
 import { stringsFor } from '../lib/strings.ts';
+
+/** The place the "run your own" link leads to: the repository of the portal, public since 0.1.0. */
+const RUN_YOUR_OWN = 'https://github.com/GratiaOS/portal';
 
 
 /**

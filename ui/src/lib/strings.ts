@@ -27,11 +27,9 @@ export type Strings = {
   guestNotPrivate: string;
   /** The whisper of the place, said to a visitor where the room is empty: the family's own line (gratia.space, M3), never a line in Nova's mouth. */
   guestWelcome: string;
-  /** The little map under the whisper, for a visitor's first step: what to do here, who may answer, how long it lasts, where the portal comes from. */
-  guestMapSay: string;
-  guestMapAsk: (companion: string, example?: string) => string;
-  guestMapTrail: (minutes: number) => string;
-  guestMapOwn: string;
+  /** Under the whisper, three things said to someone who has just come in and knows nothing: nothing follows you (and, when the portal says how long, that everything fades), and nothing is asked of you. */
+  guestFade: (minutes?: number) => string;
+  guestRest: string;
   /** Said when a visit has ended, on the gate it returns to. */
   visitEnded: string;
   enter: string;
@@ -108,10 +106,8 @@ const ro: Strings = {
   guestLeave: 'Pleacă',
   guestNotPrivate: 'Ce scrii aici poate fi citit de oricine e în cameră și de cine rulează portalul.',
   guestWelcome: 'Multe aripi, același zbor.',
-  guestMapSay: 'Spune ceva: cine e aici o să vadă.',
-  guestMapAsk: (companion, example) => (example ? `Întreab-o pe ${companion}, care citește documentele publice ale portalului: @${companion}, ${example}` : `Poți vorbi cu ${companion}, care citește documentele publice ale portalului: scrie @${companion} la început.`),
-  guestMapTrail: (minutes) => `Ce se spune aici se estompează și dispare după ${minutes === 1 ? 'un minut' : `${minutes} ${minutes % 100 >= 1 && minutes % 100 <= 19 ? '' : 'de '}minute`}.`,
-  guestMapOwn: 'Îți place? Poți avea o cameră ca asta:',
+  guestFade: (minutes) => (minutes === undefined ? 'Nicio istorie nu te urmează aici.' : `Nicio istorie nu te urmează aici. Totul se estompează în ${minutes === 1 ? 'un minut' : `${minutes} ${minutes % 100 >= 1 && minutes % 100 <= 19 ? '' : 'de '}minute`}.`),
+  guestRest: 'Vorbește cu camera, sau doar odihnește-te.',
   visitEnded: 'Vizita ta s-a încheiat.',
   enter: 'Intră',
   checking: 'Verific…',
@@ -179,10 +175,8 @@ const en: Strings = {
   guestLeave: 'Leave',
   guestNotPrivate: 'What you write here can be read by everyone in the room, and by whoever runs the portal.',
   guestWelcome: 'Many wings, same flight.',
-  guestMapSay: 'Say something: whoever is here will see it.',
-  guestMapAsk: (companion, example) => (example ? `Ask ${companion}, who reads the portal's public documents: @${companion}, ${example}` : `You can talk to ${companion}, who reads the portal's public documents: start with @${companion}.`),
-  guestMapTrail: (minutes) => `What is said here fades and is gone after ${minutes === 1 ? '1 minute' : `${minutes} minutes`}.`,
-  guestMapOwn: 'Like it? You can have a room like this:',
+  guestFade: (minutes) => (minutes === undefined ? 'No history follows you here.' : `No history follows you here. Everything fades in ${minutes === 1 ? '1 minute' : `${minutes} minutes`}.`),
+  guestRest: 'Speak to the room, or just rest.',
   visitEnded: 'Your visit has ended.',
   enter: 'Enter',
   checking: 'Checking…',
@@ -250,10 +244,8 @@ const es: Strings = {
   guestLeave: 'Salir',
   guestNotPrivate: 'Lo que escribes aquí puede leerlo cualquiera que esté en la sala, y quien administra el portal.',
   guestWelcome: 'Muchas alas, un mismo vuelo.',
-  guestMapSay: 'Di algo: quien esté aquí lo verá.',
-  guestMapAsk: (companion, example) => (example ? `Pregúntale a ${companion}, que lee los documentos públicos del portal: @${companion}, ${example}` : `Puedes hablar con ${companion}, que lee los documentos públicos del portal: empieza con @${companion}.`),
-  guestMapTrail: (minutes) => `Lo que se dice aquí se desvanece y desaparece a los ${minutes === 1 ? '1 minuto' : `${minutes} minutos`}.`,
-  guestMapOwn: '¿Te gusta? Puedes tener una sala como esta:',
+  guestFade: (minutes) => (minutes === undefined ? 'Aquí no te sigue ningún historial.' : `Aquí no te sigue ningún historial. Todo se desvanece en ${minutes === 1 ? '1 minuto' : `${minutes} minutos`}.`),
+  guestRest: 'Habla con la sala, o simplemente descansa.',
   visitEnded: 'Tu visita ha terminado.',
   enter: 'Entrar',
   checking: 'Comprobando…',
