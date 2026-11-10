@@ -172,7 +172,7 @@
   [data-part='skin-option'] {
     @apply rounded-lg px-2 py-1 text-sm transition-colors;
     background: transparent;
-    opacity: 0.6;
+    opacity: 0.75;
   }
 
   [data-part='skin-option'][aria-pressed='true'] {
@@ -214,7 +214,7 @@
 
   [data-part='sign-step'] {
     padding: 0 0.25rem;
-    font-size: 0.6rem;
+    font-size: 0.75rem;
     line-height: 1.1;
     color: var(--ink-faint);
     background: transparent;
@@ -378,7 +378,7 @@
     margin: 0 auto 1.5rem;
     padding: 0.875rem 1.5rem;
     text-align: center;
-    color: var(--ink-faint);
+    color: var(--ink-soft);
     background: var(--glass);
     border: 1px dashed var(--glass-edge);
     border-radius: 1.5rem;
@@ -597,6 +597,47 @@
   [data-part='composer-note'] {
     @apply mt-1.5 min-h-4 px-1 text-xs;
     color: var(--quiet);
+  }
+
+  /* touch: on a phone or a tablet what is pressed is at least 44 px, and what is written is 16 px so that iOS does not zoom the page at the focus; with a mouse the look is as it was */
+  @media (pointer: coarse) {
+    [data-part='skin-option'],
+    [data-part='channel'],
+    [data-part='signout'],
+    [data-part='code-copy'],
+    [data-part='sign-slot'],
+    [data-part='sign-step'] {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    [data-part='sign-steps'] {
+      flex-direction: row;
+    }
+
+    [data-part='sign-step'] {
+      font-size: 0.875rem;
+    }
+
+    [data-part='composer-input'] {
+      min-height: 44px;
+      font-size: 16px;
+    }
+
+    [data-part='composer-send'] {
+      min-height: 44px;
+      min-width: 64px;
+    }
+
+    [data-part='composer-note'],
+    [data-part='signout'],
+    [data-part='time'],
+    [data-part='signal'] {
+      font-size: 0.8125rem;
+    }
   }
 
   [data-part='sr-only'] {
