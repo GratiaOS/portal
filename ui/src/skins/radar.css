@@ -955,6 +955,18 @@
     }
   }
 
+  /* the reading column: what is said and where it is written keep to about 44 rem and sit in the middle of the room, so that on a wide screen a line does not run from one end of it to the other */
+  @media (min-width: 48rem) {
+    [data-part='log'] {
+      padding-inline: max(0px, calc((100% - 44rem) / 2));
+    }
+
+    [data-part='channel-head'],
+    [data-part='channel-view'] [data-part='composer'] {
+      padding-inline: max(var(--pad), calc((100% - 44rem) / 2 + var(--pad)));
+    }
+  }
+
   /* touch: on a phone or a tablet what is pressed is at least 44 px, and what is written is 16 px so that iOS does not zoom the page at the focus; with a mouse the look is as it was */
   @media (pointer: coarse) {
     [data-part='skin-option'],
@@ -1092,7 +1104,7 @@
   /* the third column, only where the channel keeps room for its columns (the time, the name, the words): a ruled margin, the line in it breathing at the beat of the scope (after the rules of the wide page, so that it wins over their two columns) */
   @media (min-width: 64rem) {
     [data-part='room'] {
-      grid-template-columns: 19rem minmax(0, 1fr) 13rem;
+      grid-template-columns: 19rem minmax(0, 1fr) 10.5rem;
     }
 
     [data-part='field'] {

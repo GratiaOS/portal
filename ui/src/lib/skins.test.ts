@@ -94,3 +94,13 @@ for (const { id } of SKINS) {
     assert.match(coarse, /\[data-part='composer-input'\] \{[^}]*font-size: 16px/, `${id}: the box for writing is not 16 px (iOS zooms the page below it)`);
   });
 }
+
+for (const { id } of SKINS) {
+  test(`skins: ${id} keeps what is said and where it is written to a reading column on a wide page`, () => {
+    const css = skinCss(id).replace(/\/\*[\s\S]*?\*\//g, '');
+    const block = /@media \(min-width: 48rem\) \{\s*\[data-part='log'\] \{([^}]*)\}\s*\[data-part='channel-head'\],\s*\[data-part='channel-view'\] \[data-part='composer'\] \{([^}]*)\}/.exec(css);
+    assert.ok(block, `${id}.css has no reading column`);
+    assert.match(block![1]!, /calc\(\(100% - 44rem\) \/ 2\)/);
+    assert.match(block![2]!, /calc\(\(100% - 44rem\) \/ 2/);
+  });
+}

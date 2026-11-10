@@ -302,7 +302,7 @@
 
   /* the third column, on a page wide enough for it (64 rem, so that the channel keeps room for its words): a few quiet lines that turn by themselves, on the sky as the left of the page is */
   [data-part='field'] {
-    @apply hidden shrink-0 items-center justify-center px-5 lg:flex lg:w-56;
+    @apply hidden shrink-0 items-center justify-center px-5 lg:flex lg:w-44;
     color: var(--ink-soft);
   }
 
@@ -748,6 +748,18 @@
       [data-part='sheet-backdrop'] {
         transition: none;
       }
+    }
+  }
+
+  /* the reading column: what is said and where it is written keep to about 44 rem and sit in the middle of the room, so that on a wide screen a line does not run from one end of it to the other */
+  @media (min-width: 48rem) {
+    [data-part='log'] {
+      padding-inline: max(1.5rem, calc((100% - 44rem) / 2));
+    }
+
+    [data-part='channel-head'],
+    [data-part='channel-view'] [data-part='composer'] {
+      padding-inline: max(1.5rem, calc((100% - 44rem) / 2 + 0rem));
     }
   }
 
