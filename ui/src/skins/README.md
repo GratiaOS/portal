@@ -137,7 +137,7 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `channel-title` | the title | |
 | `signal` | the connection, told quietly | `data-connection="live \| connecting \| reconnecting \| refused"` |
 | `signal-dot` | its dot | |
-| `log` | what scrolls | |
+| `log` | what scrolls | `data-welcome` when it holds the welcome of a visitor's room: then it should keep its content at its foot (a column that puts the free space above the welcome) |
 | `older` | holds the button for older messages | |
 | `older-button` | the button | `disabled` while loading |
 | `empty` | the line for a channel where nothing has been said | |
@@ -145,7 +145,7 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `welcome-whisper` | its first line, the whisper of the place | |
 | `welcome-map` | the two lines under it: nothing follows you, nothing is asked of you | |
 | `messages` | the list of messages, a `log` for screen readers | |
-| `message` | one message | `data-head` when it is the first of a run by the same person; `data-from="mine \| companion \| other"`; `data-to-you` when it names the reader and the reader did not write it |
+| `message` | one message | `data-head` when it is the first of a run by the same person; `data-from="mine \| companion \| other"`; `data-to-you` when it names the reader and the reader did not write it; `data-fading` when the room lets what is said fade (a visitor's room): the page then sets the element's own `opacity`, so a skin should not set one |
 | `time` | the time it was said | |
 | `message-body` | everything but the time | |
 | `speaker` | the name, once per run; the page gives it `--hue` (0 to 360), a colour that stays with the person | |

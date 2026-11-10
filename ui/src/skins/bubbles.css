@@ -375,7 +375,7 @@
   [data-part='welcome'] {
     width: fit-content;
     max-width: min(26rem, calc(100% - 2rem));
-    margin: 2.5rem auto 1.5rem;
+    margin: 0 auto 1.5rem;
     padding: 0.875rem 1.5rem;
     text-align: center;
     color: var(--ink-faint);
@@ -383,6 +383,17 @@
     border: 1px dashed var(--glass-edge);
     border-radius: 1.5rem;
     opacity: 0.85;
+  }
+
+  /* with a welcome, what the log holds sits at its foot, close to where people write, and goes up as the room fills */
+  [data-part='log'][data-welcome] {
+    display: flex;
+    flex-direction: column;
+    padding-top: 1rem;
+  }
+
+  [data-part='log'][data-welcome] > [data-part='welcome'] {
+    margin-top: auto;
   }
 
   [data-part='welcome-whisper'] {

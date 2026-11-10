@@ -69,7 +69,7 @@ export default function MemoryStream({ rows, meId, channelIds, hasMore, loading,
   }, [rows, thinking.length]);
 
   return (
-    <div ref={scroller} data-part="log">
+    <div ref={scroller} data-part="log" data-welcome={welcome ? '' : undefined}>
       {welcome}
       {hasMore && (
         <div data-part="older">
