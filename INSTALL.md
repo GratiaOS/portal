@@ -151,8 +151,9 @@ version to the next, for whoever runs a portal, is in [CHANGELOG.md](CHANGELOG.m
 
 The page can be installed from a browser as an app of its own (a window with no address bar, an icon on the home screen). `name` in the config
 (up to 40 characters, one line) is what the portal is called there and on its tab; without it, `El portal`. The manifest
-(`/manifest.webmanifest`) is made from the config when asked, so two portals on one phone are two apps. The icons (`ui/public/icons/`, an enso
-in one stroke) are drawn by `scripts/make-icons.mjs` and kept in the repository.
+(`/manifest.webmanifest`) is made from the config when asked, so two portals on one phone are two apps. The icons (`ui/public/icons/`, one brush stroke
+that goes round and curls inward, in the manner of the Gratia mark but not it: that logo is the family's own, see `TRADEMARK.md`) are drawn by
+`scripts/make-icons.mjs` and kept in the repository; a portal that is yours should draw its own.
 
 - **Android and desktop Chrome:** ⚙ shows *Install the app* when the browser offers it. **iOS:** Safari has no such button; ⚙ says
   *Share → Add to Home Screen*.
