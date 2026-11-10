@@ -83,3 +83,14 @@ test('skins: the page puts no class and no fixed colour on an element', () => {
     assert.equal(/style=\{\{[^}]*(var\(--|#[0-9a-f]{3,6}|rgb|hsl|oklch)/.test(text.replace(/'--hue': hueOf/g, '')), false, `${file} puts a colour inline`);
   }
 });
+
+for (const { id } of SKINS) {
+  test(`skins: ${id} makes what is pressed 44 px and what is written 16 px on a touch screen`, () => {
+    const css = skinCss(id).replace(/\/\*[\s\S]*?\*\//g, '');
+    const coarse = /@media \(pointer: coarse\) \{([\s\S]*?)\n  \}\n/.exec(css)?.[1] ?? '';
+    assert.ok(coarse, `${id}.css has no block for a touch screen`);
+    for (const part of ['skin-option', 'channel', 'signout', 'code-copy', 'sign-slot', 'sign-step', 'composer-send']) assert.ok(coarse.includes(`[data-part='${part}']`), `${id}: ${part} is not made 44 px for a finger`);
+    assert.match(coarse, /min-height: 44px/);
+    assert.match(coarse, /\[data-part='composer-input'\] \{[^}]*font-size: 16px/, `${id}: the box for writing is not 16 px (iOS zooms the page below it)`);
+  });
+}
