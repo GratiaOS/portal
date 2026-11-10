@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { addressedTo, clock, hueOf, rowsOf, splitSources } from './format.ts';
+import { addressedTo, clock, hueOf, rowsOf, splitSources, startsWithPicture } from './format.ts';
 import type { Participant, Turn } from './types.ts';
 
 const athena: Participant = { id: 'human:athena', kind: 'human', alias: 'Athena', capabilities: [] };
@@ -38,4 +38,12 @@ test('a message is for the reader when it names them and they did not write it',
   assert.equal(addressedTo(to('companion:nova', []), 'human:athena'), false);
   assert.equal(addressedTo(to('human:athena', ['companion:nova']), 'human:athena'), false); // for someone else
   assert.equal(addressedTo(to('companion:nova', ['human:athena']), undefined), false); // nobody is reading yet
+});
+
+test('a title that begins with a picture has that for its mark, and the others keep the hash', () => {
+  assert.equal(startsWithPicture('⛲ PlazaDelSol'), true);
+  assert.equal(startsWithPicture('🅿️ Parking'), true);
+  assert.equal(startsWithPicture('General'), false);
+  assert.equal(startsWithPicture('1 Plaza'), false);
+  assert.equal(startsWithPicture('Plaza ⛲'), false);
 });

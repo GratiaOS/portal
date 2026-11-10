@@ -6,6 +6,7 @@
  * Different:  channels come from the room's config, not from a list in the code, and they hold what is said, not pulses.
  * Not copied: written new for Room (MPL-2.0); M3's UI is Apache-2.0.
  */
+import { startsWithPicture } from '../lib/format.ts';
 import type { Conversation } from '../lib/types.ts';
 
 export default function ChannelList({ channels, selected, onSelect, label }: { channels: Conversation[]; selected: string | undefined; onSelect: (id: string) => void; label: string }) {
@@ -21,7 +22,12 @@ export default function ChannelList({ channels, selected, onSelect, label }: { c
             onClick={() => onSelect(channel.id)}
             data-part="channel"
           >
-            <span data-part="hash">#</span> {channel.title}
+            {!startsWithPicture(channel.title) && (
+              <>
+                <span data-part="hash">#</span>{' '}
+              </>
+            )}
+            {channel.title}
           </button>
         );
       })}

@@ -59,6 +59,13 @@ export default function MessageBubble({ row, mine, meId, channelIds, t }: { row:
                         </span>
                       );
                     }
+                    if (piece.kind === 'link') {
+                      return (
+                        <a key={j} data-part="link" href={piece.href} target="_blank" rel="noopener noreferrer nofollow ugc">
+                          {piece.text}
+                        </a>
+                      );
+                    }
                     if (piece.kind === 'tag') {
                       return (
                         <span key={j} data-part="tag">

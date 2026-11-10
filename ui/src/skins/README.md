@@ -162,7 +162,8 @@ parts keeps working everywhere else; those rules simply find nothing now.
 
 The words of a message are cut into what they are: `mention` (a person the room says was named, `@Nova`; it has `--hue` as the speaker has,
 `data-from='companion'` when it is a companion, and `data-you` when it is the reader), `tag` (`#decizie`: a `#` and a word that starts with a letter,
-so `#78` and the name of a channel are not tags), and `inline-code` (a span between backticks, taken as written, and nothing inside it is
+so `#78` and the name of a channel are not tags), `link` (an address that starts with `http://` or `https://`: the text is the address itself, so what is shown is where it goes, and it opens in another tab
+with `noopener noreferrer nofollow ugc`; a skin should let it break anywhere, `overflow-wrap: anywhere`), and `inline-code` (a span between backticks, taken as written, and nothing inside it is
 read as a mention or a tag). A `text` whose message is one to three emoji and nothing else has `data-jumbo`: a skin may show it large.
 
 The page also registers one highlight, `room-occurrence`: when a word is selected in the log, every place it is in the log is in it. A

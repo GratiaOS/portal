@@ -8,6 +8,11 @@ export function clock(iso: string): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** Whether a title begins with a picture: then the picture is its mark, and the page does not put a `#` before it. */
+export function startsWithPicture(title: string): boolean {
+  return /^\p{Extended_Pictographic}/u.test(title.trim());
+}
+
 /** A hue from a name, so a person keeps their colour everywhere and in every session. */
 export function hueOf(id: string): number {
   let h = 0;
