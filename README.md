@@ -1,5 +1,7 @@
 # El portal
 
+![Heartware: states first, silence allowed](docs/heartware-badge.svg)
+
 A small team chat, self-hosted, with a companion who answers from a folder, on the model you bring. A room for visitors that forgets as it goes. An app you can install.
 
 Written new, [MPL-2.0](LICENSE), with where its parts come from in [TRACES.md](TRACES.md). No central accounts, no telemetry, no presence tracking by time.
