@@ -13,6 +13,8 @@ export type ParticipantInput = {
   capabilities?: string[];
   /** The sign a person is given by the config; the one they choose themselves, if any, is shown instead. */
   sign?: string;
+  /** A person's earlier alias, when they have been renamed: what they said, and their place, move to the new one. Said once; when the old one is no longer there, it does nothing. */
+  renamedFrom?: string;
 };
 
 export type ConversationInput = {
@@ -38,6 +40,8 @@ const DEFAULT_PAGE = 50;
 const MAX_PAGE = 200;
 const DEFAULT_RESUME = 500;
 const MAX_RESUME = 1000;
+
+const TURNS_NO_UPDATE = "CREATE TRIGGER turns_no_update BEFORE UPDATE ON turns BEGIN SELECT RAISE(ABORT, 'turns are append-only'); END;";
 
 const SCHEMA_V1 = `
 CREATE TABLE participants (
@@ -71,7 +75,7 @@ CREATE TABLE turns (
 CREATE INDEX turns_by_conversation ON turns(conversation_id, seq);
 
 -- A turn is written once and never changed. (V1 also refused its removal; V3 lets the portal forget, see forget().)
-CREATE TRIGGER turns_no_update BEFORE UPDATE ON turns BEGIN SELECT RAISE(ABORT, 'turns are append-only'); END;
+${TURNS_NO_UPDATE}
 CREATE TRIGGER turns_no_delete BEFORE DELETE ON turns BEGIN SELECT RAISE(ABORT, 'turns are append-only'); END;
 `;
 
@@ -245,6 +249,7 @@ export class RoomStore {
     const upsert = `INSERT INTO participants (id, kind, alias, locale, capabilities, given_sign, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET alias = excluded.alias, locale = excluded.locale, capabilities = excluded.capabilities, given_sign = excluded.given_sign`;
     this.transaction(() => {
+      for (const input of inputs) if (input.renamedFrom !== undefined) this.renameParticipant(input);
       for (const input of inputs) {
         if (!PARTICIPANT_KINDS.includes(input.kind)) throw new RoomError('invalid', `unknown participant kind "${input.kind}"`);
         if (!ALIAS_PATTERN.test(input.alias)) throw new RoomError('invalid', `"${input.alias}" is not a valid alias`);
@@ -257,6 +262,35 @@ export class RoomStore {
         this.db.run(upsert, id, input.kind, input.alias, input.locale ?? null, JSON.stringify(input.capabilities ?? []), input.sign ?? null, at);
       }
     });
+  }
+
+  /**
+   * A person who has been renamed keeps what they said and who they are: the row, the sign they chose, their bindings, and every turn of
+   * theirs (and every mention of them) move to the new name. A turn is still never changed in what it says, only in whose it is, and the
+   * trigger that refuses an update is put back at once. It runs inside `syncParticipants`' transaction, and only when the old one is there
+   * and the new one is not, so a config that still says `renamedFrom` changes nothing the second time.
+   */
+  private renameParticipant(input: ParticipantInput): void {
+    const from = input.renamedFrom as string;
+    if (input.kind !== 'human') throw new RoomError('invalid', `"${input.alias}" is not a person: only people are renamed`);
+    if (!ALIAS_PATTERN.test(from)) throw new RoomError('invalid', `"${from}" is not a valid alias`);
+    const oldId = participantId(input.kind, from);
+    const newId = participantId(input.kind, input.alias);
+    if (oldId === newId) return;
+    if (!this.one('SELECT id FROM participants WHERE id = ?', oldId) || this.one('SELECT id FROM participants WHERE id = ?', newId)) return;
+    const taken = this.one('SELECT id FROM participants WHERE alias = ?', input.alias) as { id: string } | undefined;
+    if (taken) throw new RoomError('invalid', `alias "${input.alias}" already belongs to ${taken.id}`);
+    this.db.run(
+      'INSERT INTO participants (id, kind, alias, locale, capabilities, given_sign, sign, created_at) SELECT ?, kind, ?, locale, capabilities, given_sign, sign, created_at FROM participants WHERE id = ?',
+      newId, input.alias, oldId,
+    );
+    this.db.run('UPDATE bindings SET participant_id = ? WHERE participant_id = ?', newId, oldId);
+    this.db.run('UPDATE guest_keys SET participant_id = ? WHERE participant_id = ?', newId, oldId);
+    this.db.exec('DROP TRIGGER turns_no_update');
+    this.db.run('UPDATE turns SET speaker_id = ? WHERE speaker_id = ?', newId, oldId);
+    this.db.run('UPDATE turns SET mentions = REPLACE(mentions, ?, ?) WHERE mentions LIKE ?', `"${oldId}"`, `"${newId}"`, `%"${oldId}"%`);
+    this.db.exec(TURNS_NO_UPDATE);
+    this.db.run('DELETE FROM participants WHERE id = ?', oldId);
   }
 
   /** Adds new conversations and updates title, visibility and tags. A closed conversation stays closed. */

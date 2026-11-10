@@ -58,7 +58,7 @@ export class Portal extends DurableObject<Env> {
     if (this.handler) return this.handler;
     const config = configFrom(this.env);
     const store = new RoomStore(objectSqlite(this.ctx.storage));
-    store.syncParticipants(config.participants.map(({ kind, alias, locale, capabilities, sign }) => ({ kind, alias, locale, capabilities, sign })));
+    store.syncParticipants(config.participants.map(({ kind, alias, locale, capabilities, sign, renamedFrom }) => ({ kind, alias, locale, capabilities, sign, renamedFrom })));
     store.syncConversations(config.rooms);
     this.store = store;
     this.retention = config.retention;

@@ -39,6 +39,8 @@ In `portal.local.json`:
   from her). Without `knowledgeDir` she still talks, with nothing written down for her yet: about the portal from its facts, and
   about anything else she says she does not know yet. Leave the section out for a plain chat.
 
+A person whose name changes is renamed, not added: give them the new `alias` and `"renamedFrom": "old"` in `participants` (and move their token to the new alias in the tokens file, keeping its value, so the same key still opens). At the next start what they said, the mentions of them, their sign and their place move to the new name, with no one left behind under the old one; what they wrote is as it was written, and `@old` inside a sentence stays as it was typed. It is done once: when the old name is no longer there, `renamedFrom` does nothing, and you can take it out. Only people are renamed.
+
 Then a token for each person, kept in a file of its own (`chmod 600`):
 
 ```bash

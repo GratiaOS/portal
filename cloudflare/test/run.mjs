@@ -98,9 +98,9 @@ const check = (ok, line) => {
   console.log(`${ok ? '✓' : '✗'} ${line}`);
 };
 
-function start() {
+function start(config = CONFIG, tokens = { Zeus: ZEUS, Hera: HERA }) {
   const [command, ...pre] = process.env.WRANGLER ? [process.env.WRANGLER] : ['npx', '--yes', 'wrangler@4.136.2'];
-  const vars = { PORTAL_CONFIG: JSON.stringify(CONFIG), PORTAL_TOKENS: JSON.stringify({ Zeus: ZEUS, Hera: HERA }), PORTAL_FORGET_EVERY_MS: '1000', PORTAL_LLM_API_KEY: 'stand-in-key', PORTAL_GUESTS_LLM_API_KEY: 'guests-stand-in-key' };
+  const vars = { PORTAL_CONFIG: JSON.stringify(config), PORTAL_TOKENS: JSON.stringify(tokens), PORTAL_FORGET_EVERY_MS: '1000', PORTAL_LLM_API_KEY: 'stand-in-key', PORTAL_GUESTS_LLM_API_KEY: 'guests-stand-in-key' };
   const args = [...pre, 'dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', state, '--log-level', 'error', '--show-interactive-dev-session=false'];
   for (const [name, value] of Object.entries(vars)) args.push('--var', `${name}:${value}`);
   // its own process group, so that stopping it stops what `npx` started under it too (on Linux the SIGINT that reached only `npx` left the rest running)
@@ -191,7 +191,7 @@ const bundledJson = JSON.parse(readFileSync(bundle, 'utf8'));
 const files = bundledJson.files;
 const guestFiles = bundledJson.guestFiles;
 
-const dev = start();
+let dev = start();
 try {
   console.log('\n— her knowledge, bundled');
   check(refused.status !== 0 && untouched && /nova\.exclude/.test(refused.stderr), 'a config the Worker would refuse is refused before anything is bundled');
@@ -273,6 +273,16 @@ try {
   check(guestSystem.includes('### FILE: about.md') && !guestSystem.includes('olympus/food.md') && !guestSystem.includes('SECRET-7f3a'), 'she reads the folder for guests, and nothing of the team\'s');
   check(!guestSystem.includes('Zeus') && !guestSystem.includes('Hera'), 'and no name of the team went to the guests\' engine');
   check(!(await (await zeus('/api/gaps')).text().catch(() => '')).includes('ce este un portal'), 'what the guest asked is not among what the knowledge lacked');
+
+  console.log('\n— a person renamed in the config keeps what they said (the object is started again, with the same storage)');
+  await say(hera, 'a word before the new name');
+  await stop(dev);
+  dev = start({ ...CONFIG, participants: CONFIG.participants.map((p) => (p.alias === 'Hera' ? { kind: 'human', alias: 'Athena', renamedFrom: 'Hera' } : p)) }, { Zeus: ZEUS, Athena: HERA });
+  await ready();
+  const renamed = await (await hera('/api/me')).json();
+  check(renamed.id === 'human:athena', `the same key is now Athena: ${renamed.id}`);
+  const hers = (await (await zeus('/api/rooms/general/messages')).json()).turns.find((t) => t.text === 'a word before the new name');
+  check(hers?.speakerId === 'human:athena', `what she said is hers under the new name, and as it was said: ${hers?.speakerId}`);
 
   console.log('\n— wrong keys, counted in the object (last: it turns this caller away)');
   const wrong = [];
