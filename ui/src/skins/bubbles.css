@@ -730,6 +730,12 @@
       align-items: stretch;
     }
 
+    /* the rooms are a row that scrolls sideways, which cuts what goes outside it: room is left in the row for the shadow of the room you are in */
+    [data-part='channel-list'] {
+      padding: 0.75rem 0.75rem 1.75rem;
+      margin: -0.75rem -0.75rem -1.75rem;
+    }
+
     [data-part='room'][data-sheet] [data-part='side'] {
       transform: none;
       visibility: visible;
