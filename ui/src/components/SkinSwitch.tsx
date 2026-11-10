@@ -34,7 +34,8 @@ export default function SkinSwitch({ t, extra }: { t: Strings; extra: SkinInfo[]
     <div role="group" aria-label={t.skin} data-part="skin-switch">
       {SKINS.map(({ id, emoji }) => (
         <button key={id} type="button" aria-pressed={current.id === id} aria-label={t.skinNames[id]} title={t.skinNames[id]} onClick={() => choose({ id })} data-part="skin-option">
-          {emoji}
+          <span aria-hidden data-part="skin-emoji">{emoji}</span>
+          <span aria-hidden data-part="skin-name">{t.skinNames[id]}</span>
         </button>
       ))}
       {(extra ?? []).map((skin) => (
@@ -47,7 +48,8 @@ export default function SkinSwitch({ t, extra }: { t: Strings; extra: SkinInfo[]
           onClick={() => choose({ id: skin.id, ...(isBuiltIn(skin.extends) ? { base: skin.extends } : {}) })}
           data-part="skin-option"
         >
-          {skin.emoji ?? '◻︎'}
+          <span aria-hidden data-part="skin-emoji">{skin.emoji ?? '◻︎'}</span>
+          <span aria-hidden data-part="skin-name">{skin.name}</span>
         </button>
       ))}
     </div>

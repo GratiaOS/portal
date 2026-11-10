@@ -99,7 +99,7 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `room` | the side and the channel next to it | `data-sheet` while the sheet of a narrow page is open |
 | `side` | channels, people, you; on a narrow page it is the sheet that comes up from the foot (`position: fixed`, `visibility: hidden` while closed, so that it cannot be tabbed into) | |
 | `channels` | the group of channels, with its `label` | |
-| `label` | a small heading in the side (channels, people) | |
+| `label` | a small heading in the side (channels, people; on a narrow page also you, the look and the app, which carry `data-sheet-only` and are not shown on a wide one) | `data-sheet-only` |
 | `channel-list` | the list of channels | |
 | `channel` | one channel, a button | `aria-current="true"` for the one open |
 | `hash` | the `#` before a channel's name | |
@@ -151,6 +151,12 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `sheet-backdrop` | the cover behind the open sheet; a press on it closes it | |
 | `visit-as` | in a visitor's side: who they are writing as | |
 | `visit-time` | in a visitor's side: how long the visit has left | |
+| `sheet-head` | the head of the sheet of a narrow page: the handle and the close button; hidden on a wide page | |
+| `sheet-handle` | the little bar that says the sheet can be pulled down | |
+| `sheet-close` | the button that closes the sheet | |
+| `self-group` | a section under your name in the side: `data-group` is `you`, `look`, `app` or `end` (the way out); on a wide page it adds nothing, on a narrow one it is a section with its own title | `data-group` |
+| `skin-emoji` | the sign of a look, inside its button | |
+| `skin-name` | the name of a look, inside its button; shown on a narrow page, where the buttons are big | |
 | `install` | the button that offers to install the portal as an app, shown only where the browser gives the means | |
 | `install-hint` | a line about the app: how to add it by hand on iOS, or what staying signed in means once it is installed | |
 | `welcome` | what a visitor finds at the top of the room: a whisper and two lines; made by the page, no message, and it does not fade | |

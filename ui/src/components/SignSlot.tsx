@@ -15,7 +15,7 @@ import type { KeyboardEvent } from 'react';
 import { OWN_MAX, TAKE_AFTER_MS, addOwnSign, ownSigns, signFrom, stepSign, tilesOf } from '../lib/sign.ts';
 import type { Strings } from '../lib/strings.ts';
 
-const COLUMNS = 4;
+const DEFAULT_COLUMNS = 4;
 /** Stepping with ↑↓ keeps the sign once you stop for this long, or at once with Enter. */
 const SETTLE_MS = 1200;
 
@@ -36,6 +36,9 @@ export default function SignSlot({ name, current, onChoose, t }: { name: string;
   const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const input = useRef<HTMLInputElement>(null);
+  const grid = useRef<HTMLDivElement>(null);
+  // how many tiles the grid really has in a row: it fills the width it is given
+  const columns = () => (grid.current ? getComputedStyle(grid.current).gridTemplateColumns.split(' ').filter(Boolean).length || DEFAULT_COLUMNS : DEFAULT_COLUMNS);
   const typing = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const shown = preview ?? current;
 
@@ -133,7 +136,8 @@ export default function SignSlot({ name, current, onChoose, t }: { name: string;
   // the frame moves like a cursor on a select screen: the arrows, Home and End; Enter picks; Esc closes
   const count = tiles.length + 1; // the tiles, and +
   const onGridKey = (e: KeyboardEvent) => {
-    const moves: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: COLUMNS, ArrowUp: -COLUMNS };
+    const across = columns();
+    const moves: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: across, ArrowUp: -across };
     if (e.key in moves) {
       e.preventDefault();
       setFocus((at) => Math.min(count - 1, Math.max(0, at + moves[e.key]!)));
@@ -172,7 +176,7 @@ export default function SignSlot({ name, current, onChoose, t }: { name: string;
       </span>
 
       {open && (
-        <div role="group" aria-label={t.signGrid} onKeyDown={onGridKey} data-part="sign-grid">
+        <div ref={grid} role="group" aria-label={t.signGrid} onKeyDown={onGridKey} data-part="sign-grid">
           {tiles.map((sign, i) => (
             <button
               key={sign}
