@@ -10,8 +10,9 @@
  * Not copied: written new for the portal (MPL-2.0); only a turn of phrase is taken from M3, no code.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { KeyboardEvent } from 'react';
-import { OWN_MAX, addOwnSign, isSign, ownSigns, stepSign, tilesOf } from '../lib/sign.ts';
+import { OWN_MAX, TAKE_AFTER_MS, addOwnSign, ownSigns, signFrom, stepSign, tilesOf } from '../lib/sign.ts';
 import type { Strings } from '../lib/strings.ts';
 
 const COLUMNS = 4;
@@ -34,9 +35,19 @@ export default function SignSlot({ name, current, onChoose, t }: { name: string;
   const [popping, setPopping] = useState(false);
   const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const input = useRef<HTMLInputElement>(null);
+  const typing = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const shown = preview ?? current;
 
-  useEffect(() => () => clearTimeout(settle.current), []);
+  useEffect(() => () => (clearTimeout(settle.current), clearTimeout(typing.current)), []);
+
+  // on a phone the keyboard rises over the page: the box for an emoji is brought into view when it opens and when the visible part of the page changes
+  useEffect(() => {
+    if (!adding) return;
+    const show = () => input.current?.scrollIntoView({ block: 'nearest' });
+    window.visualViewport?.addEventListener('resize', show);
+    return () => window.visualViewport?.removeEventListener('resize', show);
+  }, [adding]);
   useEffect(() => {
     if (open && !adding) tileRefs.current[focus]?.focus();
   }, [open, adding, focus]);
@@ -95,13 +106,28 @@ export default function SignSlot({ name, current, onChoose, t }: { name: string;
     void keep(sign);
   };
 
-  const addOne = () => {
-    const sign = added.trim();
-    if (!isSign(sign)) return setSaid(t.signNotOne);
+  const addOne = (typed: string = added) => {
+    clearTimeout(typing.current);
+    const sign = signFrom(typed);
+    if (!sign) return setSaid(t.signNotOne);
     setOwn(addOwnSign(sign));
     setAdded('');
     setAdding(false);
     pick(sign);
+  };
+
+  // a keyboard of emoji has no Enter: one emoji, once the typing has stopped for a moment, is taken as it is; anything else is said not to be one
+  const typed = (value: string) => {
+    setAdded(value);
+    clearTimeout(typing.current);
+    if (!value.trim()) return;
+    typing.current = setTimeout(() => addOne(value), TAKE_AFTER_MS);
+  };
+
+  // the focus goes to the box in the same breath as the press, which is what lets a phone raise its keyboard
+  const startAdding = () => {
+    flushSync(() => setAdding(true));
+    input.current?.focus();
   };
 
   // the frame moves like a cursor on a select screen: the arrows, Home and End; Enter picks; Esc closes
@@ -166,20 +192,28 @@ export default function SignSlot({ name, current, onChoose, t }: { name: string;
             </button>
           ))}
           {adding ? (
-            <input
-              autoFocus
-              value={added}
-              onChange={(e) => setAdded(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') addOne();
-                if (e.key === 'Escape') setAdding(false);
-                e.stopPropagation();
-              }}
-              placeholder="🗿"
-              aria-label={t.signAdd(OWN_MAX)}
-              maxLength={16}
-              data-part="sign-input"
-            />
+            <>
+              <input
+                ref={input}
+                value={added}
+                onChange={(e) => typed(e.target.value)}
+                onFocus={(e) => e.currentTarget.scrollIntoView({ block: 'nearest' })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') addOne();
+                  if (e.key === 'Escape') setAdding(false);
+                  e.stopPropagation();
+                }}
+                placeholder="🗿"
+                aria-label={t.signAdd(OWN_MAX)}
+                enterKeyHint="done"
+                autoComplete="off"
+                maxLength={16}
+                data-part="sign-input"
+              />
+              <button type="button" aria-label={t.signConfirm} title={t.signConfirm} onClick={() => addOne()} data-part="sign-add">
+                ✓
+              </button>
+            </>
           ) : (
             <button
               ref={(el) => {
@@ -189,7 +223,7 @@ export default function SignSlot({ name, current, onChoose, t }: { name: string;
               tabIndex={focus === tiles.length ? 0 : -1}
               aria-label={t.signAdd(OWN_MAX)}
               title={t.signAdd(OWN_MAX)}
-              onClick={() => setAdding(true)}
+              onClick={startAdding}
               onFocus={() => setFocus(tiles.length)}
               data-part="sign-add"
             >

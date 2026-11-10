@@ -96,6 +96,7 @@ export type Strings = {
   signKept: (sign: string) => string;
   signLetGoDone: string;
   signNotOne: string;
+  signConfirm: string;
   signPlotTwist: (why: string) => string;
 };
 
@@ -171,6 +172,7 @@ const ro: Strings = {
   signKept: (sign) => `Bate palma! Acum ești ${sign}`,
   signLetGoDone: 'Gata, fără semn de-al tău',
   signNotOne: 'Plot twist: un singur emoji, te rog.',
+  signConfirm: 'Păstrează',
   signPlotTwist: (why) => `Plot twist: semnul n-a plecat${why ? ` (${why})` : ''}. Încearcă iar.`,
 };
 
@@ -246,6 +248,7 @@ const en: Strings = {
   signKept: (sign) => `High five! You are ${sign} now`,
   signLetGoDone: 'Done, no sign of your own',
   signNotOne: 'Plot twist: one emoji, please.',
+  signConfirm: 'Keep',
   signPlotTwist: (why) => `Plot twist: the sign did not go${why ? ` (${why})` : ''}. Try again.`,
 };
 
@@ -321,6 +324,7 @@ const es: Strings = {
   signKept: (sign) => `¡Choca esos cinco! Ahora eres ${sign}`,
   signLetGoDone: 'Listo, sin signo propio',
   signNotOne: 'Giro inesperado: un solo emoji, por favor.',
+  signConfirm: 'Guardar',
   signPlotTwist: (why) => `Giro inesperado: el signo no salió${why ? ` (${why})` : ''}. Inténtalo de nuevo.`,
 };
 

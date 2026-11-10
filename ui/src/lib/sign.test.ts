@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { OWN_MAX, SIGNS, addOwnSign, isSign, ownSigns, stepSign, tilesOf } from './sign.ts';
+import { OWN_MAX, SIGNS, TAKE_AFTER_MS, addOwnSign, isSign, ownSigns, signFrom, stepSign, tilesOf } from './sign.ts';
 
 const memory = () => {
   const kept = new Map<string, string>();
@@ -50,4 +50,12 @@ test('stepping goes round and round, from wherever you are', () => {
   assert.equal(stepSign(tiles, '🎭', -1), '🦉');
   assert.equal(stepSign(tiles, undefined, 1), '🎭');
   assert.equal(stepSign(tiles, '🌵', -1), '🦉'); // a sign not in the grid: from an end
+});
+
+test('what is typed is taken as a sign when it is exactly one, with the spaces around it let go, and not before', () => {
+  assert.equal(signFrom('🎭'), '🎭');
+  assert.equal(signFrom(' 🧙‍♂️ '), '🧙‍♂️');
+  assert.equal(signFrom('🇷🇴'), '🇷🇴');
+  for (const not of ['', '  ', 'a', '🦁🦁', '🦁a', '12']) assert.equal(signFrom(not), undefined, JSON.stringify(not));
+  assert.ok(TAKE_AFTER_MS >= 300 && TAKE_AFTER_MS <= 800, 'long enough for a sequence to arrive, short enough not to be felt as a wait');
 });

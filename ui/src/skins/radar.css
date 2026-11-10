@@ -974,7 +974,9 @@
     [data-part='signout'],
     [data-part='code-copy'],
     [data-part='sign-slot'],
-    [data-part='sign-step'] {
+    [data-part='sign-step'],
+    [data-part='sign-tile'],
+    [data-part='sign-add'] {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -984,6 +986,15 @@
 
     [data-part='sign-steps'] {
       flex-direction: row;
+    }
+
+    [data-part='sign-grid'] {
+      grid-template-columns: repeat(4, 44px);
+    }
+
+    [data-part='sign-input'] {
+      min-height: 44px;
+      font-size: 16px;
     }
 
     [data-part='sign-step'] {
