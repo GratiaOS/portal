@@ -89,8 +89,9 @@ for (const { id } of SKINS) {
     const css = skinCss(id).replace(/\/\*[\s\S]*?\*\//g, '');
     const coarse = /@media \(pointer: coarse\) \{([\s\S]*?)\n  \}\n/.exec(css)?.[1] ?? '';
     assert.ok(coarse, `${id}.css has no block for a touch screen`);
-    for (const part of ['skin-option', 'channel', 'signout', 'code-copy', 'sign-slot', 'sign-step', 'composer-send']) assert.ok(coarse.includes(`[data-part='${part}']`), `${id}: ${part} is not made 44 px for a finger`);
+    for (const part of ['skin-option', 'channel', 'signout', 'code-copy', 'sign-slot', 'sign-step', 'sign-tile', 'sign-add', 'composer-send']) assert.ok(coarse.includes(`[data-part='${part}']`), `${id}: ${part} is not made 44 px for a finger`);
     assert.match(coarse, /min-height: 44px/);
+    assert.match(coarse, /\[data-part='sign-input'\] \{[^}]*font-size: 16px/, `${id}: the box for an emoji is not 16 px`);
     assert.match(coarse, /\[data-part='composer-input'\] \{[^}]*font-size: 16px/, `${id}: the box for writing is not 16 px (iOS zooms the page below it)`);
   });
 }

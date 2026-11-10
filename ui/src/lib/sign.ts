@@ -38,6 +38,15 @@ export function ownSigns(storage: Memory | undefined = memory()): string[] {
   }
 }
 
+/** How long a typed emoji is waited for before it is taken: a keyboard of emoji has no Enter, and a sequence (a flag, a family) arrives in more than one piece. */
+export const TAKE_AFTER_MS = 450;
+
+/** What was typed, as a sign if it is exactly one (spaces around it let go), and `undefined` when it is not one yet. */
+export function signFrom(typed: string): string | undefined {
+  const sign = typed.trim();
+  return isSign(sign) ? sign : undefined;
+}
+
 /** Adds one to the front; one already there moves to the front; the oldest beyond OWN_MAX goes. */
 export function addOwnSign(sign: string, storage: Memory | undefined = memory()): string[] {
   const next = [sign, ...ownSigns(storage).filter((s) => s !== sign)].slice(0, OWN_MAX);
