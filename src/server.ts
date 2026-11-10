@@ -62,7 +62,7 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
   let guestNova: Nova | undefined;
   let forgetting: NodeJS.Timeout | undefined;
   try {
-    store.syncParticipants(config.participants.map(({ kind, alias, locale, capabilities, sign }) => ({ kind, alias, locale, capabilities, sign })));
+    store.syncParticipants(config.participants.map(({ kind, alias, locale, capabilities, sign, renamedFrom }) => ({ kind, alias, locale, capabilities, sign, renamedFrom })));
     store.syncConversations(config.rooms);
 
     // what the portal no longer keeps goes now, and then every ten minutes; a number in the log, never a message

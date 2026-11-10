@@ -17,6 +17,7 @@
   is a door, and `/api/hints` gives a guest their companion's examples and never the team's.
 - **The guest room ends by absence** (`guests.forgetAfterMinutes`, 5): once the last guest's time is over and those minutes have passed, what was said
   there, the guests, their keys and their bindings are let go, and the next visitors find an empty room. The questions' ledger stays, as the portal's ceiling per hour.
+- **A person can be renamed** (`renamedFrom` in `participants`): what they said, the mentions of them, their sign and their place move to the new alias and the old one is gone, once, inside the start; a turn is still never changed in what it says, and the trigger that refuses an update is put back at once. Checked on a Durable Object's storage by stopping and starting the dev object with the same files.
 - **The guest room has a trail** (`guests.trailMinutes`, 15): what a guest says fades on the page by its age and is let go by the portal after those minutes, one message at a time, in
   one statement at the check that already runs. The page does the fading and the counting, and keeps the turns only in the tab's memory (no storage). A guest is not given a turn past
   the trail, even before it is let go. The end by absence stays for the guests, their keys and what is left.

@@ -204,6 +204,15 @@ function parseRetention(raw: unknown): Retention {
   };
 }
 
+/** `renamedFrom`: the alias a person had before, for a person (a human) whose name has changed. */
+function renamedFromOf(value: unknown, alias: string, kind: string, index: number): string {
+  const from = text(value, `participants[${index}].renamedFrom`);
+  if (kind !== 'human') throw new ConfigError(`participants[${index}]: only a person can be renamed`);
+  if (!ALIAS_PATTERN.test(from)) throw new ConfigError(`participants[${index}]: "${from}" is not a valid alias`);
+  if (from.toLowerCase() === alias.toLowerCase()) throw new ConfigError(`participants[${index}]: renamedFrom is the same as the alias`);
+  return from;
+}
+
 export function parseConfig(raw: unknown, baseDir: string = process.cwd()): RoomConfig {
   if (!isRecord(raw)) throw new ConfigError('the config must be a JSON object');
 
@@ -234,6 +243,7 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
       ...(entry.locale === undefined ? {} : { locale: entry.locale as string }),
       ...(entry.capabilities === undefined ? {} : { capabilities: entry.capabilities as string[] }),
       ...(entry.sign === undefined ? {} : { sign: entry.sign as string }),
+      ...(entry.renamedFrom === undefined ? {} : { renamedFrom: renamedFromOf(entry.renamedFrom, alias, kind, index) }),
       ...(typeof entry.token === 'string' ? { token: entry.token } : {}),
     };
   });
@@ -244,6 +254,7 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
   for (const p of participants) {
     if (aliases.has(p.alias.toLowerCase())) throw new ConfigError(`the alias "${p.alias}" is used twice`);
     aliases.add(p.alias.toLowerCase());
+    if (p.renamedFrom !== undefined && participants.some((other) => other.alias.toLowerCase() === p.renamedFrom!.toLowerCase())) throw new ConfigError(`renamedFrom "${p.renamedFrom}" is still an alias of the config: a person cannot be renamed from one who is there`);
     if (p.token !== undefined) {
       if (tokens.has(p.token)) throw new ConfigError(`${participantId(p.kind, p.alias)} has the same token as another participant`);
       tokens.add(p.token);
