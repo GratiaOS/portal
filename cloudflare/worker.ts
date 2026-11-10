@@ -51,6 +51,7 @@ export class Portal extends DurableObject<Env> {
   private store?: RoomStore;
   private retention?: Retention;
   private guestsForgetAfterMs?: number;
+  private guestsTrailMs?: number;
 
   /** Opened once each time the object wakes: who and where from the config, what is past keeping let go, and the handler. */
   private open(): (request: Request) => Promise<Response> {
@@ -62,10 +63,11 @@ export class Portal extends DurableObject<Env> {
     this.store = store;
     this.retention = config.retention;
     this.guestsForgetAfterMs = config.guests ? config.guests.forgetAfterMinutes * 60_000 : undefined;
+    this.guestsTrailMs = config.guests ? config.guests.trailMinutes * 60_000 : undefined;
     this.forget();
     if (config.retention !== 'forever' || this.guestsForgetAfterMs) void this.ctx.storage.getAlarm().then((at) => (at === null ? this.ctx.storage.setAlarm(Date.now() + this.every()) : undefined));
 
-    const hub = new Hub(store);
+    const hub = new Hub(store, { trailMinutes: config.guests?.trailMinutes });
     if (config.nova) this.wakeNova(config, config.nova, store, hub);
     if (config.guests?.nova.enabled && config.guests.nova.nova) this.wakeGuestNova(config.guests, config.guests.nova.nova, store, hub);
 
@@ -139,6 +141,8 @@ export class Portal extends DurableObject<Env> {
     if (turns || gaps) console.log(`portal: let go of ${turns} message(s) and ${gaps} question(s) past what it keeps`);
     // the guest room ends by absence, whatever the retention of the team says
     if (this.guestsForgetAfterMs) {
+      const faded = this.store.forgetGuestTrail(this.guestsTrailMs ?? 0);
+      if (faded) console.log(`portal: the guest trail let go of ${faded} message(s)`);
       const ended = this.store.forgetEmptyGuestRooms(this.guestsForgetAfterMs);
       if (ended.turns || ended.guests) console.log(`portal: the guest room ended: let go of ${ended.turns} message(s) and ${ended.guests} guest(s)`);
     }

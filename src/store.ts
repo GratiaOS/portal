@@ -557,6 +557,18 @@ export class RoomStore {
     return total;
   }
 
+  /**
+   * The trail of a guest room: what was said there more than `trailMs` ago is let go, in one statement for the whole room (never a timer per
+   * turn). It is time and not distance, so a room where no one writes any more empties itself. The key and the roster are another clock
+   * (`forgetEmptyGuestRooms`). Returns how many turns. Team rooms are never touched.
+   */
+  forgetGuestTrail(trailMs: number): number {
+    const cutoff = new Date(this.now().getTime() - trailMs).toISOString();
+    const gone = this.db.run("DELETE FROM turns WHERE created_at <= ? AND conversation_id IN (SELECT id FROM conversations WHERE kind = 'guest')", cutoff).changes;
+    if (gone) this.db.afterForget();
+    return gone;
+  }
+
   /** Whether a turn is still kept: `seq` is never given again, so a turn that is gone stays gone. */
   hasTurn(seq: number): boolean {
     return this.one('SELECT 1 AS yes FROM turns WHERE seq = ?', seq) !== undefined;

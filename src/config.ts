@@ -57,6 +57,8 @@ export type GuestsConfig = {
   minutes: number;
   /** The room ends by absence: this many minutes after the last guest's time is over, what was said there and who was there are let go. */
   forgetAfterMinutes: number;
+  /** A guest's words leave one by one: a turn in the guest room older than this many minutes is let go, and the page lets it fade before. */
+  trailMinutes: number;
   /** How many guests one caller may bring in, per window. */
   perCaller: { count: number; perMinutes: number };
   /** The companion for guests: an engine of her own, off until it is chosen. */
@@ -144,6 +146,7 @@ function parseGuests(raw: unknown, rooms: ConversationInput[], participants: Con
     maxActive: whole(raw.maxActive, 20, 'guests.maxActive', { min: 1, max: 1000 }),
     minutes: whole(raw.minutes, 60, 'guests.minutes', { min: 1, max: 1440 }),
     forgetAfterMinutes: whole(raw.forgetAfterMinutes, 5, 'guests.forgetAfterMinutes', { min: 1, max: 1440 }),
+    trailMinutes: whole(raw.trailMinutes, 15, 'guests.trailMinutes', { min: 1, max: 1440 }),
     perCaller: {
       count: whole(each.count, 5, 'guests.perCaller.count', { min: 1, max: 100 }),
       perMinutes: whole(each.perMinutes, 10, 'guests.perCaller.perMinutes', { min: 1, max: 1440 }),

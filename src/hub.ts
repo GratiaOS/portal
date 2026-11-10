@@ -25,6 +25,8 @@ export type Hello = {
   activity: Activity[];
   conversations: Conversation[];
   lastSeq: number;
+  /** Only to a guest: how long what is said in their room lasts, so that the page can let it fade before it is gone. */
+  trailMinutes?: number;
 };
 
 export type HubEvents = {
@@ -36,6 +38,8 @@ export type HubEvents = {
 export type HubOptions = {
   /** How long a human may be gone before they are shown offline, so a page refresh does not blink. Defaults to 5000 ms. */
   graceMs?: number;
+  /** `guests.trailMinutes`, told to a guest in the hello. */
+  trailMinutes?: number;
   /** The clock a guest's binding is read by, in milliseconds. For tests; defaults to the real one. */
   now?: () => number;
 };
@@ -59,6 +63,7 @@ export class Hub {
     activity: new Set(),
   };
   private readonly graceMs: number;
+  private readonly trailMinutes?: number;
   private readonly now: () => number;
 
   constructor(
@@ -66,6 +71,7 @@ export class Hub {
     options: HubOptions = {},
   ) {
     this.graceMs = options.graceMs ?? DEFAULT_GRACE_MS;
+    this.trailMinutes = options.trailMinutes;
     this.now = options.now ?? Date.now;
   }
 
@@ -114,6 +120,7 @@ export class Hub {
       activity: [...this.thinking.values()].filter((a) => this.mayRead(participant, a.conversationId)),
       conversations: this.store.listConversations().filter((c) => this.mayRead(participant, c.id)),
       lastSeq: this.store.lastSeq(),
+      ...(participant.kind === 'guest' && this.trailMinutes !== undefined ? { trailMinutes: this.trailMinutes } : {}),
     };
     if (this.deliver(connection, frame('hello', hello))) this.replay(connection, lastEventId);
 

@@ -31,7 +31,7 @@ export default function MessageBubble({ row, mine, meId, channelIds, t }: { row:
   const jumbo = blocks.length === 1 && blocks[0]!.kind === 'text' && emojiOnly(blocks[0]!.text) > 0;
 
   return (
-    <li data-part="message" data-head={head ? '' : undefined} data-from={companion ? 'companion' : mine ? 'mine' : 'other'} data-to-you={toYou ? '' : undefined}>
+    <li data-part="message" data-fading={row.opacity !== undefined ? '' : undefined} style={row.opacity !== undefined ? { opacity: row.opacity } : undefined} data-head={head ? '' : undefined} data-from={companion ? 'companion' : mine ? 'mine' : 'other'} data-to-you={toYou ? '' : undefined}>
       <time dateTime={turn.createdAt} title={time} data-part="time">
         {time}
       </time>

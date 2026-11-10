@@ -15,7 +15,7 @@ export function hueOf(id: string): number {
   return h;
 }
 
-export type Row = { turn: Turn; speaker: Participant | undefined; /** The people the message names, as the room worked them out. */ mentioned: Participant[]; /** The first of a run by the same person: it carries the name and the time. */ head: boolean };
+export type Row = { /** How visible the message is drawn, 0 to 1; absent when it does not fade. */ opacity?: number; turn: Turn; speaker: Participant | undefined; /** The people the message names, as the room worked them out. */ mentioned: Participant[]; /** The first of a run by the same person: it carries the name and the time. */ head: boolean };
 
 /** Whether a message is for the reader: it names them, and they did not write it. */
 export function addressedTo(row: Row, readerId: string | undefined): boolean {

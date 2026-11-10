@@ -17,6 +17,9 @@
   is a door, and `/api/hints` gives a guest their companion's examples and never the team's.
 - **The guest room ends by absence** (`guests.forgetAfterMinutes`, 5): once the last guest's time is over and those minutes have passed, what was said
   there, the guests, their keys and their bindings are let go, and the next visitors find an empty room. The questions' ledger stays, as the portal's ceiling per hour.
+- **The guest room has a trail** (`guests.trailMinutes`, 15): what a guest says fades on the page by its age and is let go by the portal after those minutes, one message at a time, in
+  one statement at the check that already runs. The page does the fading and the counting, and keeps the turns only in the tab's memory (no storage). A guest is not given a turn past
+  the trail, even before it is let go. The end by absence stays for the guests, their keys and what is left.
 - **Nova for guests, off until chosen** (`guests.nova`): an engine of her own, a public folder of her own, facts made without the team's names, a
   budget of questions per guest and per hour counted before the model is called, and no entry in the list of what the knowledge lacked. Not on
   Cloudflare yet. The database moves to version 8 at the next start.
