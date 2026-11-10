@@ -15,6 +15,8 @@ export type RoomState = {
   /** The last turn the live stream gave us: where it picks up again. Turns from history do not move it. */
   cursor?: number;
   connection: Connection;
+  /** Only for a visitor: how long what is said lasts (minutes). The page lets turns fade by it and drops them from memory past it. */
+  trailMinutes?: number;
 };
 
 export type RoomAction =
@@ -24,7 +26,8 @@ export type RoomAction =
   | { type: 'history'; conversationId: string; turns: Turn[]; limit: number }
   | { type: 'presence'; presence: Presence }
   | { type: 'participant'; participant: Participant }
-  | { type: 'activity'; activity: Activity };
+  | { type: 'activity'; activity: Activity }
+  | { type: 'forget'; before: number };
 
 export const initialState: RoomState = {
   participants: [],
@@ -55,6 +58,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
       return {
         ...state,
         you: hello.you,
+        trailMinutes: hello.trailMinutes,
         participants: hello.participants,
         presence: Object.fromEntries(hello.presence.map((p) => [p.participantId, p])),
         thinking: hello.activity.filter((a) => a.state === 'thinking'),
@@ -94,6 +98,18 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
 
     case 'presence':
       return { ...state, presence: { ...state.presence, [action.presence.participantId]: action.presence } };
+
+    case 'forget': {
+      // what has outlived the trail goes from memory: nothing of it is kept anywhere else (no storage), so this is the end of it on this machine
+      let changed = false;
+      const turns: Record<string, Turn[]> = {};
+      for (const [id, list] of Object.entries(state.turns)) {
+        const kept = list.filter((turn) => Date.parse(turn.createdAt) >= action.before);
+        if (kept.length !== list.length) changed = true;
+        turns[id] = kept;
+      }
+      return changed ? { ...state, turns } : state;
+    }
 
     case 'activity': {
       const { activity } = action;

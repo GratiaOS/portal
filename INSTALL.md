@@ -63,7 +63,7 @@ A portal can let visitors in without a key of their own, into one room. Declare 
   { "id": "general", "title": "General" },
   { "id": "guests", "title": "Guests", "kind": "guest" }
 ],
-"guests": { "room": "guests", "maxActive": 20, "minutes": 60, "forgetAfterMinutes": 5, "perCaller": { "count": 5, "perMinutes": 10 } }
+"guests": { "room": "guests", "maxActive": 20, "minutes": 60, "forgetAfterMinutes": 5, "trailMinutes": 15, "perCaller": { "count": 5, "perMinutes": 10 } }
 ```
 
 A visitor who leaves (`POST /api/guest/leave`, with their key) ends their own time at once: the key stops opening anything, their stream closes, and the room has a slot free. What they said stays until the room ends by absence.
@@ -72,6 +72,7 @@ A visitor who leaves (`POST /api/guest/leave`, with their key) ends their own ti
 what that binding gives them, in that room: they read and write there, and nothing else exists for them (no other room, none of your people,
 not what the knowledge lacked), and they cannot ask the companion. `maxActive` is how many guests the portal hosts at once (past it the
 door answers `503`); `perCaller` is how many one address may bring in per window (`429`), and counts by the address the connection has (see `clientIpHeader`).
+What a guest says has a **trail**: each message is let go `trailMinutes` (15) after it was said, one at a time (one statement at the same check, never a timer per message), and the page fades it before, from the time it carries.
 The room **ends by absence**: `forgetAfterMinutes` (5) after the last guest's time is over, what was said there, the guests of it, their keys and
 their bindings are let go, so the next visitors find an empty room and nothing of the last ones. A room with someone still in their time is never
 touched, and the team's rooms never are. It is checked every few minutes (at most ten; on Cloudflare, at the object's alarm), so the end can come a little late.

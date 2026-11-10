@@ -10,6 +10,7 @@
 import MemoryStream from './MemoryStream.tsx';
 import SeedPortal from './SeedPortal.tsx';
 import SignalQuality from './SignalQuality.tsx';
+import type { ReactNode } from 'react';
 import type { Connection } from '../lib/client.ts';
 import type { Row } from '../lib/format.ts';
 import type { Strings } from '../lib/strings.ts';
@@ -29,7 +30,7 @@ export default function ChannelView(props: {
   /** Said under the box all the time: in the guest room, who reads what is written there. */
   notice?: string;
   /** In the guest room: the whisper of the place, said where the room is empty, in place of the plain note. */
-  welcome?: string;
+  welcome?: ReactNode;
   /** What the box says while it is empty. */
   whispers: string[];
   /** Names of those working on an answer in this channel. */

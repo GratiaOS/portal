@@ -51,4 +51,6 @@ export type Hello = {
   activity: Activity[];
   conversations: Conversation[];
   lastSeq: number;
+  /** Said only to a visitor: how long what is said in their room lasts. */
+  trailMinutes?: number;
 };

@@ -71,7 +71,7 @@ test('skins: the third column, which came after contract 1, is hidden until a sk
 test('skins: the contract lists no part the page does not have', () => {
   const listed = new Set<string>();
   for (const [, part] of readme.matchAll(/`([a-z][a-z-]+)`/g)) listed.add(part!);
-  const known = new Set([...used, 'live', 'connecting', 'reconnecting', 'refused', 'mine', 'companion', 'other', 'pre', 'figure', 'log', 'disabled', 'data-here', 'data-popping', 'data-thinking', 'data-spoke', 'data-arrived', 'data-you', 'data-to-you', 'data-jumbo', 'room-occurrence', 'data-head', 'data-from', 'data-connection', 'data-part', 'data-gate', 'data-skin', 'data-skin-base', 'font-family', 'aria-current', 'aria-hidden', 'display', 'grid', 'order', 'left', 'width', 'height', 'text', 'data-idle', 'data-first', 'data-preview', 'data-own']);
+  const known = new Set([...used, 'live', 'connecting', 'reconnecting', 'refused', 'mine', 'companion', 'other', 'pre', 'figure', 'log', 'disabled', 'data-here', 'data-popping', 'data-thinking', 'data-spoke', 'data-arrived', 'data-you', 'data-to-you', 'data-jumbo', 'room-occurrence', 'data-head', 'data-from', 'data-connection', 'data-part', 'data-gate', 'data-skin', 'data-skin-base', 'font-family', 'aria-current', 'aria-hidden', 'display', 'grid', 'order', 'left', 'width', 'height', 'text', 'data-idle', 'data-first', 'data-preview', 'data-own', 'data-welcome', 'data-fading']);
   const stray = [...listed].filter((word) => !known.has(word) && /^[a-z]+(-[a-z]+)+$/.test(word));
   assert.deepEqual(stray, []);
 });

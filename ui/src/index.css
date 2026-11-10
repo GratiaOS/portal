@@ -41,3 +41,13 @@ body {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+
+/* The trail of a guest room: a turn is drawn fainter as it ages (the page sets its opacity); the change is slow, and still for those who ask for it so */
+[data-part='message'][data-fading] {
+  transition: opacity 15s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-part='message'][data-fading] {
+    transition: none;
+  }
+}

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fadeOf, inTrail, opacityOf } from './lib/trail.ts';
 import ChannelList from './components/ChannelList.tsx';
 import ChannelView from './components/ChannelView.tsx';
 import NotifyButton from './components/NotifyButton.tsx';
 import PeopleList from './components/PeopleList.tsx';
 import FieldWhispers from './components/FieldWhispers.tsx';
+import GuestWelcome from './components/GuestWelcome.tsx';
 import SignSlot from './components/SignSlot.tsx';
 import SkinSwitch from './components/SkinSwitch.tsx';
 import { ApiError } from './lib/client.ts';
@@ -84,8 +86,27 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
     };
   }, [channelId, loaded, api, dispatch]);
 
-  const turns = channelId ? (state.turns[channelId] ?? []) : [];
-  const rows = useMemo(() => rowsOf(turns, state.participants), [turns, state.participants]);
+  // the trail: a visitor's room lets what is said fade, and it goes from the tab's memory when the portal lets it go; the page does the counting
+  const trailMs = guest && state.trailMinutes ? state.trailMinutes * 60_000 : undefined;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!trailMs) return;
+    const tick = () => {
+      const at = Date.now();
+      setNow(at);
+      dispatch({ type: 'forget', before: at - trailMs });
+    };
+    tick();
+    const every = setInterval(tick, 15_000);
+    return () => clearInterval(every);
+  }, [trailMs, dispatch]);
+
+  const kept = channelId ? (state.turns[channelId] ?? []) : [];
+  const turns = useMemo(() => (trailMs ? kept.filter((turn) => inTrail(turn.createdAt, trailMs, now)) : kept), [kept, trailMs, now]);
+  const rows = useMemo(() => {
+    const made = rowsOf(turns, state.participants);
+    return trailMs ? made.map((row, i) => ({ ...row, opacity: opacityOf(fadeOf(row.turn.createdAt, trailMs, now, made.length - 1 - i)) })) : made;
+  }, [turns, state.participants, trailMs, now]);
 
   const people = useMemo(() => peopleOf(state.participants, state.presence), [state.participants, state.presence]);
   // the other visitors who are here now, counted and never listed (the portal tells a guest of no one else)
@@ -184,7 +205,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             onOlder={older}
             onSend={send}
             notice={guest ? t.guestNotPrivate : undefined}
-            welcome={guest ? t.guestWelcome : undefined}
+            welcome={guest ? <GuestWelcome trailMinutes={state.trailMinutes} t={t} /> : undefined}
             note={note}
             whispers={whispers}
             thinking={thinking}

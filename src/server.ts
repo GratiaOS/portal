@@ -71,15 +71,17 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
       if (turns || gaps) console.log(`portal: let go of ${turns} message(s) and ${gaps} question(s) past what it keeps`);
       // the guest room ends by absence, whatever the retention of the team says
       if (config.guests) {
+        const faded = store.forgetGuestTrail(config.guests.trailMinutes * 60_000);
+        if (faded) console.log(`portal: the guest trail let go of ${faded} message(s)`);
         const ended = store.forgetEmptyGuestRooms(config.guests.forgetAfterMinutes * 60_000);
         if (ended.turns || ended.guests) console.log(`portal: the guest room ended: let go of ${ended.turns} message(s) and ${ended.guests} guest(s)`);
       }
     };
     forget();
-    forgetting = setInterval(forget, config.guests ? Math.min(10, config.guests.forgetAfterMinutes) * 60_000 : 10 * 60_000);
+    forgetting = setInterval(forget, config.guests ? Math.min(10, config.guests.forgetAfterMinutes, config.guests.trailMinutes) * 60_000 : 10 * 60_000);
     forgetting.unref();
 
-    const live = new Hub(store, { graceMs: options.graceMs });
+    const live = new Hub(store, { graceMs: options.graceMs, trailMinutes: config.guests?.trailMinutes });
     hub = live;
 
     let knowledge: KnowledgeBase | undefined;
@@ -110,7 +112,7 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
       if (!novaForGuests.knowledgeDir) console.log(`portal: ${novaForGuests.alias} for guests has no folder of public documents yet; she talks, and says what she does not know`);
       guestNova = createNova(
         { hub: live, store, llm: options.guestLlm ?? providerFor(novaForGuests), knowledge: base, facts: () => guestFacts({ questions: guestConfig.questions, nova: novaForGuests }, base.files.size) },
-        { alias: novaForGuests.alias, contextTurns: novaForGuests.contextTurns, maxQueue: novaForGuests.maxQueue, scope: 'guest', guestsPerHour: guestConfig.perHour },
+        { alias: novaForGuests.alias, contextTurns: novaForGuests.contextTurns, maxQueue: novaForGuests.maxQueue, scope: 'guest', guestsPerHour: guestConfig.perHour, trailMs: guests.trailMinutes * 60_000 },
       );
     }
 

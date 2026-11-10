@@ -29,6 +29,8 @@ test('the figures the documents give are the defaults the portal has, so they ca
   assert.match(said('what-a-portal-keeps.md'), new RegExp(`last ${config.retention.days} days or its last ${config.retention.messages} messages`));
   assert.match(said('what-a-portal-keeps.md'), new RegExp(`${config.guests.forgetAfterMinutes} minutes after the last visit`));
   assert.match(said('what-a-portal-keeps.md'), new RegExp(`lasts ${config.guests.minutes} minutes by default`));
+  assert.match(said('for-visitors.md'), new RegExp(`${config.guests.trailMinutes} minutes after it was said`));
+  assert.match(said('what-a-portal-keeps.md'), new RegExp(`${config.guests.trailMinutes} minutes after it was said`));
   assert.match(said('for-visitors.md'), new RegExp(`By default it lasts ${config.guests.minutes} minutes`));
   assert.match(said('for-visitors.md'), new RegExp(`\\(${config.guests.forgetAfterMinutes} by default\\)`));
   assert.match(said('about-nova.md'), new RegExp(`ask her ${config.guests.nova.questions} questions during a visit, and all visitors together may ask ${config.guests.nova.perHour} in an hour`));

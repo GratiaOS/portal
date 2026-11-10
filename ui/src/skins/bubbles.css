@@ -371,6 +371,47 @@
     color: var(--ink-faint);
   }
 
+  /* the room speaking before you came in: a bubble that is no one's, set apart from the glass bubbles of people by a dashed edge, no name, no time, centred and quieter */
+  [data-part='welcome'] {
+    width: fit-content;
+    max-width: min(26rem, calc(100% - 2rem));
+    margin: 0 auto 1.5rem;
+    padding: 0.875rem 1.5rem;
+    text-align: center;
+    color: var(--ink-faint);
+    background: var(--glass);
+    border: 1px dashed var(--glass-edge);
+    border-radius: 1.5rem;
+    opacity: 0.85;
+  }
+
+  /* with a welcome, what the log holds sits at its foot, close to where people write, and goes up as the room fills */
+  [data-part='log'][data-welcome] {
+    display: flex;
+    flex-direction: column;
+    padding-top: 1rem;
+  }
+
+  [data-part='log'][data-welcome] > [data-part='welcome'] {
+    margin-top: auto;
+  }
+
+  [data-part='welcome-whisper'] {
+    font-style: italic;
+    margin: 0 0 0.5rem;
+  }
+
+  [data-part='welcome-map'] {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    display: grid;
+    gap: 0.375rem;
+  }
+
+
   [data-part='messages'] {
     @apply list-none p-0;
   }

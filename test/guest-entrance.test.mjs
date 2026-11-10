@@ -22,7 +22,7 @@ function setup({ guests = { room: 'guests', maxActive: 3, minutes: 30, perCaller
     callerFromHome: true,
     hints: { companion: 'Nova', examples: ['what does the team earn?'] }, // the team's, in the team's own words
     guestHints,
-    ...(config ? { guests: { nova: { enabled: false, questions: 5, perHour: 60 }, ...guests } } : {}),
+    ...(config ? { guests: { trailMinutes: 15, nova: { enabled: false, questions: 5, perHour: 60 }, ...guests } } : {}),
     now: () => now,
   });
   const call = (path, { token, caller = 'c1', ...init } = {}) =>
@@ -113,7 +113,7 @@ test('the guest room of the config must exist and be of kind guest', () => {
   const config = (guests, rooms) => parseConfig({ participants: [{ kind: 'human', alias: 'Zeus', token: ZEUS }], rooms, guests, dbPath: ':memory:' }, '/base');
   const rooms = [{ id: 'general', title: 'General' }, { id: 'guests', title: 'Guests', kind: 'guest' }];
   const ok = config({ room: 'guests' }, rooms).guests;
-  assert.deepEqual(ok, { room: 'guests', maxActive: 20, minutes: 60, forgetAfterMinutes: 5, perCaller: { count: 5, perMinutes: 10 }, nova: { enabled: false, questions: 5, perHour: 60 } });
+  assert.deepEqual(ok, { room: 'guests', maxActive: 20, minutes: 60, forgetAfterMinutes: 5, trailMinutes: 15, perCaller: { count: 5, perMinutes: 10 }, nova: { enabled: false, questions: 5, perHour: 60 } });
   assert.throws(() => config({ room: 'nowhere' }, rooms), /there is no room/);
   assert.throws(() => config({ room: 'general' }, rooms), /kind "guest"/);
   assert.throws(() => config({ room: 'guests', minutes: 0 }, rooms), /minutes/);
@@ -206,4 +206,13 @@ test('only a visitor can leave: the team has no time to end, and without a key t
   assert.equal((await call('/api/me', { token: ZEUS })).status, 200, 'and the team is as it was');
   assert.equal((await call('/api/guest/leave', { method: 'POST' })).status, 401);
   assert.equal((await call('/api/guest/leave', { method: 'GET', token: ZEUS })).status, 405);
+});
+
+test('a guest is not given what has outlived the trail, even before the portal has let it go', async () => {
+  const { call, enter, advance } = setup();
+  const owl = await (await enter('a')).json();
+  await call('/api/rooms/guests/messages', { method: 'POST', token: owl.token, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'a word of the trail' }) });
+  assert.equal((await (await call('/api/rooms/guests/messages', { token: owl.token })).json()).turns.length, 1);
+  advance(16 * MIN);
+  assert.equal((await (await call('/api/rooms/guests/messages', { token: owl.token })).json()).turns.length, 0);
 });

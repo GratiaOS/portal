@@ -25,6 +25,8 @@ export type Hello = {
   activity: Activity[];
   conversations: Conversation[];
   lastSeq: number;
+  /** Only to a guest: how long what is said in their room lasts, so that the page can let it fade before it is gone. */
+  trailMinutes?: number;
 };
 
 export type HubEvents = {
@@ -36,6 +38,8 @@ export type HubEvents = {
 export type HubOptions = {
   /** How long a human may be gone before they are shown offline, so a page refresh does not blink. Defaults to 5000 ms. */
   graceMs?: number;
+  /** `guests.trailMinutes`, told to a guest in the hello. */
+  trailMinutes?: number;
   /** The clock a guest's binding is read by, in milliseconds. For tests; defaults to the real one. */
   now?: () => number;
 };
@@ -59,6 +63,7 @@ export class Hub {
     activity: new Set(),
   };
   private readonly graceMs: number;
+  private readonly trailMinutes?: number;
   private readonly now: () => number;
 
   constructor(
@@ -66,6 +71,7 @@ export class Hub {
     options: HubOptions = {},
   ) {
     this.graceMs = options.graceMs ?? DEFAULT_GRACE_MS;
+    this.trailMinutes = options.trailMinutes;
     this.now = options.now ?? Date.now;
   }
 
@@ -114,6 +120,7 @@ export class Hub {
       activity: [...this.thinking.values()].filter((a) => this.mayRead(participant, a.conversationId)),
       conversations: this.store.listConversations().filter((c) => this.mayRead(participant, c.id)),
       lastSeq: this.store.lastSeq(),
+      ...(participant.kind === 'guest' && this.trailMinutes !== undefined ? { trailMinutes: this.trailMinutes } : {}),
     };
     if (this.deliver(connection, frame('hello', hello))) this.replay(connection, lastEventId);
 
@@ -221,10 +228,13 @@ export class Hub {
     let cursor = Number.parseInt(String(lastEventId ?? ''), 10);
     if (!Number.isInteger(cursor) || cursor < 0) return; // nothing asked for; history comes from the REST side
 
+    // a guest is not given what has outlived the trail, even in the minutes before the portal lets it go
+    const since = connection.participant.kind === 'guest' && this.trailMinutes ? new Date(this.now() - this.trailMinutes * 60_000).toISOString() : undefined;
     for (;;) {
       const page = this.store.turnsAfter(cursor, REPLAY_PAGE);
       for (const turn of page) {
         if (!this.mayRead(connection.participant, turn.conversationId)) continue;
+        if (since && turn.createdAt < since) continue;
         if (!this.deliver(connection, frame('message', turn, turn.seq))) return;
       }
       if (page.length < REPLAY_PAGE) return;

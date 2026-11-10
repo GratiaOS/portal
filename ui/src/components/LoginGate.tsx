@@ -20,6 +20,7 @@ import { stringsFor } from '../lib/strings.ts';
 /** The place the "run your own" link leads to: the repository of the portal, public since 0.1.0. */
 const RUN_YOUR_OWN = 'https://github.com/GratiaOS/portal';
 
+
 /**
  * Each cloud is a few ellipses laid along a line, wider in the middle and lighter at the ends, and then softened: so it thins out
  * the way a cloud does, instead of ending at a point or at an edge. [centre x, centre y, half width, half height, opacity].

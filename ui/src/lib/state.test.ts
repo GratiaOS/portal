@@ -107,3 +107,11 @@ test('a participant the page has not heard of is added, and one it knows is repl
   assert.equal(state.participants.length, 2);
   assert.equal(state.participants[1]?.sign, '🦉');
 });
+
+test('a visitor\'s page lets go of turns older than the trail, and of none else', () => {
+  const turn = (seq: number, createdAt: string) => ({ seq, id: `t${seq}`, conversationId: 'guests', speakerId: 'a', text: 'x', mentions: [], createdAt });
+  const before = { ...initialState, turns: { guests: [turn(1, '2026-11-10T10:00:00Z'), turn(2, '2026-11-10T10:20:00Z')] } };
+  const after = roomReducer(before, { type: 'forget', before: Date.parse('2026-11-10T10:10:00Z') });
+  assert.deepEqual(after.turns.guests?.map((t) => t.seq), [2]);
+  assert.equal(roomReducer(after, { type: 'forget', before: Date.parse('2026-11-10T10:10:00Z') }), after, 'nothing more to let go: the state is the same one');
+});

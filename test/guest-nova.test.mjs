@@ -40,7 +40,7 @@ function setup({ questions = 3, perHour = 100, minutes = 30, guestAnswer, teamAn
   const team = createNova({ hub, store, llm: teamLlm, knowledge: teamKnowledge }, base);
   const guests = createNova(
     { hub, store, llm: guestLlm, knowledge: publicKnowledge, facts: () => guestFacts({ questions, nova: { alias: 'Nova', contextTurns: 6, llm: { model: 'guest-engine' }, facts: [] } }, publicKnowledge.files.size) },
-    { ...base, scope: 'guest', guestsPerHour: perHour },
+    { ...base, scope: 'guest', guestsPerHour: perHour, trailMs: 15 * 60_000 },
   );
   const config = { ...GUESTS, minutes, nova: { enabled: true, questions, perHour } };
   const admit = (locale) => admitGuest(store, config, now, locale);
@@ -215,4 +215,15 @@ test('what the portal says in her place, when a guest has used their questions, 
     await s.guests.idle();
     assert.match(s.said('guests').at(-1), want, `${locale}`);
   }
+});
+
+test('what a guest said past the trail is not given to the model, even before the portal has let it go', async () => {
+  const s = setup();
+  const { guest } = s.admit();
+  s.hub.publish({ conversationId: 'guests', speakerId: guest.id, text: 'my old confession' });
+  s.advance(16 * 60_000); // past the trail, and nothing has been let go yet
+  s.ask(guest, 'guests');
+  await s.guests.idle();
+  assert.equal(s.guestLlm.calls.length, 1);
+  assert.ok(!JSON.stringify(s.guestLlm.calls[0].messages).includes('my old confession'));
 });

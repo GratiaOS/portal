@@ -526,6 +526,46 @@
     color: var(--ink-faint);
   }
 
+  /* the room speaking before you came in: a line on the scope that is no one's, in the mono, with a thin frame and no point; no name, no time, centred and quieter */
+  [data-part='welcome'] {
+    width: fit-content;
+    max-width: min(26rem, calc(100% - 2 * var(--pad)));
+    margin: 0 auto 1.5rem;
+    padding: 0.75rem 1.25rem;
+    text-align: center;
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    border: 1px solid var(--rule-soft);
+    border-radius: 0.25rem;
+  }
+
+  /* with a welcome, what the log holds sits at its foot, close to where people write, and goes up as the room fills */
+  [data-part='log'][data-welcome] {
+    display: flex;
+    flex-direction: column;
+    padding-top: 1rem;
+  }
+
+  [data-part='log'][data-welcome] > [data-part='welcome'] {
+    margin-top: auto;
+  }
+
+  [data-part='welcome-whisper'] {
+    margin: 0 0 0.5rem;
+    color: var(--ink-soft);
+  }
+
+  [data-part='welcome-map'] {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    display: grid;
+    gap: 0.375rem;
+  }
+
+
   [data-part='messages'] {
     padding: 0;
     list-style: none;
