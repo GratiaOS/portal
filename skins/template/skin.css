@@ -1,0 +1,33 @@
+/*
+ * A new look in two minutes.
+ *
+ * 1. Copy this folder: `cp -r skins/template skins/mine`.
+ * 2. In `skin.json` change `id` to `mine` (the name of the folder), and `name` and `emoji` to what you like.
+ * 3. In this file change `template` to `mine` in the first line, and change the five colours below.
+ * 4. Reload the page: your look is one more button in the side. It is read each time it is asked for, so no restart.
+ *
+ * It keeps the layout of the look it extends (`"extends": "bank"`, the ledger) and changes only what is said here. To lay the page out
+ * another way, take away `extends` and answer the parts yourself: the list is in ui/src/skins/README.md, and bubbles.css, bank.css and
+ * radar.css are the examples. Rules: everything inside `:root[data-skin='<id>']`, keyframes named `<id>-…`, nothing loaded from elsewhere.
+ */
+:root[data-skin='template'] {
+  /* the five: change only these, and you have a look */
+  --field: oklch(0.95 0.025 150); /* the ground the page stands on */
+  --paper: oklch(0.985 0.012 150); /* the sheet the words are written on */
+  --ink: oklch(0.25 0.04 160); /* the words */
+  --accent: oklch(0.45 0.12 160); /* what is chosen and pressed */
+  --accent-ink: oklch(0.99 0 0); /* words on the accent */
+
+  /* the rest follow from the five; change them too if you want them different */
+  --ink-soft: color-mix(in oklch, var(--ink) 82%, transparent);
+  --ink-faint: color-mix(in oklch, var(--ink) 70%, transparent);
+  --rule: color-mix(in oklch, var(--ink) 28%, var(--paper));
+  --rule-soft: color-mix(in oklch, var(--ink) 12%, var(--paper));
+  --glass: var(--paper);
+  --glass-strong: var(--paper);
+  --glass-edge: var(--rule);
+  --code: color-mix(in oklch, var(--ink) 6%, var(--paper));
+  --code-edge: var(--rule);
+  --companion: color-mix(in oklch, var(--accent) 10%, var(--paper));
+  --focus: var(--accent);
+}
