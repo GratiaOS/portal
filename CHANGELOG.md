@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.2.1 (2026-11-10)
+
+Nothing changes in what a running portal does: this is the documentation and the tools around it. If you run 0.2.0, there is nothing to upgrade for.
+
 - **`pnpm dev` and `pnpm dev:lan`**: a portal to try things on from a fresh clone, with nothing to set up. The room is in memory, the keys are made at the start and printed (a different one for each person, new at every start), the door for visitors is open at `/guest`, and `dev:lan` also listens on the network and prints the addresses the others can open, with a note that the keys travel in plain HTTP there. Run for real by a test.
 - **A template look** (`skins/template`): a folder the portal accepts as it is, with five colours to change, how to copy it and the rules in its first lines; a test keeps it good. `pnpm dev` offers the folder.
-- **The documentation as a map.** The README is now a short road (🗺️ the map, ⛰️ where you are going, 📍 six stops, 🏕️ what you can rely on and what is not yet), with a few lines for a companion that reads it to work on the repo; the long parts moved, whole, to `docs/` (how it works, Nova, the API, running one), the API table was brought up to what the portal answers, and `docs/how-it-works.md` says what a room is today, what is not built and where another kind of room would touch.
+- **The documentation as a map.** The README is now a short road (the signal, 🗺️ the map, 📍 six checkpoints, 🏕️ what you can rely on and what is still taking shape), with the Heartware badge and a few lines for a companion that reads it to work on the repo; the long parts moved, whole, to `docs/` (how it works, Nova, the API, running one), the API table was brought up to what the portal answers, and `docs/how-it-works.md` says what a room is today, what is not built and where another kind of room would touch.
 
 ## 0.2.0 (2026-11-10)
 
