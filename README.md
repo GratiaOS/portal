@@ -19,9 +19,14 @@ Your way into the portal. Start here, and take it one step at a time.
 
 Then 🏕️ rest: what you can rely on, and what is still taking shape.
 
+### 📡 Follow the signal
+
+The project's current pulse: where things stand, what is moving, and what comes next. It is short on purpose and kept true by whoever changes something: **[SIGNAL.md](SIGNAL.md)**.
+
+### Looking for something specific?
+
 | If you want to… | read |
 | --- | --- |
-| know where the project is and what comes next | [SIGNAL.md](SIGNAL.md) |
 | run one, step by step | [INSTALL.md](INSTALL.md) |
 | understand how it is made | [docs/how-it-works.md](docs/how-it-works.md) |
 | talk to it from code | [docs/api.md](docs/api.md) |
