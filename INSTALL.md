@@ -146,6 +146,23 @@ git pull && pnpm install && pnpm -r build
 Restart the portal, and check the version in `/api/health`. Updates are pulled by you; nothing phones home. What changes from one
 version to the next, for whoever runs a portal, is in [CHANGELOG.md](CHANGELOG.md).
 
+
+### As an app on a phone
+
+The page can be installed from a browser as an app of its own (a window with no address bar, an icon on the home screen). `name` in the config
+(up to 40 characters, one line) is what the portal is called there and on its tab; without it, `El portal`. The manifest
+(`/manifest.webmanifest`) is made from the config when asked, so two portals on one phone are two apps. The icons (`ui/public/icons/`, one brush stroke
+that goes round and curls inward, in the manner of the Gratia mark but not it: that logo is the family's own, see `TRADEMARK.md`) are drawn by
+`scripts/make-icons.mjs` and kept in the repository; a portal that is yours should draw its own.
+
+- **Android and desktop Chrome:** ⚙ shows *Install the app* when the browser offers it. **iOS:** Safari has no such button; ⚙ says
+  *Share → Add to Home Screen*.
+- **What the app keeps:** only the shell of the page (`sw.js`), so that it opens with no network. Nothing under `/api` (what is said,
+  the stream), `/skins` or the manifest is ever kept by it: the portal is the one place that holds the room, and it forgets.
+- **Staying signed in:** a closed app has no tab to outlive, so a person of the team who signs in *in the installed app* is kept on that
+  device until they sign out (`localStorage`). In a browser tab nothing changes (the key lives as long as the tab), and a visitor's key is
+  never kept past the tab, installed or not.
+
 ## On Cloudflare
 
 A portal can also live on Cloudflare: one Worker in front, and one Durable Object that is the whole portal, its database

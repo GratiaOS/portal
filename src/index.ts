@@ -25,3 +25,4 @@ export * from './page-headers.js';
 export * from './skins.js';
 export * from './server.js';
 export * from './version.js';
+export * from './manifest.js';

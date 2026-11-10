@@ -8,6 +8,7 @@ import type { Participant } from './domain.js';
 import type { Hub } from './hub.js';
 import { SlidingWindowLimiter } from './limiter.js';
 import { SKIN_CONTRACT } from './skins.js';
+import { manifestFor } from './manifest.js';
 import type { RoomStore } from './store.js';
 import { serveStream } from './stream.js';
 import type { StreamOptions } from './stream.js';
@@ -34,6 +35,8 @@ export type AppOptions = {
   guests?: GuestsConfig;
   /** What the box where a guest writes may say: only when Nova is on for guests, and their examples, never the team's. */
   guestHints?: { companion: string; examples: string[] };
+  /** What the portal is called (`name` in the config): in its manifest and in its health. */
+  name?: string;
   /** Defaults to 10. */
   maxStreamsPerParticipant?: number;
   /** Defaults to 32 KB: room for the longest message, in JSON, with margin. */
@@ -161,7 +164,12 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       only(request, 'GET');
       // which room this is, and the contracts it keeps, so that a module or a person can tell before relying on one
       // `guests` is said only when there is a door, so that the gate can offer it and a portal without one says nothing of it
-      return send(200, { ok: true, version: options.version, contracts: { skins: SKIN_CONTRACT }, ...(options.guests ? { guests: true } : {}) });
+      return send(200, { ok: true, version: options.version, contracts: { skins: SKIN_CONTRACT }, ...(options.name ? { name: options.name } : {}), ...(options.guests ? { guests: true } : {}) });
+    }
+    if (path === '/manifest.webmanifest') {
+      // no key: a browser asks for it to offer the install, and it holds a name and some icons, nothing of what is said
+      only(request, 'GET');
+      return new Response(JSON.stringify(manifestFor(options.name)), { status: 200, headers: { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' } });
     }
     if (path.startsWith('/skins/')) {
       // no token: the sign-in page wears a skin too, and a skin holds a look, nothing of what is said in the room

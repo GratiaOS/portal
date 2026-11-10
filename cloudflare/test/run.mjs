@@ -66,6 +66,7 @@ mkdirSync(guestDir, { recursive: true });
 writeFileSync(join(guestDir, 'about.md'), '# About\n\nUn portal este un chat de echipa, cu o companioana.\n');
 
 const CONFIG = {
+  name: 'Stand-in',
   participants: [
     { kind: 'human', alias: 'Zeus' },
     { kind: 'human', alias: 'Hera' },
@@ -212,6 +213,16 @@ try {
   const missing = await fetch(`${base}/nothing-here.js`);
   check(missing.status === 404, `a file that is not there is a 404 (${missing.status} ${missing.headers.get('content-type')})`);
   check((await fetch(`${base}/`, { method: 'POST' })).status === 405, 'the page takes no POST');
+
+  console.log('\n— the portal as an app: a manifest of its own, a worker for the shell, icons');
+  const manifestRes = await fetch(`${base}/manifest.webmanifest`);
+  const manifest = await manifestRes.json().catch(() => ({}));
+  check(manifestRes.status === 200 && /^application\/manifest\+json/.test(manifestRes.headers.get('content-type') ?? '') && manifest.name === 'Stand-in', `the manifest is made from the config, with no key: ${manifest.name}`);
+  const sw = await fetch(`${base}/sw.js`);
+  check(sw.status === 200 && /javascript/.test(sw.headers.get('content-type') ?? '') && sw.headers.get('cache-control') === 'no-cache', `the service worker is asked for again each time (${sw.status} ${sw.headers.get('cache-control')})`);
+  const icon = await fetch(`${base}/icons/icon-192.png`);
+  check(icon.status === 200 && icon.headers.get('content-type') === 'image/png', `an icon is a png (${icon.status} ${icon.headers.get('content-type')})`);
+  check((await (await fetch(`${base}/api/health`)).json()).name === 'Stand-in', 'and the health says the name');
 
   console.log('\n— the portal, from its object');
   const health = await (await fetch(`${base}/api/health`)).json();

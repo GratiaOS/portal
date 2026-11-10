@@ -35,6 +35,10 @@ export type Strings = {
   guestFade: (minutes?: number) => string;
   /** The top bar of a narrow page and the sheet behind it: where the rooms, the people and the settings are. */
   menu: string;
+  /** Installing the portal as an app: the button, how to do it by hand on iOS, and what staying signed in means once it is. */
+  install: string;
+  installIos: string;
+  installedNote: string;
   settings: string;
   closeSheet: string;
   hereCount: (count: number) => string;
@@ -122,6 +126,9 @@ const ro: Strings = {
   guestFade: (minutes) => (minutes === undefined ? 'Nicio istorie nu te urmează aici.' : `Nicio istorie nu te urmează aici. Totul se estompează în ${minutes === 1 ? 'un minut' : `${minutes} ${minutes % 100 >= 1 && minutes % 100 <= 19 ? '' : 'de '}minute`}.`),
   guestRest: 'Vorbește cu camera, sau doar odihnește-te.',
   menu: 'Camere și setări',
+  install: 'Instalează aplicația',
+  installIos: 'Ca să instalezi: Distribuie ⍐ → Adaugă pe ecranul principal.',
+  installedNote: 'Aplicația instalată te ține conectat pe acest dispozitiv, până la Sign out.',
   settings: 'Setări',
   closeSheet: 'Închide',
   hereCount: (count) => `${count} aici`,
@@ -198,6 +205,9 @@ const en: Strings = {
   guestFade: (minutes) => (minutes === undefined ? 'No history follows you here.' : `No history follows you here. Everything fades in ${minutes === 1 ? '1 minute' : `${minutes} minutes`}.`),
   guestRest: 'Speak to the room, or just rest.',
   menu: 'Rooms and settings',
+  install: 'Install the app',
+  installIos: 'To install: Share ⍐ → Add to Home Screen.',
+  installedNote: 'The installed app keeps you signed in on this device, until you sign out.',
   settings: 'Settings',
   closeSheet: 'Close',
   hereCount: (count) => `${count} here`,
@@ -274,6 +284,9 @@ const es: Strings = {
   guestFade: (minutes) => (minutes === undefined ? 'Aquí no te sigue ningún historial.' : `Aquí no te sigue ningún historial. Todo se desvanece en ${minutes === 1 ? '1 minuto' : `${minutes} minutos`}.`),
   guestRest: 'Habla con la sala, o simplemente descansa.',
   menu: 'Salas y ajustes',
+  install: 'Instalar la app',
+  installIos: 'Para instalar: Compartir ⍐ → Añadir a pantalla de inicio.',
+  installedNote: 'La app instalada te mantiene conectado en este dispositivo, hasta que cierres sesión.',
   settings: 'Ajustes',
   closeSheet: 'Cerrar',
   hereCount: (count) => `${count} aquí`,

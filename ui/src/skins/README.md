@@ -151,6 +151,8 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `sheet-backdrop` | the cover behind the open sheet; a press on it closes it | |
 | `visit-as` | in a visitor's side: who they are writing as | |
 | `visit-time` | in a visitor's side: how long the visit has left | |
+| `install` | the button that offers to install the portal as an app, shown only where the browser gives the means | |
+| `install-hint` | a line about the app: how to add it by hand on iOS, or what staying signed in means once it is installed | |
 | `welcome` | what a visitor finds at the top of the room: a whisper and two lines; made by the page, no message, and it does not fade | |
 | `welcome-whisper` | its first line, the whisper of the place | |
 | `welcome-map` | the two lines under it: nothing follows you, nothing is asked of you | |

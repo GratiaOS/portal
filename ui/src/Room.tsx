@@ -18,6 +18,7 @@ import { leavingEndsAVisit } from './lib/guest.ts';
 import { useLang } from './lib/lang.ts';
 import { readGuest, readGuestUntil } from './lib/session.ts';
 import { SAY_FROM, minutesLeft } from './lib/visit.ts';
+import { useInstall } from './lib/install.ts';
 import { stringsFor } from './lib/strings.ts';
 import type { Hints, SkinInfo } from './lib/types.ts';
 import { useNotify } from './lib/useNotify.ts';
@@ -161,6 +162,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
     return () => clearInterval(every);
   }, [until]);
   const left = minutesLeft(until, clockNow);
+  const install = useInstall();
 
   const [note, setNote] = useState('');
   const send = useCallback(
@@ -226,10 +228,17 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
           ) : (
             <PeopleList people={people} meId={state.you?.id} thinking={thinkingIds} spoke={spoke} arrived={arrived} t={t} />
           )}
+          {install.showIosHint && <p data-part="install-hint">{t.installIos}</p>}
+          {install.installed && !guest && <p data-part="install-hint">{t.installedNote}</p>}
           <div data-part="self">
             {state.you && !guest && <SignSlot name={state.you.alias} current={state.you.sign} onChoose={chooseSign} t={t} />}
             <SkinSwitch t={t} extra={skins} />
             {!guest && <NotifyButton t={t} />}
+            {install.canPrompt && (
+              <button type="button" onClick={() => void install.ask()} data-part="install">
+                {t.install}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {

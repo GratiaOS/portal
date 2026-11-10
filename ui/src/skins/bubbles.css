@@ -618,9 +618,19 @@
   }
 
   [data-part='visit-as'],
-  [data-part='visit-time'] {
+  [data-part='visit-time'],
+  [data-part='install-hint'] {
     margin: 0;
     font-size: 0.8125rem;
+    color: var(--ink-soft);
+  }
+
+  /* the portal as an app: the button, for the browsers that give the means, and a line for those that do not */
+  [data-part='install'] {
+    font-size: 0.8125rem;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 2px;
     color: var(--ink-soft);
   }
 
@@ -768,6 +778,7 @@
     [data-part='skin-option'],
     [data-part='channel'],
     [data-part='signout'],
+    [data-part='install'],
     [data-part='code-copy'],
     [data-part='sign-slot'],
     [data-part='sign-step'],
