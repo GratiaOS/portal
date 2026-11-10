@@ -112,7 +112,7 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
       if (!novaForGuests.knowledgeDir) console.log(`portal: ${novaForGuests.alias} for guests has no folder of public documents yet; she talks, and says what she does not know`);
       guestNova = createNova(
         { hub: live, store, llm: options.guestLlm ?? providerFor(novaForGuests), knowledge: base, facts: () => guestFacts({ questions: guestConfig.questions, nova: novaForGuests }, base.files.size) },
-        { alias: novaForGuests.alias, contextTurns: novaForGuests.contextTurns, maxQueue: novaForGuests.maxQueue, scope: 'guest', guestsPerHour: guestConfig.perHour },
+        { alias: novaForGuests.alias, contextTurns: novaForGuests.contextTurns, maxQueue: novaForGuests.maxQueue, scope: 'guest', guestsPerHour: guestConfig.perHour, trailMs: guests.trailMinutes * 60_000 },
       );
     }
 

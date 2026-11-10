@@ -125,7 +125,7 @@ export class Portal extends DurableObject<Env> {
     const known = fixedKnowledge(files);
     createNova(
       { hub, store, llm: createChatCompletionsProvider({ baseUrl, model, apiKey, maxTokens, timeoutMs, reasoningEffort, body }), knowledge: known, facts: () => guestFacts({ questions: guests.nova.questions, nova }, known.files.size) },
-      { alias: nova.alias, contextTurns: nova.contextTurns, maxQueue: nova.maxQueue, scope: 'guest', guestsPerHour: guests.nova.perHour },
+      { alias: nova.alias, contextTurns: nova.contextTurns, maxQueue: nova.maxQueue, scope: 'guest', guestsPerHour: guests.nova.perHour, trailMs: guests.trailMinutes * 60_000 },
     );
   }
 

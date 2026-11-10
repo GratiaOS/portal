@@ -33,6 +33,8 @@ export type NovaOptions = {
   scope?: 'team' | 'guest';
   /** In the guest scope: how many questions all the guests together may ask in an hour. */
   guestsPerHour?: number;
+  /** In the guest scope: what was said more than this many milliseconds ago is not given to the model, even before the portal has let it go. */
+  trailMs?: number;
   /** The clock, in milliseconds. For tests. */
   now?: () => number;
 };
@@ -285,7 +287,10 @@ export function createNova(
     const words = wordsFor(asker.locale);
     knowledge.refresh();
 
-    const latest = store.listTurns(turn.conversationId, { before: turn.seq + 1, limit: options.contextTurns });
+    const kept = store.listTurns(turn.conversationId, { before: turn.seq + 1, limit: options.contextTurns });
+    // in a guest room what has outlived the trail is not given to the model, in the minutes before the portal lets it go
+    const since = scope === 'guest' && options.trailMs ? new Date(clock() - options.trailMs).toISOString() : undefined;
+    const latest = since ? kept.filter((t) => t.createdAt >= since) : kept;
     const lines = latest.map((t) => ({ alias: aliasOf(t.speakerId), text: t.text }));
     const roomFacts = facts();
     // the facts are evidence too: a figure she took from them ("the last 12 messages") is not an invention. Like the conversation, they
