@@ -62,6 +62,12 @@ export type Strings = {
   notHere: string;
   signOut: string;
   notifyOn: string;
+  /** What the page says about notifications once the browser has answered: for a mention only, or blocked. */
+  notifyAbout: string;
+  notifyDenied: string;
+  /** A notice says where, never what: one mention in a channel, and several. */
+  mentionedIn: (channel: string) => string;
+  mentionsIn: (count: number, channel: string) => string;
   /** Lines that say how to call a companion, by example. */
   whispers: (companion: string) => string[];
   /** The column at the right: its name for a screen reader, and the lines it turns, while someone is here and while no one has touched anything for a minute. */
@@ -73,8 +79,6 @@ export type Strings = {
   skinNames: Record<BuiltInSkin, string>;
   copy: string;
   copied: string;
-  /** "3 mesaje noi": several turns in one notice. */
-  newMessages: (count: number) => string;
   say: string;
   send: string;
   /** Said by a screen reader before a message that names the reader. */
@@ -151,6 +155,10 @@ const ro: Strings = {
   notHere: 'nu e aici',
   signOut: 'Ieși',
   notifyOn: 'Pornește notificările',
+  notifyAbout: 'Te anunț doar când ești menționat.',
+  notifyDenied: 'Notificările sunt oprite în acest browser; le pornești din setările site-ului.',
+  mentionedIn: (c) => `Ai fost menționat în ${c}`,
+  mentionsIn: (n, c) => `${n} mențiuni în ${c}`,
   whispers: (c) => [`Cheam-o pe @${c} ca pe o colegă.`, `@${c}, mă ajuți cu ceva?`, `@${c}, tu ce părere ai?`],
   fieldLabel: 'Șoapte',
   fieldActive: ['Respiră mai întâi.', 'Nu ești în urmă.', 'Totul se desfășoară.', 'Un adevăr pe rând.', 'Lasă memoria să te găsească.', 'Nu lipsește nimic.'],
@@ -159,7 +167,6 @@ const ro: Strings = {
   skinNames: { bubbles: 'Bule', bank: 'Bancă', radar: 'Radar' },
   copy: 'Copiază',
   copied: 'Copiat',
-  newMessages: (n) => `${n} mesaje noi`,
   say: 'Scrie un mesaj…',
   send: 'Trimite',
   toYou: 'Pentru tine',
@@ -232,6 +239,10 @@ const en: Strings = {
   notHere: 'is not here',
   signOut: 'Sign out',
   notifyOn: 'Turn on notifications',
+  notifyAbout: 'You are told only when you are mentioned.',
+  notifyDenied: 'Notifications are blocked in this browser; turn them on in the site settings.',
+  mentionedIn: (c) => `You were mentioned in ${c}`,
+  mentionsIn: (n, c) => `${n} mentions in ${c}`,
   whispers: (c) => [`Call @${c} like you would a colleague.`, `@${c}, could you help me with something?`, `@${c}, what do you think?`],
   fieldLabel: 'Whispers',
   fieldActive: ['Breathe first.', 'You are not behind.', 'Everything is unfolding.', 'One truth at a time.', 'Let memory find you.', 'Nothing is missing.'],
@@ -240,7 +251,6 @@ const en: Strings = {
   skinNames: { bubbles: 'Bubbles', bank: 'Bank', radar: 'Radar' },
   copy: 'Copy',
   copied: 'Copied',
-  newMessages: (n) => `${n} new messages`,
   say: 'Write a message…',
   send: 'Send',
   toYou: 'For you',
@@ -313,6 +323,10 @@ const es: Strings = {
   notHere: 'no está aquí',
   signOut: 'Cerrar sesión',
   notifyOn: 'Activar notificaciones',
+  notifyAbout: 'Solo te avisamos cuando te mencionan.',
+  notifyDenied: 'Las notificaciones están bloqueadas en este navegador; actívalas en los ajustes del sitio.',
+  mentionedIn: (c) => `Te mencionaron en ${c}`,
+  mentionsIn: (n, c) => `${n} menciones en ${c}`,
   whispers: (c) => [`Llama a @${c} como llamarías a una colega.`, `@${c}, ¿me ayudas con algo?`, `@${c}, ¿tú qué opinas?`],
   fieldLabel: 'Susurros',
   fieldActive: ['Respira primero.', 'No vas con retraso.', 'Todo se está desplegando.', 'Una verdad a la vez.', 'Deja que la memoria te encuentre.', 'No falta nada.'],
@@ -321,7 +335,6 @@ const es: Strings = {
   skinNames: { bubbles: 'Burbujas', bank: 'Banco', radar: 'Radar' },
   copy: 'Copiar',
   copied: 'Copiado',
-  newMessages: (n) => `${n} mensajes nuevos`,
   say: 'Escribe un mensaje…',
   send: 'Enviar',
   toYou: 'Para ti',

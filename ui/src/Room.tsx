@@ -64,13 +64,22 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
   useEffect(() => {
     const onHash = () => setWanted(channelFromHash());
     window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    // a click on a notice, with the page already open: the worker says which channel (public/sw.js)
+    const onWorker = (event: MessageEvent) => {
+      const data = event.data as { type?: unknown; hash?: unknown } | null;
+      if (data?.type === 'portal:channel' && typeof data.hash === 'string' && data.hash.startsWith('#')) location.hash = data.hash;
+    };
+    navigator.serviceWorker?.addEventListener('message', onWorker);
+    return () => {
+      window.removeEventListener('hashchange', onHash);
+      navigator.serviceWorker?.removeEventListener('message', onWorker);
+    };
   }, []);
 
   const selected = state.conversations.find((c) => c.id === wanted) ?? state.conversations[0];
   const channelId = selected?.id;
   const { here: looking, start } = useUnread(state, channelId, TITLE);
-  useNotify(state, looking, start, t, !guest); // a visitor's messages are never shown as notifications of the computer
+  useNotify(state, looking, start, t, !guest, TITLE); // a visitor's messages are never shown as notifications of the computer
 
   // the first page of a channel's history, once, when it is first looked at
   const [loadingFor, setLoadingFor] = useState<string | undefined>(undefined);
