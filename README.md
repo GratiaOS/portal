@@ -87,7 +87,7 @@ Either way, `name` in the config is what the portal is called.
 
 There is no separate app to build or configure: the portal's own page can be installed from the browser, on a phone or a PC. ⚙ offers it where the browser gives the means, and says how on iOS.
 
-A person of the team who signs in *in the installed app* stays signed in on that device until they sign out. A visitor never does.
+A person of the team who signs in *in the installed app* stays signed in on that device until they leave the portal. A visitor never does.
 
 A deploy or a new secret can take five minutes to reach a running object.
 
