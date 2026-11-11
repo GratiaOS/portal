@@ -914,6 +914,34 @@
     display: contents;
   }
 
+  /* on a wide page the groups of the foot are boxes, with a rest between them: eight inside a group, twenty between groups, twenty-four before the way out; and the foot scrolls where the page is too short for it (a grid opened, a long note) */
+  @media (min-width: 48rem) {
+    [data-part='self-group'] {
+      display: block;
+    }
+
+    [data-part='self-group'] > :not([data-part='label']) + * {
+      margin-top: 0.5rem;
+    }
+
+    [data-part='self-group'] + [data-part='self-group'] {
+      margin-top: 1.25rem;
+    }
+
+    [data-part='self-group'][data-group='end'] {
+      margin-top: 1.5rem;
+    }
+
+    /* here the foot is not a box (its parts are items of the side): the rest comes from the groups alone, and the side is what scrolls */
+    [data-part='self'] {
+      gap: 0;
+    }
+
+    [data-part='side'] {
+      overflow-y: auto;
+    }
+  }
+
   /* the portal as an app: the button, for the browsers that give the means, and a line for those that do not */
   [data-part='install'] {
     font-size: 0.8125rem;
