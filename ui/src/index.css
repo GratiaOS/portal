@@ -51,3 +51,8 @@ body {
     transition: none;
   }
 }
+
+/* The snails of a visit are drawn only by a look that answers them (Bubbles does); for any other the part is not there, and the page is as it was */
+[data-part='snails'] {
+  display: none;
+}

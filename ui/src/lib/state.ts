@@ -17,6 +17,7 @@ export type RoomState = {
   connection: Connection;
   /** Only for a visitor: how long what is said lasts (minutes). The page lets turns fade by it and drops them from memory past it. */
   trailMinutes?: number;
+  visitMinutes?: number;
 };
 
 export type RoomAction =
@@ -59,6 +60,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
         ...state,
         you: hello.you,
         trailMinutes: hello.trailMinutes,
+        visitMinutes: hello.visitMinutes,
         participants: hello.participants,
         presence: Object.fromEntries(hello.presence.map((p) => [p.participantId, p])),
         thinking: hello.activity.filter((a) => a.state === 'thinking'),

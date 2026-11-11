@@ -53,4 +53,5 @@ export type Hello = {
   lastSeq: number;
   /** Said only to a visitor: how long what is said in their room lasts. */
   trailMinutes?: number;
+  visitMinutes?: number;
 };

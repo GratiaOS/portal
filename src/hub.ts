@@ -27,6 +27,8 @@ export type Hello = {
   lastSeq: number;
   /** Only to a guest: how long what is said in their room lasts, so that the page can let it fade before it is gone. */
   trailMinutes?: number;
+  /** Only to a guest: how long a visit lasts (`guests.minutes`), so that the page can say which of the snails of the visit it is on. */
+  visitMinutes?: number;
 };
 
 export type HubEvents = {
@@ -40,6 +42,8 @@ export type HubOptions = {
   graceMs?: number;
   /** `guests.trailMinutes`, told to a guest in the hello. */
   trailMinutes?: number;
+  /** `guests.minutes`, told to a guest in the hello. */
+  visitMinutes?: number;
   /** The clock a guest's binding is read by, in milliseconds. For tests; defaults to the real one. */
   now?: () => number;
 };
@@ -64,6 +68,7 @@ export class Hub {
   };
   private readonly graceMs: number;
   private readonly trailMinutes?: number;
+  private readonly visitMinutes?: number;
   private readonly now: () => number;
 
   constructor(
@@ -72,6 +77,7 @@ export class Hub {
   ) {
     this.graceMs = options.graceMs ?? DEFAULT_GRACE_MS;
     this.trailMinutes = options.trailMinutes;
+    this.visitMinutes = options.visitMinutes;
     this.now = options.now ?? Date.now;
   }
 
@@ -121,6 +127,7 @@ export class Hub {
       conversations: this.store.listConversations().filter((c) => this.mayRead(participant, c.id)),
       lastSeq: this.store.lastSeq(),
       ...(participant.kind === 'guest' && this.trailMinutes !== undefined ? { trailMinutes: this.trailMinutes } : {}),
+      ...(participant.kind === 'guest' && this.visitMinutes !== undefined ? { visitMinutes: this.visitMinutes } : {}),
     };
     if (this.deliver(connection, frame('hello', hello))) this.replay(connection, lastEventId);
 

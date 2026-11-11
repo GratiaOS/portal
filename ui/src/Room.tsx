@@ -7,6 +7,7 @@ import NotifyButton from './components/NotifyButton.tsx';
 import PeopleList from './components/PeopleList.tsx';
 import FieldWhispers from './components/FieldWhispers.tsx';
 import GuestWelcome from './components/GuestWelcome.tsx';
+import Snails from './components/Snails.tsx';
 import SignSlot from './components/SignSlot.tsx';
 import SkinSwitch from './components/SkinSwitch.tsx';
 import { ApiError } from './lib/client.ts';
@@ -17,6 +18,7 @@ import { useSpoke } from './lib/spoke.ts';
 import { leavingEndsAVisit } from './lib/guest.ts';
 import { useLang } from './lib/lang.ts';
 import { readGuest, readGuestUntil } from './lib/session.ts';
+import { snailAt } from './lib/snails.ts';
 import { SAY_FROM, minutesLeft } from './lib/visit.ts';
 import { useInstall } from './lib/install.ts';
 import { stringsFor } from './lib/strings.ts';
@@ -171,6 +173,11 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
     return () => clearInterval(every);
   }, [until]);
   const left = minutesLeft(until, clockNow);
+  // the snail that is walking in this visit: a visitor's, and only when the portal has told how long a visit and a trail are
+  const snail =
+    guest && until !== undefined && state.visitMinutes && state.trailMinutes
+      ? snailAt(until, clockNow, state.visitMinutes * 60_000, state.trailMinutes * 60_000)
+      : undefined;
   const install = useInstall();
 
   const [note, setNote] = useState('');
@@ -300,6 +307,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             onSend={send}
             notice={guest ? t.guestNotPrivate : undefined}
             welcome={guest ? <GuestWelcome trailMinutes={state.trailMinutes} t={t} /> : undefined}
+            snails={snail ? <Snails snail={snail} t={t} /> : undefined}
             note={note}
             whispers={whispers}
             thinking={thinking}

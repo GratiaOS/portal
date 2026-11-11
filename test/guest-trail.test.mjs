@@ -50,7 +50,7 @@ test('a guest who reconnects is not replayed a turn past the trail, even before 
   const { Hub } = await import('../dist/index.js');
   const { fakeSink } = await import('./helpers.mjs');
   const { store, clock, owl, say } = setup();
-  const hub = new Hub(store, { graceMs: 20, now: () => clock.now, trailMinutes: 15 });
+  const hub = new Hub(store, { graceMs: 20, now: () => clock.now, trailMinutes: 15, visitMinutes: 60 });
   say(owl.id, 'guests', 'old');
   clock.now += 10 * MIN;
   say(owl.id, 'guests', 'recent');
@@ -60,4 +60,5 @@ test('a guest who reconnects is not replayed a turn past the trail, even before 
   const said = sink.frames().filter((f) => f.event === 'message').map((f) => f.data.text);
   assert.deepEqual(said, ['recent']);
   assert.equal(sink.frames()[0].data.trailMinutes, 15, 'and the hello tells the guest how long what is said lasts');
+  assert.equal(sink.frames()[0].data.visitMinutes, 60, 'and how long a visit lasts, so that the page can count its snails');
 });
