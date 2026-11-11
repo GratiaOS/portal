@@ -162,7 +162,7 @@ that goes round and curls inward, in the manner of the Gratia mark but not it: t
 - **What the app keeps:** only the shell of the page (`sw.js`), so that it opens with no network. Nothing under `/api` (what is said,
   the stream), `/skins` or the manifest is ever kept by it: the portal is the one place that holds the room, and it forgets.
 - **Staying signed in:** a closed app has no tab to outlive, so a person of the team who signs in *in the installed app* is kept on that
-  device until they sign out (`localStorage`). In a browser tab nothing changes (the key lives as long as the tab), and a visitor's key is
+  device until they leave the portal (`localStorage`). In a browser tab nothing changes (the key lives as long as the tab), and a visitor's key is
   never kept past the tab, installed or not.
 
 ## On Cloudflare
