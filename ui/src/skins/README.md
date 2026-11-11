@@ -127,6 +127,9 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `notify` | the button that turns notifications on | |
 | `signout` | the button that signs out | |
 | `main` | the open channel's side of the page | |
+| `snails` | for a visitor only, once the portal has told how long a visit and a trail are: the path of the snail of the visit, right under the head of the open channel, from a point of departure to a point of arrival (a `role="img"` that says in words which snail it is). Not there at all for the team. Hidden by the page itself until a look answers it | |
+| `snail` | the snail that is walking now, one at a time, each for one trail's length (the quarter of an hour that the guest room's words last; a visit of an hour has four). The page gives it `--progress` (0 to 1, how far along the path it is) and it moves every thirty seconds, so a skin that moves it smoothly keeps its `transition` at that tempo and behind `prefers-reduced-motion: no-preference`. The colour is what two visitors say aloud ("the green one"): `--snail` is its colour, drawn from `data-snail` | `data-snail` 1 to 4 (green, yellow, blue, brown, and round again if a visit holds more); `data-of` how many there are in the visit |
+| `snail-shell` | the shell, a drawing with as many holes as its number (one to four) that show what is behind, so that the number is told without colour; filled with `--snail` | |
 
 ## A channel
 

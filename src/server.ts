@@ -81,7 +81,7 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
     forgetting = setInterval(forget, config.guests ? Math.min(10, config.guests.forgetAfterMinutes, config.guests.trailMinutes) * 60_000 : 10 * 60_000);
     forgetting.unref();
 
-    const live = new Hub(store, { graceMs: options.graceMs, trailMinutes: config.guests?.trailMinutes });
+    const live = new Hub(store, { graceMs: options.graceMs, trailMinutes: config.guests?.trailMinutes, visitMinutes: config.guests?.minutes });
     hub = live;
 
     let knowledge: KnowledgeBase | undefined;

@@ -324,6 +324,64 @@
     @apply flex min-h-0 flex-1 flex-col;
   }
 
+  /* the snail of a visit: a path along the top of the room from where the visit begins to where it ends, one snail at a time, each a quarter of an hour; only a way of seeing the time go. The colour is what two visitors say aloud ("the green one"); the holes in the shell (one to four) are the same, for whoever does not tell colours apart. The four differ in lightness and not only in hue (a sea-glass green, a lemon, a blue, a terracotta brown). */
+  [data-part='snails'] {
+    position: relative;
+    display: block;
+    flex-shrink: 0;
+    height: 2rem;
+    margin: 0 1rem;
+  }
+
+  [data-part='snails']::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0.3rem;
+    border-bottom: 1px dashed var(--ink-soft);
+    opacity: 0.35;
+  }
+
+  [data-part='snail'] {
+    --snail: oklch(0.72 0.13 160);
+    position: absolute;
+    bottom: 0.2rem;
+    left: calc(var(--progress, 0) * (100% - 40px));
+    width: 40px;
+    height: 26px;
+    color: var(--ink-soft);
+  }
+
+  [data-part='snail'] svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  [data-part='snail'][data-snail='1'] {
+    --snail: oklch(0.72 0.13 160);
+  }
+  [data-part='snail'][data-snail='2'] {
+    --snail: oklch(0.87 0.16 98);
+  }
+  [data-part='snail'][data-snail='3'] {
+    --snail: oklch(0.58 0.15 262);
+  }
+  [data-part='snail'][data-snail='4'] {
+    --snail: oklch(0.43 0.09 42);
+  }
+
+  [data-part='snail-shell'] {
+    fill: var(--snail);
+    stroke: var(--ink-soft);
+    stroke-width: 0.8;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-part='snail'] {
+      transition: left 30s linear;
+    }
+  }
+
   /* --- a channel --- */
 
   [data-part='channel-view'] {

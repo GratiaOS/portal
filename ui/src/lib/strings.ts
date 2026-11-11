@@ -62,6 +62,9 @@ export type Strings = {
   notHere: string;
   signOut: string;
   notifyOn: string;
+  /** The four snails of a visit, by the colour a visitor says aloud; and the whole of it for a screen reader. */
+  snailNames: [string, string, string, string];
+  snailOn: (name: string, n: number, of: number) => string;
   /** What the page says about notifications once the browser has answered: for a mention only, or blocked. */
   notifyAbout: string;
   notifyDenied: string;
@@ -155,6 +158,8 @@ const ro: Strings = {
   notHere: 'nu e aici',
   signOut: 'Ieși',
   notifyOn: 'Pornește notificările',
+  snailNames: ['verde', 'galben', 'albastru', 'maro'],
+  snailOn: (name, n, of) => `Melcul ${name}, al ${n}-lea din ${of}`,
   notifyAbout: 'Te anunț doar când ești menționat.',
   notifyDenied: 'Notificările sunt oprite în acest browser; le pornești din setările site-ului.',
   mentionedIn: (c) => `Ai fost menționat în ${c}`,
@@ -239,6 +244,8 @@ const en: Strings = {
   notHere: 'is not here',
   signOut: 'Sign out',
   notifyOn: 'Turn on notifications',
+  snailNames: ['green', 'yellow', 'blue', 'brown'],
+  snailOn: (name, n, of) => `The ${name} snail, ${n} of ${of}`,
   notifyAbout: 'You are told only when you are mentioned.',
   notifyDenied: 'Notifications are blocked in this browser; turn them on in the site settings.',
   mentionedIn: (c) => `You were mentioned in ${c}`,
@@ -323,6 +330,8 @@ const es: Strings = {
   notHere: 'no está aquí',
   signOut: 'Cerrar sesión',
   notifyOn: 'Activar notificaciones',
+  snailNames: ['verde', 'amarillo', 'azul', 'marrón'],
+  snailOn: (name, n, of) => `El caracol ${name}, ${n} de ${of}`,
   notifyAbout: 'Solo te avisamos cuando te mencionan.',
   notifyDenied: 'Las notificaciones están bloqueadas en este navegador; actívalas en los ajustes del sitio.',
   mentionedIn: (c) => `Te mencionaron en ${c}`,

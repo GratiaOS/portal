@@ -9,6 +9,7 @@ Notifications are quiet by design (decision 13 of the plan). Nothing changes for
 - **It shows on Android.** The page shows a notice through the service worker's registration (Android Chrome throws on `new Notification()`, and the page used to swallow that and show nothing); the worker only answers a click, by bringing the app forward on that channel. There is no Web Push: the portal keeps no endpoint and no subscription of any device, and when the stream ends there is silence.
 - **A count on the app's icon** for the mentions not yet looked at, where the browser has one (`setAppBadge`); looking clears it.
 - **The answer of the browser stays in view.** Once the browser has answered, the sheet says what the notices are for, or that they are blocked and where to turn them on; the button used to vanish without a word.
+- **Snails in the guest room.** A visitor's visit is shown as snails, one after the other: each walks one trail's length (`guests.trailMinutes`) along a path right under the channel's head, and a visit holds as many as it holds trails (four for an hour). Each has a colour two visitors can say aloud and as many holes in its shell (one to four), so the colour is not the only way; a screen reader is told in words. Where the snail is comes from the clock and the end of the key: nothing is kept, and there is no timer per snail. The guest's hello now also says `visitMinutes` (`guests.minutes`). New skin parts `snails`, `snail` and `snail-shell` (an addition: the contract stays `1`), answered in all three looks.
 
 ## 0.2.1 (2026-11-10)
 

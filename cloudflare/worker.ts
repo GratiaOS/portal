@@ -67,7 +67,7 @@ export class Portal extends DurableObject<Env> {
     this.forget();
     if (config.retention !== 'forever' || this.guestsForgetAfterMs) void this.ctx.storage.getAlarm().then((at) => (at === null ? this.ctx.storage.setAlarm(Date.now() + this.every()) : undefined));
 
-    const hub = new Hub(store, { trailMinutes: config.guests?.trailMinutes });
+    const hub = new Hub(store, { trailMinutes: config.guests?.trailMinutes, visitMinutes: config.guests?.minutes });
     if (config.nova) this.wakeNova(config, config.nova, store, hub);
     if (config.guests?.nova.enabled && config.guests.nova.nova) this.wakeGuestNova(config.guests, config.guests.nova.nova, store, hub);
 
