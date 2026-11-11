@@ -239,7 +239,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
           )}
           <div data-part="self">
             <div data-part="self-group" data-group="you">
-              <p data-part="label" data-sheet-only="">
+              <p data-part="label" data-sheet-only={guest ? '' : undefined}>
                 {t.sheetYou}
               </p>
               {guest && state.you && (

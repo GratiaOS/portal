@@ -99,7 +99,7 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `room` | the side and the channel next to it | `data-sheet` while the sheet of a narrow page is open |
 | `side` | channels, people, you; on a narrow page it is the sheet that comes up from the foot (`position: fixed`, `visibility: hidden` while closed, so that it cannot be tabbed into) | |
 | `channels` | the group of channels, with its `label` | |
-| `label` | a small heading in the side (channels, people; on a narrow page also you, the look and the app, which carry `data-sheet-only` and are not shown on a wide one) | `data-sheet-only` |
+| `label` | a small heading in the side (channels, people and, for someone signed in, the token; on a narrow page also the look and the app, which carry `data-sheet-only` and are not shown on a wide one) | `data-sheet-only` |
 | `channel-list` | the list of channels | |
 | `channel` | one channel, a button | `aria-current="true"` for the one open |
 | `hash` | the `#` before a channel's name | |
