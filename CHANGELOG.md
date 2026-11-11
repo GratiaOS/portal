@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-Nothing yet.
+Notifications are quiet by design (decision 13 of the plan). Nothing changes for whoever runs a portal; there is no new config, no new secret and nothing new stored.
+
+- **Only a mention is news.** A turn that names the person notifies them; everything else only moves the number in the tab's title, as before. A visitor never gets a notification.
+- **A signal, not the content.** A notice says where and how many ("You were mentioned in General"), never the words or the speaker, so what is said does not go to the notification layer of the system.
+- **It shows on Android.** The page shows a notice through the service worker's registration (Android Chrome throws on `new Notification()`, and the page used to swallow that and show nothing); the worker only answers a click, by bringing the app forward on that channel. There is no Web Push: the portal keeps no endpoint and no subscription of any device, and when the stream ends there is silence.
+- **A count on the app's icon** for the mentions not yet looked at, where the browser has one (`setAppBadge`); looking clears it.
+- **The answer of the browser stays in view.** Once the browser has answered, the sheet says what the notices are for, or that they are blocked and where to turn them on; the button used to vanish without a word.
 
 ## 0.2.1 (2026-11-10)
 

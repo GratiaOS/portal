@@ -1,5 +1,6 @@
 // The service worker of the installed app: it keeps the shell of the page (its files and its icons) so that the app opens with no network,
-// and nothing else. What is said in a room is never here: the portal is the one place that holds it, and forgets it, so no request to
+// and it answers a click on a notice (the page shows the notice through it, because Android Chrome shows no other; there is no push, and
+// the worker holds no subscription and no state). What is said in a room is never here: the portal is the one place that holds it, and forgets it, so no request to
 // /api (the stream included), to /skins or to the manifest ever goes through this worker or into its cache.
 const SHELL = 'portal-shell-v1';
 
@@ -10,6 +11,25 @@ self.addEventListener('activate', (event) => {
     (async () => {
       for (const name of await caches.keys()) if (name !== SHELL) await caches.delete(name);
       await self.clients.claim();
+    })(),
+  );
+});
+
+// A click on a notice: the page that is open comes forward on that channel; with none open, the app opens on it.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const channel = event.notification.data && event.notification.data.channel;
+  const hash = channel ? '#' + encodeURIComponent(channel) : '';
+  event.waitUntil(
+    (async () => {
+      const open = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const page = open.find((client) => new URL(client.url).origin === self.location.origin);
+      if (page) {
+        await page.focus();
+        if (hash) page.postMessage({ type: 'portal:channel', hash });
+        return;
+      }
+      await self.clients.openWindow('/' + hash);
     })(),
   );
 });
