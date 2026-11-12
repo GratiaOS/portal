@@ -429,7 +429,7 @@ test('a database made before forgetting lets go of its old turns once it is open
     db.exec("CREATE TRIGGER turns_no_delete BEFORE DELETE ON turns BEGIN SELECT RAISE(ABORT, 'turns are append-only'); END;");
   });
 
-  const after = new RoomStore(home.open());
+  const after = new RoomStore(home.open(), { now: ticking() }); // the clock of the fixture, not today's: a real one makes the turn 14 days old on 12 November
   assert.equal(after.forget({ days: 14, messages: 999 }).turns, 0); // nothing old yet, and no trigger in the way
   assert.equal(after.forget({ days: 14, messages: 50 }).turns, 0);
   after.close();

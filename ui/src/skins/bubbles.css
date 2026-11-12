@@ -776,7 +776,6 @@
       color: var(--ink-soft);
     }
 
-    [data-part='topbar-people'],
     [data-part='topbar-time'] {
       flex-shrink: 0;
       font-size: 0.8125rem;

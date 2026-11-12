@@ -44,7 +44,6 @@ export type Strings = {
   /** The titles of what is under your name in the sheet of a narrow page: you, and the app. */
   sheetYou: string;
   sheetApp: string;
-  hereCount: (count: number) => string;
   /** In a visitor's sheet: who they are writing as, and how long the visit has left. */
   guestAs: (alias: string) => string;
   guestEndsIn: (minutes: number) => string;
@@ -143,7 +142,6 @@ const ro: Strings = {
   closeSheet: 'Închide',
   sheetYou: 'Token',
   sheetApp: 'Aplicația',
-  hereCount: (count) => `${count} aici`,
   guestAs: (alias) => `Scrii ca ${alias}.`,
   guestEndsIn: (minutes) => `Vizita ta se încheie în ${minutesRo(minutes)}.`,
   visitEnded: 'Vizita ta s-a încheiat.',
@@ -229,7 +227,6 @@ const en: Strings = {
   closeSheet: 'Close',
   sheetYou: 'Token',
   sheetApp: 'App',
-  hereCount: (count) => `${count} here`,
   guestAs: (alias) => `You are writing as ${alias}.`,
   guestEndsIn: (minutes) => `Your visit ends in ${minutesEn(minutes)}.`,
   visitEnded: 'Your visit has ended.',
@@ -315,7 +312,6 @@ const es: Strings = {
   closeSheet: 'Cerrar',
   sheetYou: 'Token',
   sheetApp: 'App',
-  hereCount: (count) => `${count} aquí`,
   guestAs: (alias) => `Escribes como ${alias}.`,
   guestEndsIn: (minutes) => `Tu visita termina en ${minutesEs(minutes)}.`,
   visitEnded: 'Tu visita ha terminado.',
