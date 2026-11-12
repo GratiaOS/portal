@@ -470,4 +470,31 @@ It is *geography.*
 
 ---
 
+## 17. Where our rooms sit, and what stands in the way
+
+Written after reading the code, so that nothing is claimed that the portal does not do. Nothing here is decided, and nothing in it is implemented.
+
+### The two rooms we have
+
+* **⛲ PlazaDelSol** (`general`, the team's room). It leans **Open**: the public square of a tribe, where a presence may leave a faint density that fades. Today it shows a named dot for each person and "N here" in the top bar; by §11 both are residue, and `Open` would replace them with density and decay.
+* **🅿️ Parking** (`guests`, the visitors' room). It leans **Quiet** or **Breathe**, and may be the more open of the two in spirit: a visitor arrives with no agenda, leaves a greeting, and goes. It already keeps almost nothing (a trail that fades, an end by absence). Which physics fits is open.
+
+Both are open questions, to be settled before any type is written into a config.
+
+### Why no `type` is in the config yet
+
+A field the server does not act on would say something false: whoever runs a portal would believe the room has a physics it does not. The types are added when the hub can honour them, not before.
+
+### The blocker: transport and identity
+
+* The RFC assumes a **WebSocket** and a signal with no identity.
+* The portal today streams over **SSE, through `fetch`** (so the token travels in a header), and its hub keeps presence by `participantId`.
+* So `breath`, `quiet` and `open` cannot be had by changing a config string. One of two ways has to be chosen first: a **separate hub**, without identity, for these rooms only, or **taking identity out of the existing hub** where a room's physics asks for it.
+
+### What can be done sooner, as words and no new physics
+
+The points of §11 that the present rooms already touch ("N here", named dots, the count in the tab's title, the clock on a message) can each be weighed on their own, and none needs a WebSocket.
+
+---
+
 *Draft — for discussion. Not yet implemented.*
