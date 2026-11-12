@@ -25,7 +25,7 @@ export type Strings = {
   guestAway: string;
   /** In the guest room: who else is here, with no list; and the way out. */
   guestAlone: string;
-  guestOthers: (count: number) => string;
+  guestOthers: string;
   guestLeave: string;
   /** Under it, always: what is written in the room is read by those in it, and by whoever runs the portal. */
   guestNotPrivate: string;
@@ -128,7 +128,7 @@ const ro: Strings = {
   guestClosed: 'Acest portal nu primește vizitatori.',
   guestAway: 'Nu ajung la portal acum. Încearcă din nou în câteva clipe.',
   guestAlone: 'Ești singur aici, deocamdată.',
-  guestOthers: (count) => (count === 1 ? 'Mai e cineva aici.' : `Mai sunt ${count} aici.`),
+  guestOthers: 'Mai e cineva aici.',
   guestLeave: 'Pleacă',
   guestNotPrivate: 'Ce scrii aici poate fi citit de oricine e în cameră și de cine rulează portalul.',
   guestWelcome: 'Multe aripi, același zbor.',
@@ -213,7 +213,7 @@ const en: Strings = {
   guestClosed: 'This portal does not take visitors.',
   guestAway: 'The portal is out of reach right now. Try again in a moment.',
   guestAlone: 'You are the only one here, for now.',
-  guestOthers: (count) => (count === 1 ? 'Someone else is here.' : `${count} others are here.`),
+  guestOthers: 'Someone else is here.',
   guestLeave: 'Leave',
   guestNotPrivate: 'What you write here can be read by everyone in the room, and by whoever runs the portal.',
   guestWelcome: 'Many wings, same flight.',
@@ -298,7 +298,7 @@ const es: Strings = {
   guestClosed: 'Este portal no recibe visitantes.',
   guestAway: 'No llego al portal ahora. Inténtalo de nuevo en un momento.',
   guestAlone: 'Por ahora, no hay nadie más aquí.',
-  guestOthers: (count) => (count === 1 ? 'Hay alguien más aquí.' : `Hay ${count} personas más aquí.`),
+  guestOthers: 'Hay alguien más aquí.',
   guestLeave: 'Salir',
   guestNotPrivate: 'Lo que escribes aquí puede leerlo cualquiera que esté en la sala, y quien administra el portal.',
   guestWelcome: 'Muchas alas, un mismo vuelo.',

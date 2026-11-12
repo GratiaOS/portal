@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-Nothing yet.
+- **A visitor is told that someone else is here, not how many.** "3 others are here" is now "Someone else is here", in the three languages (the line the top bar lost in 0.3.0, for a visitor's sheet); INSTALL.md and the starter `guest-docs/` say the same.
+- **In the image, the token messages name what is there.** The image sets `PORTAL_IMAGE`, and the messages that told how to make or show a token (`pnpm --filter portal tokens … | pbcopy`) say `node dist/tokens.js …` there, with no clipboard: the image has neither pnpm nor `pbcopy`. From a clone nothing changes.
 
 ## 0.3.1 (2026-11-12)
 

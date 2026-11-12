@@ -123,9 +123,9 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
   }, [turns, state.participants, trailMs, now]);
 
   const people = useMemo(() => peopleOf(state.participants, state.presence), [state.participants, state.presence]);
-  // the other visitors who are here now, counted and never listed (the portal tells a guest of no one else)
+  // whether another visitor is here now: not how many, and never who (the portal tells a guest of no one else)
   const othersHere = useMemo(
-    () => people.filter((p) => p.participant.kind === 'guest' && p.participant.id !== state.you?.id && p.here).length,
+    () => people.some((p) => p.participant.kind === 'guest' && p.participant.id !== state.you?.id && p.here),
     [people, state.you?.id],
   );
   const spoke = useSpoke(state);
@@ -238,7 +238,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
         <div data-part="side-foot">
           {guest ? (
             <p data-part="label" role="status">
-              {othersHere === 0 ? t.guestAlone : t.guestOthers(othersHere)}
+              {othersHere ? t.guestOthers : t.guestAlone}
             </p>
           ) : (
             <PeopleList people={people} meId={state.you?.id} thinking={thinkingIds} spoke={spoke} arrived={arrived} t={t} />

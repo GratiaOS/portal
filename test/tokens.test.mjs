@@ -178,3 +178,15 @@ test('tokens, as a command: the token comes out alone, so that it can be piped',
   assert.equal(shown.stdout, `${HERA}\n`);
   await assert.rejects(run(process.execPath, [script, config, 'show', 'Hades']), (err) => err.code === 1 && /portal tokens: "Hades" is not a human/.test(err.stderr));
 });
+
+test('in the image there is no pnpm and no clipboard, and the messages say what is there', async (t) => {
+  const { config } = room(t, { tokens: { Zeus: ZEUS } });
+  const script = new URL('../dist/tokens.js', import.meta.url).pathname;
+  const env = { ...process.env, PORTAL_IMAGE: '1' };
+  const made = await run(process.execPath, [script, config, 'new', 'Hera'], { env });
+  assert.match(made.stdout, /give it to them:  node dist\/tokens\.js .* show Hera\n/);
+  assert.doesNotMatch(made.stdout, /pnpm|pbcopy/);
+  const usage = await run(process.execPath, [script], { env }).catch((err) => err);
+  assert.match(usage.stderr + usage.stdout, /^usage: node dist\/tokens\.js /);
+  assert.doesNotMatch(usage.stderr + usage.stdout, /pnpm|pbcopy/);
+});

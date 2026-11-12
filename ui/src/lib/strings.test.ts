@@ -20,7 +20,7 @@ test('every sentence the page has is in all three languages, with the same shape
     assert.equal(shape(ro[key]), shape(en[key]), `ro.${key}`);
     if (typeof en[key] === 'string') assert.ok((es[key] as string).length > 0, `es.${key} is empty`);
   }
-  assert.equal(es.guestOthers(1), 'Hay alguien más aquí.');
+  assert.equal(es.guestOthers, 'Hay alguien más aquí.');
   assert.equal(es.thinking(['Nova']), 'Nova piensa…');
 });
 

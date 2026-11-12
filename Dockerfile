@@ -27,6 +27,7 @@ LABEL org.opencontainers.image.title="El portal" \
       org.opencontainers.image.licenses="MPL-2.0"
 
 ENV NODE_ENV=production \
+    PORTAL_IMAGE=1 \
     PORTAL_CONFIG=/config/portal.json
 WORKDIR /app
 
