@@ -213,7 +213,6 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             ▾
           </span>
         </button>
-        <span data-part="topbar-people">{t.hereCount(guest ? othersHere + 1 : people.filter((p) => p.here).length)}</span>
         {guest && left !== undefined && left <= SAY_FROM && <span data-part="topbar-time">⏱ {left} min</span>}
         <SignalQuality connection={state.connection} t={t} />
         <button type="button" data-part="topbar-settings" aria-label={t.settings} onClick={() => setSheet(true)}>

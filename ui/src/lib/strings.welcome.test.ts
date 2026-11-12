@@ -27,5 +27,4 @@ test('the sheet of a visitor says who they write as and how long the visit has l
   assert.equal(stringsFor('ro').guestEndsIn(8), 'Vizita ta se încheie în 8 minute.');
   assert.equal(stringsFor('ro').guestEndsIn(20), 'Vizita ta se încheie în 20 de minute.');
   assert.equal(stringsFor('es').guestEndsIn(8), 'Tu visita termina en 8 minutos.');
-  assert.equal(stringsFor('en').hereCount(3), '3 here');
 });

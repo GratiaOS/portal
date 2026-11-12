@@ -148,7 +148,6 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `topbar-room` | the button that opens the sheet, with the name of the room | `aria-expanded` |
 | `topbar-title` | the name of the room in it | |
 | `topbar-caret` | its little arrow | |
-| `topbar-people` | how many are here | |
 | `topbar-time` | a visitor's minutes left, only in the last ten | |
 | `topbar-settings` | the second button that opens the sheet | |
 | `sheet-backdrop` | the cover behind the open sheet; a press on it closes it | |
