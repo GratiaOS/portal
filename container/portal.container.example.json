@@ -1,0 +1,13 @@
+{
+  "name": "El portal",
+  "port": 3100,
+  "host": "0.0.0.0",
+  "dbPath": "/data/portal.db",
+  "tokensFile": "/data/portal.tokens.json",
+  "staticDir": "/app/ui/dist",
+  "participants": [
+    { "kind": "human", "alias": "Zeus", "sign": "🦁" },
+    { "kind": "human", "alias": "Hera" }
+  ],
+  "rooms": [{ "id": "general", "title": "General" }]
+}
