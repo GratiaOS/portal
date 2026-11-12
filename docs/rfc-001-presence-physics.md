@@ -476,7 +476,7 @@ Written after reading the code, so that nothing is claimed that the portal does 
 
 ### The two rooms we have
 
-* **⛲ PlazaDelSol** (`general`, the team's room). It leans **Open**: the public square of a tribe, where a presence may leave a faint density that fades. Today it shows a named dot for each person and "N here" in the top bar; by §11 both are residue, and `Open` would replace them with density and decay.
+* **⛲ PlazaDelSol** (`general`, the team's room). It leans **Open**: the public square of a tribe, where a presence may leave a faint density that fades. Today it shows a named dot for each person (the count in the top bar is gone since 0.3.0); by §11 the names are residue, and `Open` would replace them with density and decay.
 * **🅿️ Parking** (`guests`, the visitors' room). It leans **Quiet** or **Breathe**, and may be the more open of the two in spirit: a visitor arrives with no agenda, leaves a greeting, and goes. It already keeps almost nothing (a trail that fades, an end by absence). Which physics fits is open.
 
 Both are open questions, to be settled before any type is written into a config.
@@ -493,7 +493,7 @@ A field the server does not act on would say something false: whoever runs a por
 
 ### What can be done sooner, as words and no new physics
 
-The points of §11 that the present rooms already touch ("N here", named dots, the count in the tab's title, the clock on a message) can each be weighed on their own, and none needs a WebSocket.
+The points of §11 that the present rooms already touch (the named dots, the count in the tab's title, the clock on a message) can each be weighed on their own, and none needs a WebSocket.
 
 ---
 
