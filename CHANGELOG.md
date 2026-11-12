@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.3.1 (2026-11-12)
+
+Nothing changes in what a running portal does: this is a way to run one, as a container image, and a fix to INSTALL.md.
+
 - **The portal as a container image.** A `Dockerfile` (the server and its page, run as `node`, config from outside, `/data` the only thing written, a health check), an example config and compose file in `container/`, and a workflow that builds it and asks it for its health on every change to them, and publishes `ghcr.io/gratiaos/portal` on a tag (`linux/amd64`). INSTALL.md has a section for it. Nothing changes for a portal run from a clone.
 - **INSTALL.md built the page and not the server.** `pnpm -r build` leaves out the root of the workspace, so `dist/` was never made from it; the two places now say `pnpm run build && pnpm --filter portal-ui build`.
 
