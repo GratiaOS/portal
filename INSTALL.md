@@ -138,8 +138,9 @@ cp portal.container.example.json portal.json      # edit it: the people, the roo
 docker volume create portal-data
 MOUNTS="-v portal-data:/data -v $PWD/portal.json:/config/portal.json:ro"
 
-# a token for each person (the file lives in the volume); the portal does not start without one
+# a token for each person of the config (the file lives in the volume); the portal does not start with one missing
 docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new Zeus
+docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new Hera
 docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json show Zeus   # hand it over
 
 docker run -d --name portal --restart unless-stopped -p 127.0.0.1:3100:3100 $MOUNTS ghcr.io/gratiaos/portal
