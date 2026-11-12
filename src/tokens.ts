@@ -2,15 +2,15 @@ import { randomBytes } from 'node:crypto';
 import { chmodSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { ConfigError, MIN_TOKEN_LENGTH, readConfigFile, readTokensFile } from './config.js';
+import { ConfigError, MIN_TOKEN_LENGTH, TOKENS_COMMAND, TO_CLIPBOARD, readConfigFile, readTokensFile } from './config.js';
 
 // Who may come in. `pnpm --filter portal tokens <config> [list | show <name> | new <name> | rotate <name>]`.
 // Reads the config as a file, not through `loadConfig`: it has to work for a room that cannot start yet because a human has no token.
 
-const USAGE = `usage: pnpm --filter portal tokens <config> [command]
+const USAGE = `usage: ${TOKENS_COMMAND} <config> [command]
 
   list            who has a token (never the tokens themselves)          (the default)
-  show <name>     the token of one person, on stdout: pipe it, \`| pbcopy\`
+  show <name>     the token of one person, on stdout: pipe it${TO_CLIPBOARD ? `, \`${TO_CLIPBOARD.trim()}\`` : ''}
   new <name>      make a token for a person who has none
   rotate <name>   replace a person's token; the old one stops working when the room restarts
 
@@ -60,8 +60,8 @@ export function runTokens(argv: string[], io: { out: (text: string) => void; isT
   const current = tokenOf(who.alias, who.inline);
 
   if (command === 'show') {
-    if (!current) fail(`${who.alias} has no token; make one with: pnpm --filter portal tokens ${config} new ${who.alias}`);
-    if (io.isTTY && !reveal) fail('not printing a token to a terminal, where it stays on screen and in the scrollback: pipe it (| pbcopy), or pass --reveal');
+    if (!current) fail(`${who.alias} has no token; make one with: ${TOKENS_COMMAND} ${config} new ${who.alias}`);
+    if (io.isTTY && !reveal) fail(`not printing a token to a terminal, where it stays on screen and in the scrollback: pipe it${TO_CLIPBOARD ? ` (${TO_CLIPBOARD.trim()})` : ''}, or pass --reveal`);
     io.out(`${current}\n`);
     return;
   }
@@ -77,7 +77,7 @@ export function runTokens(argv: string[], io: { out: (text: string) => void; isT
   if (token.length < MIN_TOKEN_LENGTH) fail('could not make a token of the length the portal asks for');
   writeTokens(file!, { ...kept, [alias]: token });
   io.out(`${command === 'new' ? 'made' : 'replaced'} the token of ${who.alias} in ${file}\n`);
-  io.out(`give it to them:  pnpm --filter portal tokens ${config} show ${who.alias} | pbcopy\n`);
+  io.out(`give it to them:  ${TOKENS_COMMAND} ${config} show ${who.alias}${TO_CLIPBOARD}\n`);
   if (command === 'rotate') io.out('the old token stops working when the portal restarts\n');
   else io.out('the portal reads it when it starts\n');
 }

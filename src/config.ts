@@ -125,6 +125,10 @@ export class ConfigError extends Error {
 
 export const MIN_TOKEN_LENGTH = 24;
 
+/** How the tokens are made, in the words the messages use: from a clone it is `pnpm`; in the image (which sets `PORTAL_IMAGE`) there is no pnpm and no clipboard. */
+export const TOKENS_COMMAND = process.env.PORTAL_IMAGE ? 'node dist/tokens.js' : 'pnpm --filter portal tokens';
+export const TO_CLIPBOARD = process.env.PORTAL_IMAGE ? '' : ' | pbcopy';
+
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 function whole(value: unknown, fallback: number, name: string, { min, max }: { min: number; max: number }): number {
@@ -430,7 +434,7 @@ export function readTokensFile(file: string, options: { missingOk?: boolean } = 
     source = readFileSync(file, 'utf8');
   } catch {
     if (options.missingOk) return {};
-    throw new ConfigError(`cannot read the tokens file ${file}; make a token with: pnpm --filter portal tokens <config> new <alias>`);
+    throw new ConfigError(`cannot read the tokens file ${file}; make a token with: ${TOKENS_COMMAND} <config> new <alias>`);
   }
   let parsed: unknown;
   try {
@@ -459,7 +463,7 @@ export function readTokensFile(file: string, options: { missingOk?: boolean } = 
 function withTokens(raw: unknown, baseDir: string, configPath: string): unknown {
   if (!isRecord(raw) || raw.tokensFile === undefined) return raw;
   const file = resolve(baseDir, text(raw.tokensFile, 'tokensFile'));
-  return putTokens(raw, readTokensFile(file), `the tokens file ${file}`, (alias) => `make one with: pnpm --filter portal tokens ${configPath} new ${alias}`);
+  return putTokens(raw, readTokensFile(file), `the tokens file ${file}`, (alias) => `make one with: ${TOKENS_COMMAND} ${configPath} new ${alias}`);
 }
 
 /**
