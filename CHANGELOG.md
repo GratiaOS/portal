@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-Notifications are quiet by design (decision 13 of the plan). Nothing changes for whoever runs a portal; there is no new config, no new secret and nothing new stored.
+Nothing yet.
+
+## 0.3.0 (2026-11-12)
+
+Notifications are quiet by design (decision 13 of the plan), the guest room has its snails, and the top bar no longer counts. Nothing changes for whoever runs a portal in what it must set: there is no new config, no new secret and nothing new stored. A look of your own that styled `topbar-people` loses nothing else: that part is no more (`contract` stays `1`; `snails`, `snail` and `snail-shell` are new parts).
 
 - **Only a mention is news.** A turn that names the person notifies them; everything else only moves the number in the tab's title, as before. A visitor never gets a notification.
 - **A signal, not the content.** A notice says where and how many ("You were mentioned in General"), never the words or the speaker, so what is said does not go to the notification layer of the system.
@@ -11,6 +15,7 @@ Notifications are quiet by design (decision 13 of the plan). Nothing changes for
 - **The answer of the browser stays in view.** Once the browser has answered, the sheet says what the notices are for, or that they are blocked and where to turn them on; the button used to vanish without a word.
 - **Snails in the guest room.** A visitor's visit is shown as snails, one after the other: each walks one trail's length (`guests.trailMinutes`) along a path right under the channel's head, and a visit holds as many as it holds trails (four for an hour). Each has a colour two visitors can say aloud and as many holes in its shell (one to four), so the colour is not the only way; a screen reader is told in words. Where the snail is comes from the clock and the end of the key: nothing is kept, and there is no timer per snail. The guest's hello now also says `visitMinutes` (`guests.minutes`). New skin parts `snails`, `snail` and `snail-shell` (an addition: the contract stays `1`), answered in all three looks.
 - **No count of who is here in the top bar.** "3 here" is gone: a count is a thing to watch and to compare ("we were 4, now 3"), which [RFC 001](docs/rfc-001-presence-physics.md) removes (§11). The dot beside each person stays, and a visitor still reads in the sheet how many others are here. The skin part `topbar-people` is no more (a skin that styled it loses nothing else).
+- **Words and space, in the three languages and the three looks.** The section above your sign reads *Token*; the way out of the portal reads *Leave the portal* (a visitor's button was already *Leave*); on a wide page the groups in the foot of the side have a rest between them and the foot scrolls where the page is short.
 
 ## 0.2.1 (2026-11-10)
 
