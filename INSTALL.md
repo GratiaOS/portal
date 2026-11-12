@@ -16,7 +16,7 @@ For whoever runs a portal for their people: one process, one config, one databas
 git clone https://github.com/GratiaOS/portal && cd portal
 corepack enable
 pnpm install
-pnpm -r build
+pnpm run build && pnpm --filter portal-ui build   # the server, then its page
 ```
 
 ## Configure
@@ -127,6 +127,30 @@ The caller is the address of the connection. Behind a proxy that is the proxy's,
 your proxy sets with the real address in the config, `"clientIpHeader": "x-forwarded-for"` (the last entry is used, the one your
 nearest proxy added). Name it only for a proxy that sets it, since otherwise a caller could choose its own address.
 
+## With a container
+
+The same portal as an image, for whoever keeps their machines with containers: `ghcr.io/gratiaos/portal` (a tag per release, `latest` the last one; `linux/amd64`). The image has the server and its page and nothing else: the config comes in from outside, read only, and `/data` is the one place it writes (the database, and the tokens file). It runs as `node`, not as root.
+
+```bash
+mkdir portal && cd portal
+curl -O https://raw.githubusercontent.com/GratiaOS/portal/main/container/portal.container.example.json
+cp portal.container.example.json portal.json      # edit it: the people, the rooms (the config is described above)
+docker volume create portal-data
+MOUNTS="-v portal-data:/data -v $PWD/portal.json:/config/portal.json:ro"
+
+# a token for each person of the config (the file lives in the volume); the portal does not start with one missing
+docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new Zeus
+docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new Hera
+docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json show Zeus   # hand it over
+
+docker run -d --name portal --restart unless-stopped -p 127.0.0.1:3100:3100 $MOUNTS ghcr.io/gratiaos/portal
+curl -s http://127.0.0.1:3100/api/health
+```
+
+In the config of a container the `host` is `0.0.0.0` (the container's own address; what the host lets in is the `-p`), the paths are the ones above (`/data/portal.db`, `/data/portal.tokens.json`, `staticDir` `/app/ui/dist`), and a companion needs her key as an environment variable (`-e PORTAL_LLM_API_KEY`, the name the config gives) and the folder of her knowledge mounted where `knowledgeDir` says. Put a TLS proxy in front, as [above](#run). `container/compose.example.yaml` is the same as a compose file.
+
+**Back up** the volume, not the container: `docker run --rm -v portal-data:/data -v $PWD:/out alpine tar czf /out/portal-data.tgz -C /data .` (stop the portal first, or use SQLite's `.backup` on the file, as above). **Update** by pulling the new tag and running the container again on the same volume; `/api/health` says the version. To build the image yourself: `docker build -t portal .` in a clone.
+
 ## Back up
 
 The database is one SQLite file with its write-ahead log beside it. While the portal runs, back it up with SQLite itself:
@@ -142,7 +166,7 @@ messages, unless you must.
 ## Update
 
 ```bash
-git pull && pnpm install && pnpm -r build
+git pull && pnpm install && pnpm run build && pnpm --filter portal-ui build
 ```
 
 Restart the portal, and check the version in `/api/health`. Updates are pulled by you; nothing phones home. What changes from one

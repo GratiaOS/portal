@@ -1,0 +1,18 @@
+# A portal on a machine you run: `docker compose -f container/compose.example.yaml up -d`
+# (copy this file and the example config next to each other first, and edit the config).
+services:
+  portal:
+    image: ghcr.io/gratiaos/portal:latest
+    # to build it from a clone instead:  build: ..
+    restart: unless-stopped
+    ports:
+      # only this machine; put a TLS proxy in front (the token travels in a header, INSTALL.md says how)
+      - '127.0.0.1:3100:3100'
+    environment:
+      # the model's key, only if the config has a companion (the name is `nova.llm.apiKeyEnv`)
+      PORTAL_LLM_API_KEY: ${PORTAL_LLM_API_KEY:-}
+    volumes:
+      - ./portal.container.example.json:/config/portal.json:ro
+      - portal-data:/data
+volumes:
+  portal-data:
