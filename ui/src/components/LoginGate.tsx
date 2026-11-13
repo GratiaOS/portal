@@ -96,13 +96,13 @@ function Sky({ tree, label }: { tree?: Tree; label: string }) {
   );
 }
 
-/** Where along each string of lights a root may reach: the string over the top and down the right post, the stub, and the lantern's loop. */
-const REACH = [[0.12, 0.3, 0.5, 0.68, 0.88], [0.9], [0.3, 0.6, 0.85]];
+/** The half width of the crown in the sky's own units (x 488 to 650 at its widest, drawn a fifth larger), a little over, so that the roots spread about as wide as the crown, as they do in a real tree. */
+const CROWN_REACH = 130;
 
 /**
- * The roots of the tree: a network under the land, from its foot to the lights of the doorway, like a mycelium. They are drawn from where the
- * foot and the lights are on this page (and again when it changes size), kept dark, and lit when the canopy lets go of its breath. Only when
- * the portal has a tree that breathes.
+ * The roots of the tree: under the land, as they are in a real tree. They spread about as wide as the crown, close to the surface, and fork, and do
+ * not reach for anything: not the lights, not the doorway. They are drawn from where the foot is on this page and how large the tree is (and again when it
+ * changes size), kept dark, and lit by what the sky gives up. Only when the portal has a tree that breathes.
  */
 function Roots({ tree }: { tree: Tree }) {
   const [drawn, setDrawn] = useState<{ width: number; height: number; paths: string[] }>({ width: 0, height: 0, paths: [] });
@@ -115,29 +115,14 @@ function Roots({ tree }: { tree: Tree }) {
       const sky = page.querySelector<SVGSVGElement>('[data-gate="sky"]');
       const skyMatrix = sky?.getScreenCTM();
       if (!skyMatrix || !box.width) return;
-      const at = (x: number, y: number, matrix: DOMMatrix): Point => {
-        const p = new DOMPoint(x, y).matrixTransform(matrix);
-        return { x: p.x - box.left, y: p.y - box.top };
-      };
-      const foot = at(566, 392, skyMatrix);
-      const targets: Point[] = [];
-      page.querySelectorAll<SVGPathElement>('[data-gate="doorway"] [data-gate="bulbs"] path').forEach((path, i) => {
-        const matrix = path.getScreenCTM();
-        if (!matrix) return;
-        const length = path.getTotalLength();
-        for (const f of REACH[i] ?? []) {
-          const p = path.getPointAtLength(length * f);
-          targets.push(at(p.x, p.y, matrix));
-        }
-      });
+      const p = new DOMPoint(566, 392).matrixTransform(skyMatrix);
+      const foot: Point = { x: p.x - box.left, y: p.y - box.top };
       page.style.setProperty('--sun-x', `${foot.x}px`); // the afterglow is centred on the tree
-      setDrawn({ width: box.width, height: box.height, paths: growRoots(foot, targets) });
+      setDrawn({ width: box.width, height: box.height, paths: growRoots(foot, CROWN_REACH * skyMatrix.a) });
     };
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(page);
-    const doorway = page.querySelector('[data-gate="doorway"]');
-    if (doorway) watch.observe(doorway);
     return () => watch.disconnect();
   }, [tree.roots]);
 

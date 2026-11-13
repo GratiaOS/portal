@@ -1,6 +1,7 @@
-// 🍄 The roots under the tree on the gate: a network that grows from its foot to the lights of the doorway, like a mycelium. Drawn once from
-// the points it is given (the foot, and places along the string of bulbs), with a seed so that the same gate always has the same roots; the
-// page lights them when the canopy lets go of its breath. Nothing here reads the page or the clock.
+// 🍄 The roots under the tree on the gate, as they are in a real tree: they do not reach for anything. An olive spreads its roots about as wide as its
+// crown, close under the surface, with a short taproot going down; each root forks, and the forks fork again, thinner and shorter. Drawn once from the
+// foot and a reach (about the crown's half width), with a seed, so the same gate has the same roots on every load and every size. The page lights
+// them with the breath; nothing here reads the page or the clock.
 
 export type Point = { x: number; y: number };
 
@@ -17,7 +18,7 @@ export function seeded(seed: number): () => number {
 }
 
 const n = (value: number): string => (Math.round(value * 10) / 10).toString();
-const at = (a: Point, b: Point, c: Point, d: Point, t: number): Point => {
+const along = (a: Point, b: Point, c: Point, d: Point, t: number): Point => {
   const u = 1 - t;
   return {
     x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
@@ -25,31 +26,55 @@ const at = (a: Point, b: Point, c: Point, d: Point, t: number): Point => {
   };
 };
 
-/**
- * One root to each target, and two small forks from each root: `d` strings for an SVG path, the root first and its forks after it. A root leaves the foot
- * going down, as roots do, and wanders a little on its way to its light; a fork leaves at a third or two thirds of the way, to one side.
- */
-export function growRoots(foot: Point, targets: Point[], seed = 7): string[] {
-  const random = seeded(seed);
-  const paths: string[] = [];
-  for (const target of targets) {
-    const dx = target.x - foot.x;
-    const dy = target.y - foot.y;
-    const reach = Math.max(Math.hypot(dx, dy), 1);
-    const c1 = { x: foot.x + dx * 0.08 + (random() - 0.5) * reach * 0.18, y: foot.y + Math.max(dy, reach * 0.3) * 0.55 };
-    const c2 = { x: target.x - dx * 0.2 + (random() - 0.5) * reach * 0.2, y: target.y - Math.abs(dy) * 0.18 + (random() - 0.5) * 12 };
-    paths.push(`M${n(foot.x)} ${n(foot.y)} C${n(c1.x)} ${n(c1.y)} ${n(c2.x)} ${n(c2.y)} ${n(target.x)} ${n(target.y)}`);
+/** How a root is named by its heading: in radians, with `y` down, so a quarter turn (PI / 2) is straight down. */
+const DOWN = Math.PI / 2;
 
-    for (const t of [0.35, 0.68]) {
-      const from = at(foot, c1, c2, target, t);
-      const ahead = at(foot, c1, c2, target, Math.min(1, t + 0.04));
-      const heading = Math.atan2(ahead.y - from.y, ahead.x - from.x);
-      const turn = (random() < 0.5 ? -1 : 1) * (0.5 + random() * 0.5);
-      const length = reach * (0.14 + random() * 0.14);
-      const end = { x: from.x + Math.cos(heading + turn) * length, y: from.y + Math.sin(heading + turn) * length };
-      const bend = { x: from.x + Math.cos(heading + turn * 0.4) * length * 0.6, y: from.y + Math.sin(heading + turn * 0.4) * length * 0.6 };
-      paths.push(`M${n(from.x)} ${n(from.y)} Q${n(bend.x)} ${n(bend.y)} ${n(end.x)} ${n(end.y)}`);
+/**
+ * One root: a curve from `from` along `heading`, bending a little, and then, while `depth` lasts, forks from it. A fork leaves at a third, a half and
+ * four fifths of the way, turned to one side or the other, and is shorter and thinner (it is only a shorter path: thinness is the page's).
+ * Nothing goes above `ground`.
+ */
+function root(from: Point, heading: number, length: number, depth: number, ground: number, random: () => number, out: string[]): void {
+  const bend = (random() - 0.5) * 0.8;
+  const tip = (angle: number, at: number): Point => ({ x: from.x + Math.cos(angle) * length * at, y: Math.max(ground, from.y + Math.sin(angle) * length * at) });
+  const c1 = tip(heading, 0.35);
+  const c2 = tip(heading + bend * 0.6, 0.72);
+  const end = tip(heading + bend, 1);
+  out.push(`M${n(from.x)} ${n(from.y)} C${n(c1.x)} ${n(c1.y)} ${n(c2.x)} ${n(c2.y)} ${n(end.x)} ${n(end.y)}`);
+  if (depth <= 0) return;
+
+  const forks = depth > 1 ? [0.3, 0.55, 0.8] : [0.45, 0.8];
+  for (const t of forks) {
+    const here = along(from, c1, c2, end, t);
+    const ahead = along(from, c1, c2, end, Math.min(1, t + 0.05));
+    const going = Math.atan2(ahead.y - here.y, ahead.x - here.x);
+    const turn = (random() < 0.5 ? -1 : 1) * (0.45 + random() * 0.55);
+    root(here, going + turn, length * (0.34 + random() * 0.2), depth - 1, ground, random, out);
+  }
+}
+
+/**
+ * The roots of a tree whose crown is about `reach` wide on each side of its foot: a short taproot, two strong lateral roots nearly along the surface,
+ * and four going down and out, each forking twice. `d` strings for an SVG path, each root followed by its forks. Nothing goes above the foot, or
+ * wider than a little past `reach`, or deeper than about `0.8 * reach`.
+ */
+export function growRoots(foot: Point, reach: number, seed = 7): string[] {
+  if (!(reach > 0)) return [];
+  const random = seeded(seed);
+  const out: string[] = [];
+  const ground = foot.y;
+  const jitter = (spread: number) => (random() - 0.5) * spread;
+  // the strong roots near the surface, one to each side, going a little down
+  root(foot, 0.16 + random() * 0.14, reach * (0.9 + random() * 0.15), 2, ground, random, out);
+  root(foot, Math.PI - 0.16 - random() * 0.14, reach * (0.9 + random() * 0.15), 2, ground, random, out);
+  // the ones that go down and out, two to each side
+  for (const side of [1, -1]) {
+    for (const lean of [0.62, 0.95]) {
+      const heading = DOWN - side * (lean + jitter(0.2));
+      root(foot, heading, reach * (0.55 + random() * 0.2), 2, ground, random, out);
     }
   }
-  return paths;
+  // the taproot, short and nearly straight
+  root(foot, DOWN + jitter(0.3), reach * (0.5 + random() * 0.15), 1, ground, random, out);
+  return out;
 }
