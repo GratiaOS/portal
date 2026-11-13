@@ -17,7 +17,7 @@ const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMe
 export type Tree = {
   /** Put on the canopy's group. */
   ref: RefObject<SVGGElement | null>;
-  /** Put on the roots' drawing: they are lit by the exhale. */
+  /** Put on the roots' drawing; its parent, the page, carries `--light`, the one number the sky and the roots are lit by. */
   roots: RefObject<SVGSVGElement | null>;
   /** Whether the tree is leaning a hair off its place, waiting for a first touch (the Missing Screw: nudge, touch, wink, reward). */
   nudge: boolean;
@@ -90,8 +90,9 @@ export function useTree(enabled: boolean): Tree {
       const now = performance.now();
       if (!reducedMotion()) {
         crown.current?.style.setProperty('--breath', c.value(now).toFixed(4));
-        roots.current?.style.setProperty('--exhale', c.exhaled(now).toFixed(3));
-      } else roots.current?.style.setProperty('--exhale', '0.35'); // still, and a little lit
+        // one number for the whole scene: the sky is lit by it, and the roots by what the sky gives up
+        roots.current?.parentElement?.style.setProperty('--light', c.light(now).toFixed(3));
+      } else roots.current?.parentElement?.style.setProperty('--light', '0.5'); // still, half and half
       if (p.seated) {
         const phase = breather.current.phase(now);
         if (phase !== p.phase) {

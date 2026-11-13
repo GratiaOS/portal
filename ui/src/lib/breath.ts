@@ -82,11 +82,12 @@ export class Circle {
   }
 
   /**
-   * How far the canopy has let go of its breath at `now`, from 0 (open) to 1 (closed): the same curve as the canopy itself, turned over, so that
-   * whatever is lit by it is lit exactly as the tree closes and dims exactly as it opens. It is what the roots glow with.
+   * The light of the whole scene at `now`, from 0 to 1, on the canopy's own curve: dark when it is closed, whole when it is open. It is one movement
+   * for every step of the breath: the sky takes it as it is, and the roots take what the sky gives up (`1 - light`), so that on an inhale the light rises
+   * into the sky, in a hold it rests there, and on the exhale it goes down into the roots. Together they are always one whole.
    */
-  exhaled(now: number): number {
-    return Math.min(1, Math.max(0, (1 - this.value(now)) / 2));
+  light(now: number): number {
+    return Math.min(1, Math.max(0, (1 + this.value(now)) / 2));
   }
 
   clear(): void {

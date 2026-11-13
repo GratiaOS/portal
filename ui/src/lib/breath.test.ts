@@ -101,23 +101,42 @@ test('when the last one goes silent, the canopy gives itself back to the neutral
   near(c.value(GONE_MS + 1), new Circle().value(GONE_MS + 1));
 });
 
-test('the roots are lit on the canopy\'s own curve, turned over: dark when it is open, whole when it is closed, and in step the whole way', () => {
+test('the light is one movement on the canopy\'s own curve: dark when it is closed, whole when it is open, in step the whole way', () => {
   const c = new Circle();
   const NEUTRAL = 60_000 / NEUTRAL_BPM;
-  near(c.exhaled(0), 1); // the neutral begins closed
-  near(c.exhaled(0.5 * NEUTRAL), 0); // and is open at the half
-  let last = c.exhaled(0.5 * NEUTRAL);
-  for (let t = 0.5 * NEUTRAL; t <= NEUTRAL; t += NEUTRAL / 40) {
-    near(c.exhaled(t), (1 - c.value(t)) / 2); // exactly the canopy's curve, never a curve of its own
-    assert.ok(c.exhaled(t) >= last - 1e-9); // lit more and more for as long as the canopy falls
-    last = c.exhaled(t);
+  near(c.light(0), 0); // the neutral begins closed
+  near(c.light(0.5 * NEUTRAL), 1); // and is open at the half
+  let last = c.light(0);
+  for (let t = 0; t <= 0.5 * NEUTRAL; t += NEUTRAL / 40) {
+    near(c.light(t), (1 + c.value(t)) / 2); // exactly the canopy's curve, never a curve of its own
+    assert.ok(c.light(t) >= last - 1e-9); // lit more and more for as long as it opens
+    last = c.light(t);
   }
-  // with many it stays inside what a glow can be
+  for (let t = 0.5 * NEUTRAL; t <= NEUTRAL; t += NEUTRAL / 40) {
+    assert.ok(c.light(t) <= last + 1e-9); // and less and less as it closes: the light goes down, into the roots
+    last = c.light(t);
+  }
+  // what the sky has, the roots lack: they are `1 - light`, so together they are one whole
+  for (const t of [0, 1_000, 3_000, 5_000]) near(c.light(t) + (1 - c.light(t)), 1);
+});
+
+test('a hold keeps the light where it is, at the top: the sky stays lit and the roots stay dark', () => {
+  const c = new Circle();
+  c.hear('me', 10, 'inhale', 0);
+  for (let t = 500; t <= 3_000; t += 500) c.hear('me', 10, 'inhale', t);
+  c.hear('me', 10, 'hold', 3_000);
+  for (const t of [4_000, 6_000, 8_000]) {
+    c.hear('me', 10, 'hold', t);
+    near(c.light(t), 1);
+  }
+});
+
+test('with many, the light never leaves what a glow can be', () => {
   const many = new Circle();
   for (const id of ['a', 'b', 'c']) many.hear(id, 12, 'inhale', 0);
   for (let t = 0; t < 5_000; t += 250) for (const id of ['a', 'b', 'c']) {
     many.hear(id, 12, 'inhale', t);
-    const lit = many.exhaled(t);
+    const lit = many.light(t);
     assert.ok(lit >= 0 && lit <= 1);
   }
 });

@@ -130,6 +130,7 @@ function Roots({ tree }: { tree: Tree }) {
           targets.push(at(p.x, p.y, matrix));
         }
       });
+      page.style.setProperty('--sun-x', `${foot.x}px`); // the afterglow is centred on the tree
       setDrawn({ width: box.width, height: box.height, paths: growRoots(foot, targets) });
     };
     measure();
@@ -241,6 +242,7 @@ export default function LoginGate({ onEnter, door, ended, breath }: { onEnter: (
 
   return (
     <main data-gate="page">
+      {breath && <div data-gate="glow" aria-hidden="true" />}
       <Sky tree={breath ? tree : undefined} label={t.sitUnderTree} />
       {breath && <Roots tree={tree} />}
       <form onSubmit={onSubmit} data-gate="doorway" aria-labelledby="gate-title">
