@@ -143,6 +143,7 @@ The current list is in [SIGNAL.md](SIGNAL.md).
 | talk to it from code | [docs/api.md](docs/api.md) |
 | change how it looks | [ui/src/skins/README.md](ui/src/skins/README.md) |
 | take part | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| put out a version | [docs/releasing.md](docs/releasing.md) |
 | report a vulnerability | [SECURITY.md](SECURITY.md) |
 
 ## For companions
