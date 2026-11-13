@@ -491,6 +491,18 @@ A field the server does not act on would say something false: whoever runs a por
 * The portal today streams over **SSE, through `fetch`** (so the token travels in a header), and its hub keeps presence by `participantId`.
 * So `breath`, `quiet` and `open` cannot be had by changing a config string. One of two ways has to be chosen first: a **separate hub**, without identity, for these rooms only, or **taking identity out of the existing hub** where a room's physics asks for it.
 
+### Decided for the gate (2026-11-13): the tree breathes, and Parking stays as it is
+
+Nothing here is built yet. It settles the order, so the blocker above is crossed on purpose:
+
+* **Where.** The gate's own tree (`data-gate="tree"`) is the breathing surface, for anyone who opens `firegate.space`, with no token and no room to enter. **Parking is left exactly as it is**: the door with no key is the Missing Screw of the garden (see TRACES), and it is not changed to carry this.
+* **Transport and identity.** A **separate hub with no identity**, for this only (the first way out in "The blocker"): a stream by SSE to listen and a `POST` to send, both with no token. The hub gives each stream an id that lives in memory for as long as the stream does, so that each person is one oscillator; it is never shown, never written, never counted out loud. The existing hub and its `participantId` are not touched. No WebSocket.
+* **What it keeps of §5.** At most **4** at once (the fifth sees a still tree, with no message); a source that is silent for 10 s is let go; a room with no one in it does not exist; the tree contracts to a neutral of 8 bpm over 10 s once the last one leaves; composite as independent oscillators, not an average; no text, names, count, "joined" or "left", history or log; no reconnecting state shown.
+* **What it leaves for later.** `knock-ack` (a knock is received or not, and that is all); the camera; audio and haptics; any `type` in a config (this is a small block that asks for the gate, not a room type, until the hub can keep types).
+* **How a person takes part.** One touch on the tree sits them down (the Missing Screw: the tree stands a hair off, a touch sets it right, and the breath begins). Held, the touch is their own rhythm; let go, the tree goes back to 8 bpm. Reduced motion: the tree does not move, and is still there.
+
+The order: the hub as a pure class with tests; its two adapters (Node, and a Durable Object on Cloudflare); the page; the sun; the knock.
+
 ### What can be done sooner, as words and no new physics
 
 The points of §11 that the present rooms already touch (the named dots, the count in the tab's title, the clock on a message) can each be weighed on their own, and none needs a WebSocket.
