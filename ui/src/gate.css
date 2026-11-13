@@ -94,22 +94,10 @@
   pointer-events: none;
 }
 
-[data-gate='crown'][data-tree] {
-  pointer-events: all;
-  cursor: pointer;
-  /* a hold is the person's breath: the browser must not take the touch for a scroll, a zoom or a menu, and then cancel it */
-  touch-action: none;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
 [data-gate='crown'][data-nudge] {
   --lean: 0.9deg;
 }
 
-[data-gate='crown'][data-tree]:focus-visible {
-  filter: drop-shadow(0 0 4px var(--bulb));
-}
 
 /*
  * The light of the breath, one movement for every step: `--light` (0 to 1, set by the page on the canopy's own curve) lights the sky as the tree opens,
@@ -158,12 +146,65 @@
   fill: var(--bulb);
 }
 
-[data-gate='hit'] {
-  fill: transparent;
+/*
+ * The seat, the place to press, to the right of the tree and on the ground, so that a finger never covers the tree: the garden's pacer (a ring, a soft
+ * glow, a word in the display face), one word at a time, *in*, *hold*, *out*, as the canopy does. It breathes with it, and is lit by the same
+ * `--light`. The press is the person's breath: no scroll, no zoom and no menu may take the touch.
+ */
+[data-gate='seat'] {
+  position: absolute;
+  left: min(calc(var(--sun-x, 50%) + 10.5rem), calc(100% - 3.2rem));
+  top: calc(var(--horizon) + 1.5rem);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 4.8rem;
+  height: 4.8rem;
+  margin: 0;
+  padding: 0;
+  translate: -50% -50%;
+  border: 1.5px solid rgb(254 249 195 / 0.5);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(250 204 21 / calc(0.1 + 0.3 * var(--light, 0.5))) 0, rgb(250 204 21 / calc(0.04 + 0.12 * var(--light, 0.5))) 70%, transparent 100%);
+  color: var(--ink);
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  scale: calc(1 + 0.08 * var(--breath, 0));
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
+[data-gate='seat'][aria-pressed='true'] {
+  border-color: rgb(254 249 195 / 0.85);
+  box-shadow: 0 0 1.3rem rgb(250 204 21 / 0.35);
+}
+
+[data-gate='seat']:focus-visible {
+  outline: 2px solid var(--bulb);
+  outline-offset: 4px;
+}
+
+[data-gate='word'] {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  text-shadow: 0 0 0.6rem rgb(0 0 0 / 0.5);
+}
+
+[data-gate='seat'][data-word='in'] [data-w='in'],
+[data-gate='seat'][data-word='hold'] [data-w='hold'],
+[data-gate='seat'][data-word='out'] [data-w='out'] {
+  opacity: 1;
+  /* the word that goes fades first, and this one comes in after it, so that two are never read at once */
+  transition-delay: 150ms;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
-  [data-gate='crown'] {
+  [data-gate='crown'],
+  [data-gate='word'] {
     transition: none;
   }
 }

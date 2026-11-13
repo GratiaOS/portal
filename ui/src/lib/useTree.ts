@@ -1,10 +1,10 @@
 // 🌬️ The tree on the gate breathes with whoever else is there (docs/rfc-001-presence-physics.md §17). It listens to `/api/breath` with no key and
-// moves its canopy by what it hears; a touch sits the person down, held it is their own rhythm, and a tap after that changes nothing. The page
+// moves its canopy by what it hears; a touch on the seat, to the right of the tree, sits the person down, held it is their own rhythm, and a tap after that changes nothing. The page
 // shows nothing about it: no count, no name, no "connecting", no error. A stream that fails is tried again, quietly; a tab that is hidden
 // neither listens nor sends (and so gives its seat up). Nothing is kept: no cookie, no storage, no id past the stream that has it.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, PointerEvent, RefObject } from 'react';
-import { Breather, Circle, Rhythm, SIGNAL_MS } from './breath.ts';
+import { Breather, Circle, Pacer, Rhythm, SIGNAL_MS } from './breath.ts';
 import type { Phase } from './breath.ts';
 import { Press } from './press.ts';
 import type { PressEvent } from './press.ts';
@@ -19,18 +19,20 @@ export type Tree = {
   ref: RefObject<SVGGElement | null>;
   /** Put on the roots' drawing; its parent, the page, carries `--light`, the one number the sky and the roots are lit by. */
   roots: RefObject<SVGSVGElement | null>;
+  /** Put on the seat, the place to press, to the right of the tree: it carries the word (`data-word`) and breathes (`--breath`) with the canopy. */
+  seat: RefObject<HTMLButtonElement | null>;
   /** Whether the tree is leaning a hair off its place, waiting for a first touch (the Missing Screw: nudge, touch, wink, reward). */
   nudge: boolean;
   /** Whether this person is sitting. For the one who uses a screen reader: nothing on the page says it. */
   seated: boolean;
   handlers: {
-    onPointerDown: (event: PointerEvent<SVGGElement>) => void;
+    onPointerDown: (event: PointerEvent<Element>) => void;
     onPointerUp: () => void;
     onPointerCancel: () => void;
     onLostPointerCapture: () => void;
-    onContextMenu: (event: MouseEvent<SVGGElement>) => void;
-    onKeyDown: (event: KeyboardEvent<SVGGElement>) => void;
-    onKeyUp: (event: KeyboardEvent<SVGGElement>) => void;
+    onContextMenu: (event: MouseEvent<Element>) => void;
+    onKeyDown: (event: KeyboardEvent<Element>) => void;
+    onKeyUp: (event: KeyboardEvent<Element>) => void;
   };
 };
 
@@ -39,6 +41,8 @@ type Person = { seated: boolean; phase?: Phase; sentAt: number };
 export function useTree(enabled: boolean): Tree {
   const crown = useRef<SVGGElement | null>(null);
   const roots = useRef<SVGSVGElement | null>(null);
+  const seat = useRef<HTMLButtonElement | null>(null);
+  const pacer = useRef(new Pacer());
   const [seated, setSeated] = useState(false);
   const [touched, setTouched] = useState(false);
   const circle = useRef(new Circle());
@@ -112,8 +116,13 @@ export function useTree(enabled: boolean): Tree {
     const step = () => {
       const now = performance.now();
       apply(press.current.tick(now), now); // a press that has lasted becomes a hold, and a hold that has lasted too long lets go
+      // the word, as the garden's pacer says it: what the canopy is doing, for the one who sits and for the one who only watches
+      const word = pacer.current.next(c, now);
+      if (seat.current && seat.current.dataset.word !== word) seat.current.dataset.word = word;
       if (!reducedMotion()) {
-        crown.current?.style.setProperty('--breath', c.value(now).toFixed(4));
+        const open = c.value(now).toFixed(4);
+        crown.current?.style.setProperty('--breath', open);
+        seat.current?.style.setProperty('--breath', open);
         // one number for the whole scene: the sky is lit by it, and the roots by what the sky gives up
         roots.current?.parentElement?.style.setProperty('--light', c.light(now).toFixed(3));
       } else roots.current?.parentElement?.style.setProperty('--light', '0.5'); // still, half and half
@@ -205,7 +214,7 @@ export function useTree(enabled: boolean): Tree {
   }, [enabled, up]);
 
   const keyDown = useCallback(
-    (event: KeyboardEvent<SVGGElement>) => {
+    (event: KeyboardEvent<Element>) => {
       if ((event.key === ' ' || event.key === 'Enter') && !event.repeat) {
         event.preventDefault();
         down();
@@ -214,7 +223,7 @@ export function useTree(enabled: boolean): Tree {
     [down],
   );
   const keyUp = useCallback(
-    (event: KeyboardEvent<SVGGElement>) => {
+    (event: KeyboardEvent<Element>) => {
       if (event.key === ' ' || event.key === 'Enter') up();
     },
     [up],
@@ -223,6 +232,7 @@ export function useTree(enabled: boolean): Tree {
   return {
     ref: crown,
     roots,
+    seat,
     nudge: enabled && !touched,
     seated,
     handlers: {

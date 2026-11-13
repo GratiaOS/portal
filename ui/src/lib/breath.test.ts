@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Breather, Circle, GONE_MS, KEEP_MS, NEUTRAL_BPM, Rhythm, ceiling, hasTree, weight } from './breath.ts';
+import { Breather, Circle, GONE_MS, HOLD_NAMED_MS, KEEP_MS, NEUTRAL_BPM, Pacer, Rhythm, ceiling, hasTree, weight } from './breath.ts';
 
 const near = (a: number, b: number, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} is not ${b}`);
 const CYCLE = 60_000 / 10; // at 10 breaths a minute
@@ -330,4 +330,50 @@ test('the gate learns there is a tree from the health, and from nothing else', a
   assert.equal(await hasTree(says({ breath: 'yes' })), false);
   assert.equal(await hasTree(says({ breath: true }, false)), false);
   assert.equal(await hasTree((async () => { throw new Error('away'); }) as unknown as typeof fetch), false);
+});
+
+test('the word says what the canopy does: in while it rises, out while it falls, and never hold for the tree\'s own turn at the top', () => {
+  const c = new Circle();
+  const pacer = new Pacer();
+  const NEUTRAL = 60_000 / NEUTRAL_BPM;
+  const seen: string[] = [];
+  for (let t = 0; t <= 2 * NEUTRAL; t += 50) {
+    const word = pacer.next(c, t);
+    if (seen[seen.length - 1] !== word) seen.push(word);
+    // and it is true to what the eye sees
+    if (t > 200 && t < NEUTRAL / 2 - 200) assert.equal(word, 'in');
+    if (t > NEUTRAL / 2 + 200 && t < NEUTRAL - 200) assert.equal(word, 'out');
+  }
+  assert.ok(!seen.includes('hold'), seen.join(' '));
+  assert.deepEqual(seen.filter((w, i) => i === 0 || w !== seen[i - 1]).slice(0, 5), seen.slice(0, 5));
+  assert.ok(seen.filter((w) => w === 'in').length >= 2 && seen.filter((w) => w === 'out').length >= 2); // in, out, in, out
+});
+
+test('a rest at the top that lasts is hold; and when it lets go, the word is out', () => {
+  const c = new Circle();
+  const b = new Breather();
+  const pacer = new Pacer();
+  const start = 10_300;
+  b.sit(start);
+  let last: string | undefined;
+  const at = (t: number) => {
+    const phase = b.phase(t);
+    if (phase !== last || t % 2_000 < 100) {
+      c.hear('me', b.rate, phase, t);
+      last = phase;
+    }
+    return pacer.next(c, t);
+  };
+  for (let t = start; t < start + 350; t += 50) at(t);
+  b.press(start + 350);
+  const words = new Map<number, string>();
+  for (let t = start + 350; t <= start + 12_000; t += 50) words.set(t, at(t));
+  assert.equal(words.get(start + 12_000), 'hold'); // resting, and named
+  // it was not named at the first moment of the rest, but after HOLD_NAMED_MS
+  const firstHold = [...words].find(([, w]) => w === 'hold')![0];
+  assert.ok(firstHold - start >= HOLD_NAMED_MS);
+  b.release(start + 12_000, 8);
+  let out = false;
+  for (let t = start + 12_000; t <= start + 14_000; t += 50) out ||= at(t) === 'out';
+  assert.ok(out); // it lets go: out
 });

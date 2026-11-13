@@ -167,6 +167,40 @@ export class Rhythm {
   }
 }
 
+export type Word = 'in' | 'hold' | 'out';
+
+/**
+ * The word for what the canopy is doing, as the garden's pacer says it: *in* while it rises, *out* while it falls, *hold* when it rests at the top.
+ * It is read from the canopy itself, so it is always what the eye sees, for the one who sits and for the one who only watches. The tree's own
+ * breath has no hold (it turns at the top), and a moment of rest there is not named; only a rest that lasts, as in a hold, is.
+ */
+export class Pacer {
+  private shown: Word = 'out';
+  private flatSince: number | undefined;
+
+  next(circle: Circle, now: number): Word {
+    const here = circle.value(now);
+    const change = here - circle.value(now - 150);
+    if (change > 0.004) {
+      this.flatSince = undefined;
+      this.shown = 'in';
+    } else if (change < -0.004) {
+      this.flatSince = undefined;
+      this.shown = 'out';
+    } else if (here <= 0) {
+      this.flatSince = undefined;
+      this.shown = 'out';
+    } else {
+      this.flatSince ??= now;
+      if (now - this.flatSince >= HOLD_NAMED_MS) this.shown = 'hold';
+    }
+    return this.shown;
+  }
+}
+
+/** A rest at the top is named *hold* only once it has lasted this long: the turn of the tree's own breath is shorter, and keeps the word it had. */
+export const HOLD_NAMED_MS = 700;
+
 /** Whether this portal has a tree on its gate: it says so in its health, and says nothing when it has none. */
 export async function hasTree(fetchImpl: typeof fetch = fetch): Promise<boolean> {
   try {
