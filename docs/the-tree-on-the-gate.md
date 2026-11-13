@@ -18,6 +18,16 @@ The olive tree on the gate (what a visitor sees at `firegate.space` before they 
 
 [`ui/src/lib/roots.ts`](../ui/src/lib/roots.ts) draws **thirteen shapes and no more**, in three directions: a short thick pivot straight down, two strong roots to each side (one almost along the surface, one going down and out), and each of those four forking twice and stopping. Each is a filled shape that tapers from the trunk to a fine tip, none thinner than a clear line where it starts, and each branch leaves its parent in the parent's own direction so nothing turns sharply. They spread about as wide as the crown (`CROWN_REACH` in `LoginGate.tsx`, in the sky's own units) and reach for nothing, not even the doorway. A seed makes them the same on every load; they are drawn again, from where the foot is on the page, when it changes size. `THICKNESS` in the same file is where to make them heavier or finer. The empty space between them is part of the rhythm: more lines made the picture busier, not the breath clearer.
 
+## The guard
+
+[`test/gate-guard.test.mjs`](../test/gate-guard.test.mjs) runs with the rest of the tests, in CI, and reads the source to keep three things true, so that whoever changes the gate (a contributor, or a model making a pull request to "improve the UX") finds out in red, at once, what it was asked to keep:
+
+1. **The breath is the clock and nothing else.** The tree's modules (`breath.ts`, `useBreath.ts`, `roots.ts`) have no network call, no stream or socket, no storage, no timer, no randomness, and no import from the room; the phase is `breathAt(Date.now())`, read in one place, and `breathAt` is pure. The tree's door has not come back: no `/api/breath`, no hub, no object, no flag in the health or the config, one Durable Object in the Worker.
+2. **Nothing on the gate lets anyone verify that someone else is home** ([RFC 001](rfc-001-presence-physics.md) §11: *if removing it stops anyone verifying that another person is there, it was not to be there*). No count, "last seen", "typing", online or offline, or receipt in the gate or the breath modules; `Presence` has a participant and a state and no time, place or count; a visitor is told that *someone* is here, in a sentence that takes no number.
+3. **One organism, and a quiet gate.** Crown, sky and roots are moved by `--breath` and by nothing else (no animation or transition of their own, no second variable such as `--light`), and none of them takes the pointer; `--breath` is written in one place and read in one; with less motion asked for, it stays at 0 and no frame is requested. The scene (`Sky`, `Roots`) has no control in it, and the gate has exactly three kinds: the key, *Step through*, and the two paths at its foot; `strings.ts` has no words to guide a breath.
+
+These are rules, not habits: if one of them has to change, change it in the guard in the same pull request and say why there. The guard was proved the way a guard should be, by breaking each rule and watching it go red (fifteen ways, each with the message that says what it means).
+
 ## What it is not
 
 - **Not a place to press.** The tree has no button, no seat, no word. The gate's only controls are the key field and *Step through*.
