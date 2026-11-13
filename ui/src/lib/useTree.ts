@@ -17,6 +17,8 @@ const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMe
 export type Tree = {
   /** Put on the canopy's group. */
   ref: RefObject<SVGGElement | null>;
+  /** Put on the roots' drawing: they are lit by the exhale. */
+  roots: RefObject<SVGSVGElement | null>;
   /** Whether the tree is leaning a hair off its place, waiting for a first touch (the Missing Screw: nudge, touch, wink, reward). */
   nudge: boolean;
   /** Whether this person is sitting. For the one who uses a screen reader: nothing on the page says it. */
@@ -34,6 +36,7 @@ type Person = { seated: boolean; wasSeated: boolean; holding: boolean; timer?: R
 
 export function useTree(enabled: boolean): Tree {
   const crown = useRef<SVGGElement | null>(null);
+  const roots = useRef<SVGSVGElement | null>(null);
   const [seated, setSeated] = useState(false);
   const [touched, setTouched] = useState(false);
   const circle = useRef(new Circle());
@@ -85,7 +88,10 @@ export function useTree(enabled: boolean): Tree {
 
     const step = () => {
       const now = performance.now();
-      if (!reducedMotion()) crown.current?.style.setProperty('--breath', c.value(now).toFixed(4));
+      if (!reducedMotion()) {
+        crown.current?.style.setProperty('--breath', c.value(now).toFixed(4));
+        roots.current?.style.setProperty('--exhale', c.release(now).toFixed(3));
+      } else roots.current?.style.setProperty('--exhale', '0.35'); // still, and a little lit
       if (p.seated) {
         const phase = breather.current.phase(now);
         if (phase !== p.phase) {
@@ -204,6 +210,7 @@ export function useTree(enabled: boolean): Tree {
 
   return {
     ref: crown,
+    roots,
     nudge: enabled && !touched,
     seated,
     handlers: {

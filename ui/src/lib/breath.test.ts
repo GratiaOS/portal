@@ -105,6 +105,23 @@ test('when the last one goes silent, the canopy gives itself back to the neutral
   near(c.value(GONE_MS + 1), new Circle().value(GONE_MS + 1));
 });
 
+test('the roots are lit by the exhale: when the canopy falls, not when it rises or rests', () => {
+  const c = new Circle();
+  const NEUTRAL = 60_000 / NEUTRAL_BPM;
+  assert.ok(c.release(0.25 * NEUTRAL) < 0.02); // opening
+  assert.ok(c.release(0.5 * NEUTRAL) < 0.1); // at the crest, about to fall
+  near(c.release(0.75 * NEUTRAL), 1, 0.02); // falling fastest
+  assert.ok(c.release(1.0 * NEUTRAL) < 0.1); // at the bottom
+  // and with a faster breath it is never more than whole
+  const fast = new Circle();
+  fast.hear('a', 30, 'exhale', 0);
+  for (let t = 0; t < 2_000; t += 50) {
+    fast.hear('a', 30, 'exhale', t);
+    const lit = fast.release(t + 50);
+    assert.ok(lit >= 0 && lit <= 1);
+  }
+});
+
 test('whoever stands up is let go at once', () => {
   const c = new Circle();
   c.hear('me', 30, 'inhale', 0);

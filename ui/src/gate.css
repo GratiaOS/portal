@@ -73,7 +73,8 @@
   transform-box: view-box;
   transform-origin: 566px 392px;
   rotate: var(--lean, 0deg);
-  scale: calc(1 + 0.04 * var(--breath, 0));
+  /* a fifth larger than it was drawn, and opening and closing a few hundredths about that */
+  scale: calc(1.2 * (1 + 0.04 * var(--breath, 0)));
   transition: rotate 160ms ease-out;
   pointer-events: none;
 }
@@ -92,6 +93,41 @@
 
 [data-gate='crown'][data-tree]:focus-visible {
   filter: drop-shadow(0 0 4px var(--bulb));
+}
+
+/*
+ * The roots: thin lines under the land from the tree's foot to the lights, dark until the canopy lets go of its breath (`--exhale`, 0 to 1, set by
+ * the page), and then lit in the warm of the bulbs. Behind the doorway, never over what is written in it.
+ */
+[data-gate='roots'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: calc(0.06 + 0.8 * var(--exhale, 0));
+}
+
+[data-gate='roots'] path {
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+[data-gate='root-halo'] path {
+  stroke: var(--bulb-warm);
+  stroke-width: 5;
+  opacity: 0.22;
+}
+
+[data-gate='root-halo'] {
+  filter: blur(2.5px);
+}
+
+[data-gate='root-core'] path {
+  stroke: var(--bulb);
+  stroke-width: 1;
+  opacity: 0.85;
 }
 
 [data-gate='hit'] {

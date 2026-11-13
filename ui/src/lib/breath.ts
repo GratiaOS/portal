@@ -74,6 +74,16 @@ export class Circle {
     return ceiling(sum);
   }
 
+  /**
+   * How much the canopy is letting go of its breath at `now`, from 0 (opening, or at rest) to 1 (the fastest fall of the tree's own breath): the
+   * canopy's change over the last moments, turned round. It is what lights the roots, so that they glow on the exhale of everyone there at once.
+   */
+  release(now: number): number {
+    const before = this.value(now - 150);
+    const slope = (this.value(now) - before) / 0.15; // per second
+    return Math.min(1, Math.max(0, -slope / (TAU * (NEUTRAL_BPM / 60))));
+  }
+
   /** Lets go of one source at once (a person who stands up, not one who leaves: that one fades). */
   let(id: string): void {
     this.sources.delete(id);
