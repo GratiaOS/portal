@@ -54,6 +54,12 @@ If a room ever needs people to hear *each other*, the hub with no identity descr
 
 - **Try it locally:** `pnpm dev`; the gate is at `/`. Tests: `pnpm --filter portal-ui test` (the wave: its period, its anchor, its smoothness and the sync; the roots: their number, thickness, bounds and growth with the tree).
 
+## Looked at
+
+On 2026-11-13, on real devices: two windows on a laptop breathe together, and two on a phone do. A laptop and a phone did not, until `time.is` showed the phone's clock **1.7 s ahead** (the laptop's was exact): 1.7 s is about 80° of a breath of 7.5 s, nearly the opposite phase. The code was right; the pulse is **as together as the clocks are**. As a rule of thumb: devices within about 100 ms look the same (5° of the wave), 500 ms apart look apart (24°), a second or more is plain (48° and over).
+
+So if two devices do not breathe together, **check their clocks first** (`time.is` shows how far each is), and turn on automatic date and time (on a phone, switching it off and on again asks the network for the time anew). There is no way to correct a clock from the page without a request to the server, which the gate does not make (the guard keeps it so); that is the price of "no bytes on the network", and it is a small one.
+
 ## Not yet looked at
 
-Two people at once on a real phone and a laptop (the sync has been proved by test, not by two screens), and whether the amounts in the table still read as one thing on a real screen.
+Whether the amounts in the table still read as one thing, the crown, the sky and the roots, on a real screen of each size.
