@@ -43,6 +43,7 @@ If a room ever needs people to hear *each other*, the hub with no identity descr
 ## Worth knowing
 
 - **A phase must not run past its own end.** In the networked version an inhale ran on past the top into the fall, and the hold that followed froze the canopy half way down, which looked like a stopped breath. If you give the tree a rhythm of its own again (not the clock's), rest each phase at its end.
+- **The migration marker.** `cloudflare/wrangler.jsonc` ends with `{ "tag": "v3" }`, a migration with nothing in it. A Worker that once had the tree's object (firegate.space) holds that tag, and wrangler, if it cannot find a Worker's last tag in the file, applies every migration again over it; so the marker stays, and the history of the object is not shipped (the guard checks it). Anyone else gets `v1`, and `v3` changes nothing.
 - **One number drives everything**, or it reads as separate things. If you add something that should breathe, give it a rule on `--breath` in `gate.css` and nothing else.
 - **You cannot judge the motion in an embedded browser pane**: it throttles animation frames to about one a second. To see both ends of the wave, freeze the frames and set the number by hand in the console, then look at it on a real device:
 
