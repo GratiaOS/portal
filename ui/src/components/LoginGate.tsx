@@ -10,6 +10,8 @@
  * Not copied: written new for Room (MPL-2.0); Firegate is AGPL-3.0.
  */
 import { stepThroughMeans } from '../lib/guest.ts';
+import { useTree } from '../lib/useTree.ts';
+import type { Tree } from '../lib/useTree.ts';
 import type { Refused } from '../lib/guest.ts';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -41,9 +43,9 @@ const CLOUDS: { id: string; depth: 'far' | 'near'; puffs: [number, number, numbe
  * The sky of the photograph: dark clouds drawn across the dusk, the edge of the land, and one tree alone on it. Its colours are in
  * gate.css; held to the bottom, so that the tree stands on the horizon at any width.
  */
-function Sky() {
+function Sky({ tree, label }: { tree?: Tree; label: string }) {
   return (
-    <svg data-gate="sky" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+    <svg data-gate="sky" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden={tree ? undefined : true} focusable="false">
       <defs>
         {/* two softnesses: the clouds low and small are far, and a little sharper; the big ones are near, and softer */}
         <filter id="gate-soft-far" x="-10%" y="-60%" width="120%" height="220%">
@@ -60,12 +62,33 @@ function Sky() {
           ))}
         </g>
       ))}
-      {/* an olive tree: a crown uneven at its edge, wider than tall, on a short trunk, and a shrub beside it */}
-      <path
-        d="M552 392 L554 368 Q530 372 512 364 Q494 366 490 354 Q478 348 488 338 Q480 326 494 320 Q492 306 508 304 Q512 290 528 292 Q534 278 550 282 Q560 270 574 278 Q590 272 598 284 Q614 282 618 296 Q634 298 632 312 Q646 318 638 330 Q650 340 638 350 Q640 362 624 364 Q610 374 590 368 Q578 372 566 368 L568 392 Z"
-        data-gate="tree"
-      />
-      <path d="M452 392 Q448 380 458 376 Q462 366 474 370 Q484 364 490 374 Q500 376 496 388 L496 392 Z" data-gate="tree" />
+      {/*
+        An olive tree: a crown uneven at its edge, wider than tall, on a short trunk, and a shrub beside it. When the portal has a tree that
+        breathes, this is it: it leans a hair off its place until it is touched, and a wider circle that draws nothing is its door, so that a
+        thumb finds it. Nothing is written on it. Without one, it is a drawing, as before.
+      */}
+      <g
+        data-gate="crown"
+        ref={tree?.ref}
+        {...(tree
+          ? {
+              'data-tree': '',
+              ...(tree.nudge ? { 'data-nudge': '' } : {}),
+              role: 'button',
+              tabIndex: 0,
+              'aria-label': label,
+              'aria-pressed': tree.seated,
+              ...tree.handlers,
+            }
+          : {})}
+      >
+        {tree && <circle cx="566" cy="330" r="100" data-gate="hit" />}
+        <path
+          d="M552 392 L554 368 Q530 372 512 364 Q494 366 490 354 Q478 348 488 338 Q480 326 494 320 Q492 306 508 304 Q512 290 528 292 Q534 278 550 282 Q560 270 574 278 Q590 272 598 284 Q614 282 618 296 Q634 298 632 312 Q646 318 638 330 Q650 340 638 350 Q640 362 624 364 Q610 374 590 368 Q578 372 566 368 L568 392 Z"
+          data-gate="tree"
+        />
+        <path d="M452 392 Q448 380 458 376 Q462 366 474 370 Q484 364 490 374 Q500 376 496 388 L496 392 Z" data-gate="tree" />
+      </g>
       <path d="M-40 392 Q400 384 760 388 T1260 380 L1260 400 L-40 400 Z" data-gate="hill" />
     </svg>
   );
@@ -126,8 +149,9 @@ function Lantern() {
 /** The door for visitors, when the portal has one: what it is doing, and how to ask it to open. `only` hides the key, for the link that steps through by itself. */
 export type GuestDoor = { state: 'idle' | 'stepping' | Refused; onStep: () => void; only: boolean };
 
-export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: string) => void; door?: GuestDoor; ended?: boolean }) {
+export default function LoginGate({ onEnter, door, ended, breath }: { onEnter: (token: string) => void; door?: GuestDoor; ended?: boolean; breath?: boolean }) {
   const t = stringsFor(navigator.language);
+  const tree = useTree(Boolean(breath));
   useLang(navigator.language);
   const [token, setToken] = useState('');
   const [state, setState] = useState<'idle' | 'checking' | 'unknown' | 'slow' | 'away'>('idle');
@@ -158,7 +182,7 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
 
   return (
     <main data-gate="page">
-      <Sky />
+      <Sky tree={breath ? tree : undefined} label={t.sitUnderTree} />
       <form onSubmit={onSubmit} data-gate="doorway" aria-labelledby="gate-title">
         <Fence />
         <Lantern />

@@ -65,6 +65,45 @@
   fill: var(--land);
 }
 
+/*
+ * The tree that breathes: its crown opens and closes about its foot with `--breath` (-1 to 1, set by the page from what it hears), by a few
+ * hundredths, and leans a hair off its place until it is touched once. Without a tree on the portal none of this is on it, and it is the drawing.
+ */
+[data-gate='crown'] {
+  transform-box: view-box;
+  transform-origin: 566px 392px;
+  rotate: var(--lean, 0deg);
+  scale: calc(1 + 0.04 * var(--breath, 0));
+  transition: rotate 160ms ease-out;
+  pointer-events: none;
+}
+
+[data-gate='crown'][data-tree] {
+  pointer-events: all;
+  cursor: pointer;
+  touch-action: manipulation;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-gate='crown'][data-nudge] {
+  --lean: 0.9deg;
+}
+
+[data-gate='crown'][data-tree]:focus-visible {
+  filter: drop-shadow(0 0 4px var(--bulb));
+}
+
+[data-gate='hit'] {
+  fill: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-gate='crown'] {
+    transition: none;
+  }
+}
+
 /* the doorway: the fence and its lights, with the key given inside it */
 [data-gate='doorway'] {
   position: relative;
