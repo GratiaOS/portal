@@ -1,5 +1,7 @@
 # El portal
 
+Sit under the tree: [firegate.space](https://firegate.space)
+
 ![Heartware: states first, silence allowed](docs/heartware-badge.svg)
 
 A small team chat, self-hosted, with live rooms and a companion who answers from a folder, on the model you bring. It has a room for visitors that forgets as it goes, and a page you can install as an app on your phone or PC.
@@ -9,6 +11,8 @@ Written from scratch, [MPL-2.0](LICENSE). Where its parts come from is recorded 
 ## 📡 Follow the signal
 
 Where the project stands, what is moving, and what comes next: **[SIGNAL.md](SIGNAL.md)**, the project's living status note. Short on purpose, and kept true by whoever changes something.
+
+Read the field notes: [gratiaos.dev/garden](https://gratiaos.dev/garden)
 
 ## 🗺️ MAP
 

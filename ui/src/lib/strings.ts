@@ -16,6 +16,7 @@ export type Strings = {
   gatePlaceholder: string;
   gateEnter: string;
   runYourOwn: string;
+  aloneInTheGarden: string;
   /** The door for visitors: the button, what is said while it opens, and why it may not. */
   stepThrough: string;
   stepping: string;
@@ -121,6 +122,7 @@ const ro: Strings = {
   gatePlaceholder: 'tokenul tău',
   gateEnter: 'Enter o trimite.',
   runYourOwn: 'Rulează-l pe al tău',
+  aloneInTheGarden: 'Singur în grădină',
   stepThrough: 'Intră',
   stepping: 'Intru…',
   guestFull: 'Camera e plină acum. Mai încearcă puțin mai târziu.',
@@ -206,6 +208,7 @@ const en: Strings = {
   gatePlaceholder: 'your token',
   gateEnter: 'Enter sends it.',
   runYourOwn: 'Run your own',
+  aloneInTheGarden: 'Alone in the garden',
   stepThrough: 'Step through',
   stepping: 'Stepping through…',
   guestFull: 'The room is full right now. Try again in a little while.',
@@ -291,6 +294,7 @@ const es: Strings = {
   gatePlaceholder: 'tu token',
   gateEnter: 'Enter lo envía.',
   runYourOwn: 'Ejecuta el tuyo',
+  aloneInTheGarden: 'Solo en el jardín',
   stepThrough: 'Entra',
   stepping: 'Entrando…',
   guestFull: 'La sala está llena ahora mismo. Inténtalo de nuevo en un rato.',

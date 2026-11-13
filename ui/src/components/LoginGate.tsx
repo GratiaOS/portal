@@ -19,6 +19,7 @@ import { stringsFor } from '../lib/strings.ts';
 
 /** The place the "run your own" link leads to: the repository of the portal, public since 0.1.0. */
 const RUN_YOUR_OWN = 'https://github.com/GratiaOS/portal';
+const ALONE_IN_THE_GARDEN = 'https://gratiaos.dev/garden';
 
 
 /**
@@ -228,9 +229,14 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
           )}
         </div>
       </form>
-      <a href={RUN_YOUR_OWN} target="_blank" rel="noopener noreferrer" data-gate="side">
-        {t.runYourOwn} ↗
-      </a>
+      <div data-gate="sides">
+        <a href={ALONE_IN_THE_GARDEN} data-gate="side">
+          {t.aloneInTheGarden} →
+        </a>
+        <a href={RUN_YOUR_OWN} target="_blank" rel="noopener noreferrer" data-gate="side">
+          {t.runYourOwn} ↗
+        </a>
+      </div>
     </main>
   );
 }
