@@ -45,8 +45,6 @@ const config = parseConfig(
     ],
     // the door for visitors is open, so that anyone on the network can walk in at /guest, with no key
     guests: { room: 'guests' },
-    // the tree on the gate breathes with whoever is there (open two tabs to see it)
-    breath: {},
     ...(existsSync(join(page, 'index.html')) ? { staticDir: page } : {}),
     ...(existsSync(join(root, 'skins')) ? { skinsDir: join(root, 'skins') } : {}),
   },

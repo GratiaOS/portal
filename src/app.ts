@@ -35,11 +35,6 @@ export type AppOptions = {
   guests?: GuestsConfig;
   /** What the box where a guest writes may say: only when Nova is on for guests, and their examples, never the team's. */
   guestHints?: { companion: string; examples: string[] };
-  /**
-   * The tree on the gate: answers `/api/breath` and `/api/breath/<id>` with no key, since it knows no one. Absent: those paths are
-   * not there. See `createBreathHandler`.
-   */
-  breath?: (request: Request) => Response | Promise<Response>;
   /** What the portal is called (`name` in the config): in its manifest and in its health. */
   name?: string;
   /** Defaults to 10. */
@@ -169,7 +164,7 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       only(request, 'GET');
       // which room this is, and the contracts it keeps, so that a module or a person can tell before relying on one
       // `guests` is said only when there is a door, so that the gate can offer it and a portal without one says nothing of it
-      return send(200, { ok: true, version: options.version, contracts: { skins: SKIN_CONTRACT }, ...(options.name ? { name: options.name } : {}), ...(options.guests ? { guests: true } : {}), ...(options.breath ? { breath: true } : {}) });
+      return send(200, { ok: true, version: options.version, contracts: { skins: SKIN_CONTRACT }, ...(options.name ? { name: options.name } : {}), ...(options.guests ? { guests: true } : {}) });
     }
     if (path === '/manifest.webmanifest') {
       // no key: a browser asks for it to offer the install, and it holds a name and some icons, nothing of what is said
@@ -185,9 +180,6 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       if (options.pages) return options.pages(request);
       throw new HttpError(404, 'not found');
     }
-
-    // the tree: no key, because the hub behind it knows no one (it answers by itself, and never with an error that says who)
-    if (options.breath && (path === '/api/breath' || path.startsWith('/api/breath/'))) return options.breath(request);
 
     // the one door with no key: a visitor comes in, and is given a name, a room and a key for a while
     if (path === '/api/guest' && options.guests && entrances) {

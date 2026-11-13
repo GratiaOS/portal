@@ -110,15 +110,9 @@ budget she keeps.
   in a plain line. What a visitor asks is never put on the list of what the knowledge lacked.
 - On Cloudflare she is the same, with her own secret for the engine's key (the name `guests.nova.llm.apiKeyEnv` gives; set it with `wrangler secret put`, as for the team's) and her folder bundled apart from the team's at each `pnpm cloudflare:deploy`. Without the secret she does not answer guests, and the log says so; a folder changed after the deploy waits for the next one.
 
-### The tree on the gate (optional)
+### The tree on the gate
 
-A tree that breathes with whoever is on the gate, with no key and no room to enter (docs/rfc-001-presence-physics.md §17). Off until the config asks for it:
-
-```json
-"breath": { "seats": 4 }
-```
-
-`seats` is how many may be heard at once (1 to 12, default 4); anyone may listen, and a fifth who tries to sit simply is not heard. Nothing is kept: no name, no count, no log. Behind it is a hub with no identity, apart from the room's, at `/api/breath` (`GET` to listen, `POST /api/breath/<id>` to send; a `POST` is always `204`). On Cloudflare it is a second Durable Object, `Breath`, which the next deploy adds with a migration (`v2`); the only secret to change is `PORTAL_CONFIG`, to add the `breath` block. The gate asks the health for `breath`, and when it is there the tree on the gate breathes with whoever else is there: a tap on the seat beside it, a ring with the word *in*, *hold* or *out*, sits you down, and held is your own rhythm (a tap after that changes nothing, and you leave by leaving); the roots under it are lit by the same curve as the canopy closes (`pnpm dev` has it on).
+Nothing to set. The olive tree on the gate breathes by itself, eight breaths a minute counted from the same instant for everyone, on the page and from the clock, so two people who open the gate together see the same pulse; nothing is sent, nothing is kept, and nothing is pressed. With less motion asked for by the system, the tree stands still.
 
 ## Run
 

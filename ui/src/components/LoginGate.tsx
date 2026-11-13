@@ -12,10 +12,9 @@
 import { stepThroughMeans } from '../lib/guest.ts';
 import { growRoots } from '../lib/roots.ts';
 import type { Point } from '../lib/roots.ts';
-import { useTree } from '../lib/useTree.ts';
-import type { Tree } from '../lib/useTree.ts';
+import { useBreath } from '../lib/useBreath.ts';
 import type { Refused } from '../lib/guest.ts';
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiError, createApi } from '../lib/client.ts';
 import { useLang } from '../lib/lang.ts';
@@ -45,7 +44,7 @@ const CLOUDS: { id: string; depth: 'far' | 'near'; puffs: [number, number, numbe
  * The sky of the photograph: dark clouds drawn across the dusk, the edge of the land, and one tree alone on it. Its colours are in
  * gate.css; held to the bottom, so that the tree stands on the horizon at any width.
  */
-function Sky({ tree }: { tree?: Tree }) {
+function Sky() {
   return (
     <svg data-gate="sky" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
       <defs>
@@ -64,12 +63,8 @@ function Sky({ tree }: { tree?: Tree }) {
           ))}
         </g>
       ))}
-      {/*
-        An olive tree: a crown uneven at its edge, wider than tall, on a short trunk, and a shrub beside it. When the portal has a tree that
-        breathes, this is it: it leans a hair off its place until the seat beside it is touched, and the canopy opens and closes. It is not the
-        thing to press, so that a thumb never covers it. Without a tree that breathes, it is a drawing, as before.
-      */}
-      <g data-gate="crown" ref={tree?.ref} {...(tree?.nudge ? { 'data-nudge': '' } : {})}>
+      {/* an olive tree: a crown uneven at its edge, wider than tall, on a short trunk, and a shrub beside it; it breathes with the page (gate.css) */}
+      <g data-gate="crown">
         <path
           d="M552 392 L554 368 Q530 372 512 364 Q494 366 490 354 Q478 348 488 338 Q480 326 494 320 Q492 306 508 304 Q512 290 528 292 Q534 278 550 282 Q560 270 574 278 Q590 272 598 284 Q614 282 618 296 Q634 298 632 312 Q646 318 638 330 Q650 340 638 350 Q640 362 624 364 Q610 374 590 368 Q578 372 566 368 L568 392 Z"
           data-gate="tree"
@@ -81,33 +76,19 @@ function Sky({ tree }: { tree?: Tree }) {
   );
 }
 
-/**
- * The seat: the place to press, to the right of the tree, so that a finger never covers the tree. It is the garden's pacer, a ring with a word in it:
- * *in* while the canopy rises, *hold* when it rests at the top, *out* while it falls. The word is what the tree is doing, always, for the one who
- * sits and for the one who only looks; a tap sits you down, held it is your own rhythm. The page sets `data-word` and `--breath` on it.
- */
-function Seat({ tree, t }: { tree: Tree; t: ReturnType<typeof stringsFor> }) {
-  return (
-    <button ref={tree.seat} type="button" data-gate="seat" data-word="out" aria-label={t.sitUnderTree} aria-pressed={tree.seated} {...tree.handlers}>
-      <span data-gate="word" data-w="in" aria-hidden="true">{t.breathIn}</span>
-      <span data-gate="word" data-w="hold" aria-hidden="true">{t.breathHold}</span>
-      <span data-gate="word" data-w="out" aria-hidden="true">{t.breathOut}</span>
-    </button>
-  );
-}
-
 /** The half width of the crown in the sky's own units (x 488 to 650 at its widest, drawn a fifth larger), a little over, so that the roots spread about as wide as the crown, as they do in a real tree. */
 const CROWN_REACH = 130;
 
 /**
  * The roots of the tree: under the land, as they are in a real tree. They spread about as wide as the crown, close to the surface, and fork, and do
  * not reach for anything: not the lights, not the doorway. They are drawn from where the foot is on this page and how large the tree is (and again when it
- * changes size), kept dark, and lit by what the sky gives up. Only when the portal has a tree that breathes.
+ * changes size), moving and lit with the crown on the same breath (gate.css).
  */
-function Roots({ tree }: { tree: Tree }) {
+function Roots() {
   const [drawn, setDrawn] = useState<{ width: number; height: number; paths: string[] }>({ width: 0, height: 0, paths: [] });
+  const own = useRef<SVGSVGElement | null>(null);
   useLayoutEffect(() => {
-    const svg = tree.roots.current;
+    const svg = own.current;
     const page = svg?.parentElement;
     if (!svg || !page) return;
     const measure = () => {
@@ -117,17 +98,20 @@ function Roots({ tree }: { tree: Tree }) {
       if (!skyMatrix || !box.width) return;
       const p = new DOMPoint(566, 392).matrixTransform(skyMatrix);
       const foot: Point = { x: p.x - box.left, y: p.y - box.top };
-      page.style.setProperty('--sun-x', `${foot.x}px`); // the afterglow is centred on the tree
+      // where the tree stands on this page: the afterglow is centred on it, and the roots move about it
+      page.style.setProperty('--sun-x', `${foot.x}px`);
+      page.style.setProperty('--foot-x', `${foot.x}px`);
+      page.style.setProperty('--foot-y', `${foot.y}px`);
       setDrawn({ width: box.width, height: box.height, paths: growRoots(foot, CROWN_REACH * skyMatrix.a) });
     };
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(page);
     return () => watch.disconnect();
-  }, [tree.roots]);
+  }, []);
 
   return (
-    <svg ref={tree.roots} data-gate="roots" viewBox={`0 0 ${drawn.width || 1} ${drawn.height || 1}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+    <svg ref={own} data-gate="roots" viewBox={`0 0 ${drawn.width || 1} ${drawn.height || 1}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
       {(['halo', 'core'] as const).map((layer) => (
         <g key={layer} data-gate={`root-${layer}`}>
           {drawn.paths.map((d, i) => (
@@ -194,9 +178,10 @@ function Lantern() {
 /** The door for visitors, when the portal has one: what it is doing, and how to ask it to open. `only` hides the key, for the link that steps through by itself. */
 export type GuestDoor = { state: 'idle' | 'stepping' | Refused; onStep: () => void; only: boolean };
 
-export default function LoginGate({ onEnter, door, ended, breath }: { onEnter: (token: string) => void; door?: GuestDoor; ended?: boolean; breath?: boolean }) {
+export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: string) => void; door?: GuestDoor; ended?: boolean }) {
   const t = stringsFor(navigator.language);
-  const tree = useTree(Boolean(breath));
+  const page = useRef<HTMLElement | null>(null);
+  useBreath(page); // the tree breathes, from the clock: nothing to press, nothing sent
   useLang(navigator.language);
   const [token, setToken] = useState('');
   const [state, setState] = useState<'idle' | 'checking' | 'unknown' | 'slow' | 'away'>('idle');
@@ -226,11 +211,10 @@ export default function LoginGate({ onEnter, door, ended, breath }: { onEnter: (
   }
 
   return (
-    <main data-gate="page">
-      {breath && <div data-gate="glow" aria-hidden="true" />}
-      <Sky tree={breath ? tree : undefined} />
-      {breath && <Roots tree={tree} />}
-      {breath && <Seat tree={tree} t={t} />}
+    <main data-gate="page" ref={page}>
+      <div data-gate="glow" aria-hidden="true" />
+      <Sky />
+      <Roots />
       <form onSubmit={onSubmit} data-gate="doorway" aria-labelledby="gate-title">
         <Fence />
         <Lantern />
