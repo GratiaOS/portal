@@ -3,13 +3,13 @@
 // shows nothing about it: no count, no name, no "connecting", no error. A stream that fails is tried again, quietly; a tab that is hidden
 // neither listens nor sends (and so gives its seat up). Nothing is kept: no cookie, no storage, no id past the stream that has it.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent, PointerEvent, RefObject } from 'react';
+import type { KeyboardEvent, MouseEvent, PointerEvent, RefObject } from 'react';
 import { Breather, Circle, Rhythm, SIGNAL_MS } from './breath.ts';
 import type { Phase } from './breath.ts';
+import { Press } from './press.ts';
+import type { PressEvent } from './press.ts';
 import { createSseParser } from './sse.ts';
 
-/** A press longer than this is a hold (the person's own rhythm); a shorter one is a tap. */
-export const HOLD_MS = 350;
 const RETRY_MS = 3_000;
 
 const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -27,12 +27,14 @@ export type Tree = {
     onPointerDown: (event: PointerEvent<SVGGElement>) => void;
     onPointerUp: () => void;
     onPointerCancel: () => void;
+    onLostPointerCapture: () => void;
+    onContextMenu: (event: MouseEvent<SVGGElement>) => void;
     onKeyDown: (event: KeyboardEvent<SVGGElement>) => void;
     onKeyUp: (event: KeyboardEvent<SVGGElement>) => void;
   };
 };
 
-type Person = { seated: boolean; holding: boolean; timer?: ReturnType<typeof setTimeout>; phase?: Phase; sentAt: number };
+type Person = { seated: boolean; phase?: Phase; sentAt: number };
 
 export function useTree(enabled: boolean): Tree {
   const crown = useRef<SVGGElement | null>(null);
@@ -43,12 +45,33 @@ export function useTree(enabled: boolean): Tree {
   const breather = useRef(new Breather());
   const rhythm = useRef(new Rhythm());
   const me = useRef<string | undefined>(undefined);
-  const person = useRef<Person>({ seated: false, holding: false, sentAt: 0 });
+  const person = useRef<Person>({ seated: false, sentAt: 0 });
+  const press = useRef(new Press());
 
   const send = useCallback((rate: number, phase: Phase) => {
     const id = me.current;
     if (!id) return;
     void fetch(`/api/breath/${id}`, { method: 'POST', body: JSON.stringify({ type: 'breath', rate, phase }) }).catch(() => {});
+  }, []);
+
+  /** What a touch did, in order: a press sits the person down (once), a hold is their own rhythm, a release goes on from there; a tap changes nothing. */
+  const apply = useCallback((events: PressEvent[], now: number) => {
+    const p = person.current;
+    for (const event of events) {
+      if (event === 'down' && !p.seated) {
+        p.seated = true;
+        p.phase = undefined; // the next step says the first inhale
+        breather.current.sit(now);
+        setSeated(true);
+        setTouched(true); // the screw is touched once, and is set right
+      } else if (event === 'hold') {
+        rhythm.current.press(now);
+        breather.current.press(now);
+      } else if (event === 'release') {
+        breather.current.release(now, rhythm.current.rate());
+      }
+      // a tap on a tree one is already sitting under changes nothing: a click never resets the breath (it is the knock's, later), and one leaves by leaving
+    }
   }, []);
 
   // listening, and moving: only while the page is in front of someone
@@ -88,6 +111,7 @@ export function useTree(enabled: boolean): Tree {
 
     const step = () => {
       const now = performance.now();
+      apply(press.current.tick(now), now); // a press that has lasted becomes a hold, and a hold that has lasted too long lets go
       if (!reducedMotion()) {
         crown.current?.style.setProperty('--breath', c.value(now).toFixed(4));
         // one number for the whole scene: the sky is lit by it, and the roots by what the sky gives up
@@ -126,6 +150,7 @@ export function useTree(enabled: boolean): Tree {
 
     const toggle = () => {
       if (document.hidden) {
+        apply(press.current.up(performance.now()), performance.now()); // a touch left behind with the page is over
         stream?.abort();
         clearTimeout(retry);
         halt();
@@ -145,47 +170,39 @@ export function useTree(enabled: boolean): Tree {
       document.removeEventListener('visibilitychange', toggle);
       stream?.abort();
       clearTimeout(retry);
-      clearTimeout(p.timer);
       halt();
       c.clear();
+      press.current = new Press();
       p.seated = false;
-      p.holding = false;
       p.phase = undefined;
       me.current = undefined;
     };
-  }, [enabled, send]);
+  }, [enabled, send, apply]);
 
   const down = useCallback(() => {
-    const p = person.current;
-    if (!enabled || p.timer !== undefined) return; // a key held down is one press, not many
+    if (!enabled) return;
     const now = performance.now();
-    if (!p.seated) {
-      p.seated = true;
-      p.phase = undefined; // the next step says the first inhale
-      breather.current.sit(now);
-      setSeated(true);
-      setTouched(true); // the screw is touched once, and is set right
-    }
-    p.timer = setTimeout(() => {
-      p.holding = true;
-      const at = performance.now();
-      rhythm.current.press(at);
-      breather.current.press(at);
-    }, HOLD_MS);
-  }, [enabled]);
+    apply(press.current.down(now), now); // a press that never ended is ended first, so that none is ever ignored
+  }, [enabled, apply]);
 
   const up = useCallback(() => {
-    const p = person.current;
-    if (p.timer === undefined) return;
-    clearTimeout(p.timer);
-    p.timer = undefined;
     const now = performance.now();
-    if (p.holding) {
-      p.holding = false;
-      breather.current.release(now, rhythm.current.rate());
-    }
-    // a tap on a tree one is already sitting under changes nothing: a click never resets the breath (it is the knock's, later), and one leaves by leaving
-  }, []);
+    apply(press.current.up(now), now);
+  }, [apply]);
+
+  // a phone may take a long touch for a menu or a selection and never say that it ended: whatever ends it anywhere on the page ends it here
+  useEffect(() => {
+    if (!enabled) return;
+    const end = () => up();
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+    window.addEventListener('blur', end);
+    return () => {
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      window.removeEventListener('blur', end);
+    };
+  }, [enabled, up]);
 
   const keyDown = useCallback(
     (event: KeyboardEvent<SVGGElement>) => {
@@ -216,6 +233,9 @@ export function useTree(enabled: boolean): Tree {
       },
       onPointerUp: up,
       onPointerCancel: up,
+      onLostPointerCapture: up,
+      // a long touch must not raise the menu of the browser: it is the person's breath
+      onContextMenu: (event) => event.preventDefault(),
       onKeyDown: keyDown,
       onKeyUp: keyUp,
     },

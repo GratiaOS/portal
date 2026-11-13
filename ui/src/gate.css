@@ -97,7 +97,8 @@
 [data-gate='crown'][data-tree] {
   pointer-events: all;
   cursor: pointer;
-  touch-action: manipulation;
+  /* a hold is the person's breath: the browser must not take the touch for a scroll, a zoom or a menu, and then cancel it */
+  touch-action: none;
   outline: none;
   -webkit-tap-highlight-color: transparent;
 }

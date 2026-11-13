@@ -16,7 +16,7 @@ test('a source is whole while fresh, then fades to nothing by ten seconds', () =
 /** What the portal does while someone sits: the same breath again every two seconds, so the source stays whole. */
 const kept = (c: Circle, id: string, rate: number, phase: 'inhale' | 'exhale', now: number): void => c.hear(id, rate, phase, now);
 
-test('alone, one breath is a wave at its own rate: an inhale begins at the bottom and rises', () => {
+test('alone, one breath is a wave at its own rate: an inhale begins at the bottom and rises to the top, an exhale falls back', () => {
   const c = new Circle();
   c.hear('a', 10, 'inhale', 0);
   near(c.value(0), -1);
@@ -24,8 +24,53 @@ test('alone, one breath is a wave at its own rate: an inhale begins at the botto
   near(c.value(CYCLE / 4), 0);
   kept(c, 'a', 10, 'inhale', CYCLE / 2);
   near(c.value(CYCLE / 2), 1);
-  kept(c, 'a', 10, 'inhale', CYCLE);
+  c.hear('a', 10, 'exhale', CYCLE / 2);
+  kept(c, 'a', 10, 'exhale', CYCLE);
   near(c.value(CYCLE), -1);
+});
+
+test('a phase never runs past its own end: an inhale rests at the top, an exhale at the bottom, until the next comes', () => {
+  const up = new Circle();
+  up.hear('a', 10, 'inhale', 0);
+  for (let t = 500; t <= 20_000; t += 500) kept(up, 'a', 10, 'inhale', t);
+  near(up.value(20_000), 1); // never caught half way down
+
+  const down = new Circle();
+  down.hear('a', 10, 'inhale', 0);
+  for (let t = 500; t <= CYCLE / 2; t += 500) kept(down, 'a', 10, 'inhale', t);
+  down.hear('a', 10, 'exhale', CYCLE / 2);
+  for (let t = CYCLE / 2 + 500; t <= 20_000; t += 500) kept(down, 'a', 10, 'exhale', t);
+  near(down.value(20_000), -1); // and at the bottom, not coming up again
+});
+
+test('a hold from a touch rests at the top and stays there, however long it lasts; let go, it falls, and goes on by itself', () => {
+  const c = new Circle();
+  const b = new Breather();
+  const start = 10_300; // the neutral is somewhere in its breath when the person sits
+  b.sit(start);
+  let last: string | undefined;
+  const feed = (t: number) => {
+    const phase = b.phase(t);
+    if (phase !== last || t % 2_000 < 100) {
+      c.hear('me', b.rate, phase, t);
+      last = phase;
+    }
+    return c.value(t);
+  };
+  for (let t = start; t < start + 350; t += 50) feed(t);
+  b.press(start + 350); // a hold begins
+  const held: number[] = [];
+  for (let t = start + 350; t <= start + 14_000; t += 50) {
+    const v = feed(t);
+    if (t > start + 5_000) held.push(v);
+  }
+  assert.ok(Math.min(...held) > 0.99, `it was caught at ${Math.min(...held)}`); // at the top for the whole of it, from a few seconds in
+  const release = start + 14_000;
+  b.release(release, 8);
+  const fall: number[] = [];
+  for (let t = release; t <= release + 3_000; t += 250) fall.push(feed(t));
+  assert.ok(fall[fall.length - 1]! < fall[0]! - 0.5); // and then it falls
+  assert.ok(fall.every((v, i) => i === 0 || v <= fall[i - 1]! + 1e-9)); // without stopping on the way
 });
 
 test('an exhale from the top goes down, and reaches the bottom a half cycle later', () => {
@@ -89,14 +134,14 @@ test('when the last one goes silent, the canopy gives itself back to the neutral
   const c = new Circle();
   c.hear('a', 30, 'inhale', 0); // a fast breath, to tell it apart from the neutral
   const neutral = (t: number) => Math.sin(2 * Math.PI * (NEUTRAL_BPM / 60_000) * t - Math.PI / 2);
-  const own = (t: number) => Math.sin(2 * Math.PI * (30 / 60_000) * t - Math.PI / 2);
+  const own = () => 1; // a fast inhale has long since reached the top and rests there
   // while it is fresh, the tree is that breath alone
-  near(c.value(KEEP_MS), own(KEEP_MS));
+  near(c.value(KEEP_MS), own());
   // then it fades, and what it leaves empty is the tree's own: a blend that gives itself back a little at a time
   const mid = (KEEP_MS + GONE_MS) / 2;
   const w = weight(mid);
   assert.ok(w > 0 && w < 1);
-  near(c.value(mid), w * own(mid) + (1 - w) * neutral(mid));
+  near(c.value(mid), w * own() + (1 - w) * neutral(mid));
   // after ten seconds only the neutral is left, exactly what an empty tree gives
   near(c.value(GONE_MS + 1), new Circle().value(GONE_MS + 1));
 });

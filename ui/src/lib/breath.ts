@@ -95,7 +95,16 @@ export class Circle {
   }
 }
 
-const thetaAt = (source: Source, now: number): number => (source.phase === 'hold' ? source.theta : source.theta + TAU * (source.rate / 60_000) * (now - source.at));
+/**
+ * Where a source's oscillator is at `now`. An inhale rises and rests at the top until the next phase comes, an exhale falls and rests at the bottom, a
+ * hold stays where it is: a phase never runs past its own end into the next one's, so that a breath held (or one whose next phase is late) is at the top,
+ * and not caught half way down.
+ */
+const thetaAt = (source: Source, now: number): number => {
+  if (source.phase === 'hold') return source.theta;
+  const theta = source.theta + TAU * (source.rate / 60_000) * (now - source.at);
+  return Math.min(theta, source.phase === 'inhale' ? CREST : CREST + Math.PI);
+};
 
 /**
  * One person's breath. Sitting begins an inhale at the neutral rate and goes on by itself; held, it is an inhale until it reaches the top, and a
