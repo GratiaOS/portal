@@ -10,6 +10,8 @@ import { CALLER_HEADER, createApp } from '../src/app.ts';
 import { ConfigError, createAuthenticator, parseConfig, putTokens } from '../src/config.ts';
 import type { GuestsConfig, NovaConfig, RoomConfig } from '../src/config.ts';
 import { guestFacts, roomFacts } from '../src/facts.ts';
+import { BreathHub } from '../src/breath.ts';
+import { createBreathHandler } from '../src/breath-http.ts';
 import { Hub } from '../src/hub.ts';
 import { fixedKnowledge } from '../src/knowledge-files.ts';
 import { createNova } from '../src/nova.ts';
@@ -20,6 +22,7 @@ import type { Retention } from '../src/store.ts';
 
 type Env = {
   PORTAL: DurableObjectNamespace<Portal>;
+  BREATH: DurableObjectNamespace<Breath>;
   ASSETS: Fetcher;
   /** The config, as portal.example.json, without tokensFile, dbPath, staticDir or skinsDir: a secret. */
   PORTAL_CONFIG?: string;
@@ -79,6 +82,8 @@ export class Portal extends DurableObject<Env> {
       callerFromHome: true,
       name: config.name,
       guests: config.guests,
+      // the Worker sends /api/breath straight to its own object; this is only so that the app says so in its health, and is whole on its own
+      breath: config.breath ? (request) => this.env.BREATH.getByName('tree').fetch(request) : undefined,
       hints: config.nova ? { companion: config.nova.alias, examples: config.nova.examples } : undefined,
       // a guest is told of her companion, with her examples and never the team's, as in Node
       guestHints: config.guests?.nova.enabled && config.guests.nova.nova ? { companion: config.guests.nova.nova.alias, examples: config.guests.nova.nova.examples } : undefined,
@@ -168,6 +173,29 @@ export class Portal extends DurableObject<Env> {
   }
 }
 
+/**
+ * The tree on the gate: a second object, apart from the portal's, with no store and no identity. It knows no one, keeps nothing and
+ * has no alarm: it holds a `BreathHub` in memory for as long as someone is listening, and is gone from memory when no one is.
+ * It asks the config only whether there is a `breath` block (a secret, like the rest), and answers `404` as if there were no tree when there is not.
+ */
+export class Breath extends DurableObject<Env> {
+  private handler?: (request: Request) => Promise<Response>;
+
+  async fetch(request: Request): Promise<Response> {
+    try {
+      if (!this.handler) {
+        const config = configFrom(this.env);
+        const hub = config.breath ? new BreathHub({ seats: config.breath.seats }) : undefined;
+        this.handler = hub ? createBreathHandler(hub, { callerFromHome: true }) : async () => new Response(null, { status: 404 });
+      }
+      return await this.handler(request);
+    } catch (err) {
+      console.error('portal: the tree cannot open', err instanceof ConfigError ? err.message : err);
+      return new Response(null, { status: 404 });
+    }
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -176,6 +204,8 @@ export default {
       // who is calling, from Cloudflare, under the name the handler counts wrong keys by; whatever the client sent there is replaced
       const forwarded = new Request(request);
       forwarded.headers.set(CALLER_HEADER, request.headers.get('cf-connecting-ip') ?? 'unknown');
+      // the tree has an object of its own: its signals do not wake the portal, and the portal's store is not in their way
+      if (url.pathname === '/api/breath' || url.pathname.startsWith('/api/breath/')) return env.BREATH.getByName('tree').fetch(forwarded);
       return env.PORTAL.getByName('portal').fetch(forwarded);
     }
 

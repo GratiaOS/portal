@@ -1,5 +1,5 @@
 {
-  // The portal's second home: one Worker, and one Durable Object that is the whole portal. See ../INSTALL.md, "On Cloudflare".
+  // The portal's second home: one Worker, and one Durable Object that is the whole portal, and another for the tree on the gate (it keeps nothing). See ../INSTALL.md, "On Cloudflare".
   // Its config and tokens are secrets (PORTAL_CONFIG, PORTAL_TOKENS), never this file: a portal's people are its own.
   "name": "portal",
   "main": "worker.ts",
@@ -8,6 +8,6 @@
   // the page, built by `pnpm --filter portal-ui build`; the Worker sees every request first, to send /api to the portal and
   // the page with the same headers as in Node
   "assets": { "directory": "../ui/dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": true },
-  "durable_objects": { "bindings": [{ "name": "PORTAL", "class_name": "Portal" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Portal"] }]
+  "durable_objects": { "bindings": [{ "name": "PORTAL", "class_name": "Portal" }, { "name": "BREATH", "class_name": "Breath" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Portal"] }, { "tag": "v2", "new_sqlite_classes": ["Breath"] }]
 }

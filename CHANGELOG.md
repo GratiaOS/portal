@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The tree on the gate has a door: `/api/breath`, off until the config has a `breath` block.** `BreathHub` (no identity, four seats, ten seconds of silence, a knock that carries nothing) and its door over HTTP (`GET` to listen with server-sent events, `POST /api/breath/<id>` to send, always `204`), in Node and, as a second Durable Object (`Breath`, migration `v2`), on Cloudflare. The page does not draw it yet. docs/rfc-001-presence-physics.md §17 says why and what it leaves out.
 - **A visitor is told that someone else is here, not how many.** "3 others are here" is now "Someone else is here", in the three languages (the line the top bar lost in 0.3.0, for a visitor's sheet); INSTALL.md and the starter `guest-docs/` say the same.
 - **In the image, the token messages name what is there.** The image sets `PORTAL_IMAGE`, and the messages that told how to make or show a token (`pnpm --filter portal tokens … | pbcopy`) say `node dist/tokens.js …` there, with no clipboard: the image has neither pnpm nor `pbcopy`. From a clone nothing changes.
 
