@@ -48,6 +48,9 @@ export type NovaConfig = {
 };
 
 /** The guest room: where a visitor may come in without a key of their own, and how many, and for how long. Absent: nobody does. */
+/** How many may sit under the tree at once; the rest of what the tree does is not a choice. */
+export type BreathConfig = { seats: number };
+
 export type GuestsConfig = {
   /** The id of a room of kind `guest`. */
   room: string;
@@ -94,6 +97,8 @@ export type RoomConfig = {
   /** What the portal keeps: by default the last 14 days and the last 999 messages of each room, whichever ends first. */
   retention: Retention;
   guests?: GuestsConfig;
+  /** The tree on the gate breathes with whoever is there (docs/rfc-001-presence-physics.md §17). Absent: it does not, and no route answers. */
+  breath?: BreathConfig;
   /**
    * A file that holds the tokens of the humans, `{ "Alias": "token" }`, apart from the config: the config says who and what, this says
    * who may come in. It can be kept out of version control and read by few (`chmod 600`); the room warns if others can read it.
@@ -137,6 +142,11 @@ function whole(value: unknown, fallback: number, name: string, { min, max }: { m
     throw new ConfigError(`${name} must be a whole number from ${min} to ${max}`);
   }
   return value;
+}
+
+function parseBreath(raw: unknown): BreathConfig {
+  if (!isRecord(raw)) throw new ConfigError('breath must be an object');
+  return { seats: whole(raw.seats, 4, 'breath.seats', { min: 1, max: 12 }) };
 }
 
 function parseGuests(raw: unknown, rooms: ConversationInput[], participants: ConfigParticipant[], teamNova: NovaConfig | undefined, baseDir: string): GuestsConfig {
@@ -310,6 +320,7 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
     maxStreamsPerParticipant: whole(raw.maxStreamsPerParticipant, 10, 'maxStreamsPerParticipant', { min: 1, max: 100 }),
     retention: parseRetention(raw.retention),
     ...(raw.guests === undefined ? {} : { guests: parseGuests(raw.guests, rooms, participants, nova, baseDir) }),
+    ...(raw.breath === undefined ? {} : { breath: parseBreath(raw.breath) }),
     ...(raw.tokensFile === undefined ? {} : { tokensFile: resolve(baseDir, text(raw.tokensFile, 'tokensFile')) }),
     ...(raw.clientIpHeader === undefined ? {} : { clientIpHeader: text(raw.clientIpHeader, 'clientIpHeader') }),
     ...(raw.staticDir === undefined ? {} : { staticDir: resolve(baseDir, text(raw.staticDir, 'staticDir')) }),

@@ -83,6 +83,7 @@ const CONFIG = {
     perCaller: { count: 3, perMinutes: 10 },
     nova: { enabled: true, questions: 3, perHour: 20, knowledgeDir: guestDir, examples: ['what is a portal?'], llm: { baseUrl: `http://127.0.0.1:${guestModel.address().port}/v1`, model: 'guests-stand-in', apiKeyEnv: 'PORTAL_GUESTS_LLM_API_KEY' } },
   },
+  breath: {},
   retention: { days: 14, messages: 50 },
   rateLimit: { messages: 1000, perSeconds: 10 },
   nova: {
@@ -284,6 +285,35 @@ try {
   check(guestSystem.includes('### FILE: about.md') && !guestSystem.includes('olympus/food.md') && !guestSystem.includes('SECRET-7f3a'), 'she reads the folder for guests, and nothing of the team\'s');
   check(!guestSystem.includes('Zeus') && !guestSystem.includes('Hera'), 'and no name of the team went to the guests\' engine');
   check(!(await (await zeus('/api/gaps')).text().catch(() => '')).includes('ce este un portal'), 'what the guest asked is not among what the knowledge lacked');
+
+  console.log('\n— the tree on the gate, from an object of its own, with no key');
+  check((await (await fetch(`${base}/api/health`)).json()).breath === true, 'the health says there is a tree');
+  const sit = () => {
+    const abort = new AbortController();
+    const seen = { text: '', abort: () => abort.abort(), status: 0 };
+    void fetch(`${base}/api/breath`, { signal: abort.signal }).then(async (res) => {
+      seen.status = res.status;
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        seen.text += decoder.decode(value, { stream: true });
+      }
+    }).catch(() => {});
+    return seen;
+  };
+  const one = sit();
+  const two = sit();
+  check(await until(() => one.text.includes('event: hello') && two.text.includes('event: hello')), 'two listen, with no Authorization header');
+  const oneId = /"you":"([0-9a-f-]{36})"/.exec(one.text)?.[1];
+  const sent = await fetch(`${base}/api/breath/${oneId}`, { method: 'POST', body: JSON.stringify({ type: 'breath', rate: 10, phase: 'inhale' }) });
+  check(sent.status === 204, `a breath is sent and answered with nothing (${sent.status})`);
+  check(await until(() => two.text.includes('event: breath') && two.text.includes(oneId)), 'the other hears it, as from that source');
+  check(!one.text.includes('event: breath'), 'and the one who sent it does not hear itself');
+  check((await fetch(`${base}/api/breath/00000000-0000-0000-0000-000000000000`, { method: 'POST', body: '{}' })).status === 204, 'a signal from no one is answered the same way');
+  one.abort();
+  two.abort();
 
   console.log('\n— a person renamed in the config keeps what they said (the object is started again, with the same storage)');
   await say(hera, 'a word before the new name');
