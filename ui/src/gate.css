@@ -47,21 +47,6 @@
   );
 }
 
-/*
- * Nothing on the gate is text to select, except what is typed in the field: a double tap or a long press on the tree must not pick up the "El" of the title nearest
- * to it (nor, on a phone, raise the menu of copy and look up). The field is the one place whose text is the person's own.
- */
-[data-gate='page'] {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-[data-gate='input'] {
-  -webkit-user-select: text;
-  user-select: text;
-}
-
 /* the sky's drawing: clouds across it, the land's edge, and the tree on it */
 [data-gate='sky'] {
   position: absolute;
@@ -81,41 +66,22 @@
 }
 
 /*
- * The tree that breathes: its crown opens and closes about its foot with `--breath` (-1 to 1, set by the page from what it hears), by a few
- * hundredths, and leans a hair off its place until it is touched once. Without a tree on the portal none of this is on it, and it is the drawing.
+ * One organism, one breath. `--breath` (-1 closed to 1 open) is set once, on the page, from the clock (lib/breath.ts), and everything below is the same
+ * number, in the same frame, so nothing can be out of step with anything else: the crown opens and lifts, the sky takes the light it lets go of, and the
+ * roots, which hold the mass the crown draws up, draw in as it opens and spread as it closes, and are lit as the light comes down into them.
+ * Nothing is pressed and nothing is sent: whoever looks is breathing with it, since the clock is the same for all.
  */
 [data-gate='crown'] {
   transform-box: view-box;
   transform-origin: 566px 392px;
-  rotate: var(--lean, 0deg);
-  /* a fifth larger than it was drawn, and opening and closing a few hundredths about that */
-  scale: calc(1.2 * (1 + 0.04 * var(--breath, 0)));
-  transition: rotate 160ms ease-out;
+  /* a fifth larger than it was drawn; it rises a little more than it widens, as a crown does */
+  scale: calc(1.2 * (1 + 0.03 * var(--breath, 0))) calc(1.2 * (1 + 0.05 * var(--breath, 0)));
   pointer-events: none;
 }
 
-[data-gate='crown'][data-tree] {
-  pointer-events: all;
-  cursor: pointer;
-  touch-action: manipulation;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-[data-gate='crown'][data-nudge] {
-  --lean: 0.9deg;
-}
-
-[data-gate='crown'][data-tree]:focus-visible {
-  filter: drop-shadow(0 0 4px var(--bulb));
-}
-
 /*
- * The light of the breath, one movement for every step: `--light` (0 to 1, set by the page on the canopy's own curve) lights the sky as the tree opens,
- * rests there in a hold, and goes down into the roots as it closes (they are lit by `1 - light`). The glow in the sky is the afterglow of the photograph:
- * a wide warm ellipse low on the horizon, a little to the right of the tree, added to the dusk with `screen` so that it can only brighten it.
- *
- * The roots: a few thick shapes under the land, tapering from the trunk, filled and not drawn as lines, behind the doorway, never over what is written in it.
+ * The afterglow of the photograph in the sky: a wide warm ellipse low on the horizon, centred on the tree, added to the dusk with `screen` so that it can
+ * only brighten it. Whole when the crown is open, gone when it is closed.
  */
 [data-gate='glow'] {
   position: absolute;
@@ -126,16 +92,22 @@
     radial-gradient(ellipse 62% 78% at calc(var(--sun-x, 50%) + 9%) 100%, rgb(255 138 104 / 0.95), rgb(244 150 118 / 0.55) 38%, transparent 72%),
     radial-gradient(ellipse 85% 60% at calc(var(--sun-x, 50%) - 14%) 100%, rgb(255 190 120 / 0.7), transparent 70%);
   mix-blend-mode: screen;
-  opacity: calc(var(--light, 0.5) * 0.85);
+  opacity: calc((0.5 + 0.5 * var(--breath, 0)) * 0.85);
 }
 
+/*
+ * The roots: a few thick shapes under the land, tapering from the trunk, behind the doorway, never over what is written in it. They move with the crown on
+ * the same number, the other way about the foot (what the crown draws up, they give), and are lit by what the sky lets go of.
+ */
 [data-gate='roots'] {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  opacity: calc(0.05 + 0.95 * (1 - var(--light, 0.5)));
+  transform-origin: var(--foot-x, 50%) var(--foot-y, 40%);
+  scale: calc(1 - 0.03 * var(--breath, 0)) calc(1 - 0.05 * var(--breath, 0));
+  opacity: calc(0.05 + 0.95 * (0.5 - 0.5 * var(--breath, 0)));
 }
 
 [data-gate='roots'] path {
@@ -155,16 +127,6 @@
 
 [data-gate='root-core'] path {
   fill: var(--bulb);
-}
-
-[data-gate='hit'] {
-  fill: transparent;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-gate='crown'] {
-    transition: none;
-  }
 }
 
 /* the doorway: the fence and its lights, with the key given inside it */

@@ -4,7 +4,6 @@ import type { GuestDoor } from './components/LoginGate.tsx';
 import ParticleField from './components/ParticleField.tsx';
 import { Room } from './Room.tsx';
 import { forgetDrafts } from './lib/drafts.ts';
-import { hasTree } from './lib/breath.ts';
 import { isGuestPath, opensToGuests, stepThrough } from './lib/guest.ts';
 import { forgetGuest, forgetToken, keepGuest, keepToken, readGuest, readToken } from './lib/session.ts';
 
@@ -17,11 +16,6 @@ export default function App() {
   const byLink = isGuestPath(location.pathname);
   const [opens, setOpens] = useState(byLink);
   const [door, setDoor] = useState<GuestDoor['state']>('idle');
-  // whether the gate has a tree that breathes: the portal says so in its health, and says nothing when it has none
-  const [breathes, setBreathes] = useState(false);
-  useEffect(() => {
-    void hasTree().then(setBreathes);
-  }, []);
   useEffect(() => {
     if (token || byLink) return;
     let cancelled = false;
@@ -72,7 +66,6 @@ export default function App() {
         ) : (
           <LoginGate
             ended={ended}
-            breath={breathes}
             door={opens ? { state: door, onStep: () => void step(), only: byLink } : undefined}
             onEnter={(entered) => {
               keepToken(entered, true); // a person of the team: kept on the device when the page is the installed app

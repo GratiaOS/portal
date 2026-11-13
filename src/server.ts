@@ -10,8 +10,6 @@ import { VERSION } from './version.js';
 import { createAuthenticator } from './config.js';
 import { guestFacts, roomFacts } from './facts.js';
 import type { NovaConfig, RoomConfig } from './config.js';
-import { BreathHub } from './breath.js';
-import { createBreathHandler } from './breath-http.js';
 import { Hub } from './hub.js';
 import { KnowledgeBase } from './knowledge.js';
 import { fixedKnowledge } from './knowledge-files.js';
@@ -60,7 +58,6 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
   if (config.dbPath !== ':memory:') mkdirSync(dirname(config.dbPath), { recursive: true });
   const store = new RoomStore(nodeSqlite(config.dbPath));
   let hub: Hub | undefined;
-  let breathHub: BreathHub | undefined;
   let nova: Nova | undefined;
   let guestNova: Nova | undefined;
   let forgetting: NodeJS.Timeout | undefined;
@@ -126,10 +123,6 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
     const skins = config.skinsDir ? new SkinFolder(config.skinsDir) : undefined;
     if (config.skinsDir && !existsSync(config.skinsDir)) console.warn(`portal: ${config.skinsDir} does not exist; no skins from a folder until it does`);
 
-    // the tree on the gate, when the config asks for it: a hub with no identity, apart from the room's
-    breathHub = config.breath ? new BreathHub({ seats: config.breath.seats }) : undefined;
-    const breath = breathHub ? createBreathHandler(breathHub, { callerFromHome: true }) : undefined;
-
     const server = createServer(
       toNodeListener(createApp(store, live, {
         version: VERSION,
@@ -139,7 +132,6 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
         callerFromHome: true,
         name: config.name,
         guests: config.guests,
-        breath,
         guestHints: config.guests?.nova.enabled && config.guests.nova.nova ? { companion: config.guests.nova.nova.alias, examples: config.guests.nova.nova.examples } : undefined,
         pages: config.staticDir ? createStaticHandler(config.staticDir) : undefined,
         skins,
@@ -174,7 +166,6 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
     clearInterval(forgetting);
     nova?.stop();
     hub?.close();
-    breathHub?.close();
     store.close();
     throw err;
   }

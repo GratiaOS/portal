@@ -17,8 +17,6 @@ export type Strings = {
   gateEnter: string;
   runYourOwn: string;
   aloneInTheGarden: string;
-  /** What a screen reader says of the tree on the gate, when the portal has one: nothing is written on the page. */
-  sitUnderTree: string;
   /** The door for visitors: the button, what is said while it opens, and why it may not. */
   stepThrough: string;
   stepping: string;
@@ -125,7 +123,6 @@ const ro: Strings = {
   gateEnter: 'Enter o trimite.',
   runYourOwn: 'Rulează-l pe al tău',
   aloneInTheGarden: 'Singur în grădină',
-  sitUnderTree: 'Așază-te sub copac',
   stepThrough: 'Intră',
   stepping: 'Intru…',
   guestFull: 'Camera e plină acum. Mai încearcă puțin mai târziu.',
@@ -212,7 +209,6 @@ const en: Strings = {
   gateEnter: 'Enter sends it.',
   runYourOwn: 'Run your own',
   aloneInTheGarden: 'Alone in the garden',
-  sitUnderTree: 'Sit under the tree',
   stepThrough: 'Step through',
   stepping: 'Stepping through…',
   guestFull: 'The room is full right now. Try again in a little while.',
@@ -299,7 +295,6 @@ const es: Strings = {
   gateEnter: 'Enter lo envía.',
   runYourOwn: 'Ejecuta el tuyo',
   aloneInTheGarden: 'Solo en el jardín',
-  sitUnderTree: 'Siéntate bajo el árbol',
   stepThrough: 'Entra',
   stepping: 'Entrando…',
   guestFull: 'La sala está llena ahora mismo. Inténtalo de nuevo en un rato.',
