@@ -233,9 +233,16 @@
   opacity: 0.6;
   cursor: default;
 }
-[data-gate='side'] {
+[data-gate='sides'] {
   grid-row: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.4rem;
   margin: 0 0 1.4rem;
+}
+
+[data-gate='side'] {
   font-size: 0.8rem;
   color: var(--ink-soft);
   text-underline-offset: 3px;
