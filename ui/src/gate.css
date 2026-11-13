@@ -47,6 +47,21 @@
   );
 }
 
+/*
+ * Nothing on the gate is text to select, except what is typed in the field: a double tap or a long press on the tree must not pick up the "El" of the title nearest
+ * to it (nor, on a phone, raise the menu of copy and look up). The field is the one place whose text is the person's own.
+ */
+[data-gate='page'] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+[data-gate='input'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* the sky's drawing: clouds across it, the land's edge, and the tree on it */
 [data-gate='sky'] {
   position: absolute;
