@@ -118,7 +118,7 @@ A tree that breathes with whoever is on the gate, with no key and no room to ent
 "breath": { "seats": 4 }
 ```
 
-`seats` is how many may be heard at once (1 to 12, default 4); anyone may listen, and a fifth who tries to sit simply is not heard. Nothing is kept: no name, no count, no log. Behind it is a hub with no identity, apart from the room's, at `/api/breath` (`GET` to listen, `POST /api/breath/<id>` to send; a `POST` is always `204`). On Cloudflare it is a second Durable Object, `Breath`, which the next deploy adds with a migration (`v2`); the only secret to change is `PORTAL_CONFIG`, to add the `breath` block. The page does not draw it yet.
+`seats` is how many may be heard at once (1 to 12, default 4); anyone may listen, and a fifth who tries to sit simply is not heard. Nothing is kept: no name, no count, no log. Behind it is a hub with no identity, apart from the room's, at `/api/breath` (`GET` to listen, `POST /api/breath/<id>` to send; a `POST` is always `204`). On Cloudflare it is a second Durable Object, `Breath`, which the next deploy adds with a migration (`v2`); the only secret to change is `PORTAL_CONFIG`, to add the `breath` block. The gate asks the health for `breath`, and when it is there the tree on the gate breathes with whoever else is there: a tap sits you down, held is your own rhythm, a second tap stands you up (`pnpm dev` has it on).
 
 ## Run
 
