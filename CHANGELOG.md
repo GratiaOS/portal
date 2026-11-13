@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-Nothing yet.
+- **The roots start under the trunk.** They started at the middle of the crown (x 566) and the trunk's base is centred on x 560, a few pixels to the left, so the roots hung off to the right of the trunk. They now start, and the crown turns, about the middle of the trunk's base; the guard keeps the two together.
 
 ## 0.4.0 (2026-11-13)
 

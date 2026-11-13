@@ -76,6 +76,10 @@ function Sky() {
   );
 }
 
+/** Where the foot of the trunk is in the sky's own units (its base runs from x 552 to 568, at y 392): the roots start here and the crown turns about it, so the two meet at the trunk. */
+const TRUNK_X = 560;
+const TRUNK_BASE_Y = 392;
+
 /** The half width of the crown in the sky's own units (x 488 to 650 at its widest, drawn a fifth larger), a little over, so that the roots spread about as wide as the crown, as they do in a real tree. */
 const CROWN_REACH = 130;
 
@@ -96,7 +100,7 @@ function Roots() {
       const sky = page.querySelector<SVGSVGElement>('[data-gate="sky"]');
       const skyMatrix = sky?.getScreenCTM();
       if (!skyMatrix || !box.width) return;
-      const p = new DOMPoint(566, 392).matrixTransform(skyMatrix);
+      const p = new DOMPoint(TRUNK_X, TRUNK_BASE_Y).matrixTransform(skyMatrix);
       const foot: Point = { x: p.x - box.left, y: p.y - box.top };
       // where the tree stands on this page: the afterglow is centred on it, and the roots move about it
       page.style.setProperty('--sun-x', `${foot.x}px`);

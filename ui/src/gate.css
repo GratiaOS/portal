@@ -73,7 +73,8 @@
  */
 [data-gate='crown'] {
   transform-box: view-box;
-  transform-origin: 566px 392px;
+  /* the foot of the trunk (its base runs from x 552 to 568): the roots start there too, in LoginGate.tsx */
+  transform-origin: 560px 392px;
   /* a fifth larger than it was drawn; it rises a little more than it widens, as a crown does */
   scale: calc(1.2 * (1 + 0.03 * var(--breath, 0))) calc(1.2 * (1 + 0.05 * var(--breath, 0)));
   pointer-events: none;
