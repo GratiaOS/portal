@@ -28,12 +28,16 @@ test('alone, one breath is a wave at its own rate: an inhale begins at the botto
   near(c.value(CYCLE), -1);
 });
 
-test('an exhale begins at the top', () => {
+test('an exhale from the top goes down, and reaches the bottom a half cycle later', () => {
   const c = new Circle();
-  c.hear('a', 10, 'exhale', 0);
-  near(c.value(0), 1);
-  kept(c, 'a', 10, 'exhale', CYCLE / 2);
-  near(c.value(CYCLE / 2), -1);
+  c.hear('a', 10, 'inhale', 0);
+  for (let t = 500; t <= CYCLE / 2; t += 500) kept(c, 'a', 10, 'inhale', t);
+  near(c.value(CYCLE / 2), 1);
+  c.hear('a', 10, 'exhale', CYCLE / 2); // turns at the top
+  kept(c, 'a', 10, 'exhale', CYCLE / 2 + CYCLE / 4);
+  near(c.value(CYCLE / 2 + CYCLE / 4), 0);
+  kept(c, 'a', 10, 'exhale', CYCLE);
+  near(c.value(CYCLE), -1);
 });
 
 test('the signal that comes again with the same phase does not make the canopy jump', () => {
@@ -52,14 +56,6 @@ test('two breaths are two oscillators added, not an average', () => {
   kept(together, 'a', 10, 'inhale', CYCLE / 2);
   kept(together, 'b', 10, 'inhale', CYCLE / 2);
   near(together.value(CYCLE / 2), ceiling(2)); // both at the crest: more than one alone, and more than the average
-
-  const apart = new Circle();
-  apart.hear('a', 10, 'inhale', 0); // rising
-  apart.hear('b', 10, 'exhale', 0); // falling: they cancel
-  near(apart.value(0), 0);
-  kept(apart, 'a', 10, 'inhale', CYCLE / 4);
-  kept(apart, 'b', 10, 'exhale', CYCLE / 4);
-  near(apart.value(CYCLE / 4), 0);
 
   // different rates are never in step for long: the irregularity is the point
   const at = (t: number) => {
@@ -105,28 +101,111 @@ test('when the last one goes silent, the canopy gives itself back to the neutral
   near(c.value(GONE_MS + 1), new Circle().value(GONE_MS + 1));
 });
 
-test('the roots are lit by the exhale: when the canopy falls, not when it rises or rests', () => {
+test('the light is one movement on the canopy\'s own curve: dark when it is closed, whole when it is open, in step the whole way', () => {
   const c = new Circle();
   const NEUTRAL = 60_000 / NEUTRAL_BPM;
-  assert.ok(c.release(0.25 * NEUTRAL) < 0.02); // opening
-  assert.ok(c.release(0.5 * NEUTRAL) < 0.1); // at the crest, about to fall
-  near(c.release(0.75 * NEUTRAL), 1, 0.02); // falling fastest
-  assert.ok(c.release(1.0 * NEUTRAL) < 0.1); // at the bottom
-  // and with a faster breath it is never more than whole
-  const fast = new Circle();
-  fast.hear('a', 30, 'exhale', 0);
-  for (let t = 0; t < 2_000; t += 50) {
-    fast.hear('a', 30, 'exhale', t);
-    const lit = fast.release(t + 50);
+  near(c.light(0), 0); // the neutral begins closed
+  near(c.light(0.5 * NEUTRAL), 1); // and is open at the half
+  let last = c.light(0);
+  for (let t = 0; t <= 0.5 * NEUTRAL; t += NEUTRAL / 40) {
+    near(c.light(t), (1 + c.value(t)) / 2); // exactly the canopy's curve, never a curve of its own
+    assert.ok(c.light(t) >= last - 1e-9); // lit more and more for as long as it opens
+    last = c.light(t);
+  }
+  for (let t = 0.5 * NEUTRAL; t <= NEUTRAL; t += NEUTRAL / 40) {
+    assert.ok(c.light(t) <= last + 1e-9); // and less and less as it closes: the light goes down, into the roots
+    last = c.light(t);
+  }
+  // what the sky has, the roots lack: they are `1 - light`, so together they are one whole
+  for (const t of [0, 1_000, 3_000, 5_000]) near(c.light(t) + (1 - c.light(t)), 1);
+});
+
+test('a hold keeps the light where it is, at the top: the sky stays lit and the roots stay dark', () => {
+  const c = new Circle();
+  c.hear('me', 10, 'inhale', 0);
+  for (let t = 500; t <= 3_000; t += 500) c.hear('me', 10, 'inhale', t);
+  c.hear('me', 10, 'hold', 3_000);
+  for (const t of [4_000, 6_000, 8_000]) {
+    c.hear('me', 10, 'hold', t);
+    near(c.light(t), 1);
+  }
+});
+
+test('with many, the light never leaves what a glow can be', () => {
+  const many = new Circle();
+  for (const id of ['a', 'b', 'c']) many.hear(id, 12, 'inhale', 0);
+  for (let t = 0; t < 5_000; t += 250) for (const id of ['a', 'b', 'c']) {
+    many.hear(id, 12, 'inhale', t);
+    const lit = many.light(t);
     assert.ok(lit >= 0 && lit <= 1);
   }
 });
 
-test('whoever stands up is let go at once', () => {
+test('a touch never makes the canopy jump: a new breath, a turn, a hold and a rate all go on from where the canopy is', () => {
   const c = new Circle();
-  c.hear('me', 30, 'inhale', 0);
-  c.let('me');
-  near(c.value(1_000), new Circle().value(1_000));
+  const at = 10_000;
+  const before = c.value(at); // the tree's own breath, mid-way somewhere
+  c.hear('me', 8, 'inhale', at); // sitting down
+  near(c.value(at), before);
+  assert.ok(Math.abs(c.value(at + 16) - before) < 0.02); // and a frame later, only a little further along
+
+  // turning from inhale to exhale (a release) is a turn, not a step
+  const t1 = at + 2_000;
+  c.hear('me', 8, 'inhale', t1);
+  const turning = c.value(t1);
+  c.hear('me', 8, 'exhale', t1);
+  near(c.value(t1), turning);
+  // and a change of rate too
+  const t2 = t1 + 1_500;
+  c.hear('me', 8, 'exhale', t2);
+  const same = c.value(t2);
+  c.hear('me', 14, 'exhale', t2);
+  near(c.value(t2), same);
+});
+
+test('an inhale goes on rising from the present value, and an exhale goes on falling', () => {
+  const c = new Circle();
+  c.hear('me', 10, 'inhale', 0);
+  c.hear('me', 10, 'inhale', 1_500);
+  const mid = c.value(1_500); // 0: half way up
+  near(mid, 0);
+  c.hear('me', 10, 'exhale', 1_500); // turns at the middle: goes down from there
+  c.hear('me', 10, 'exhale', 2_500);
+  assert.ok(c.value(2_500) < mid);
+  c.hear('me', 10, 'inhale', 2_500); // and turns again
+  c.hear('me', 10, 'inhale', 3_500);
+  assert.ok(c.value(3_500) > c.value(2_500));
+});
+
+test('a hold stays where the breath is, however long', () => {
+  const c = new Circle();
+  c.hear('me', 10, 'inhale', 0);
+  c.hear('me', 10, 'inhale', 2_000);
+  const high = c.value(2_000);
+  c.hear('me', 10, 'hold', 2_000);
+  for (const t of [3_000, 4_000, 5_000]) {
+    c.hear('me', 10, 'hold', t);
+    near(c.value(t), high);
+  }
+});
+
+test('a source that is new comes in over a second, so the canopy does not jump to meet it', () => {
+  const c = new Circle();
+  c.hear('a', 10, 'inhale', 0);
+  for (let t = 0; t <= 5_000; t += 500) c.hear('a', 10, 'inhale', t);
+  const before = c.value(5_000);
+  c.hear('b', 17, 'exhale', 5_000);
+  near(c.value(5_000), before); // not there yet
+  const half = new Circle();
+  half.hear('a', 10, 'inhale', 0);
+  for (let t = 0; t <= 5_000; t += 500) half.hear('a', 10, 'inhale', t);
+  half.hear('b', 17, 'exhale', 5_000);
+  const later = (() => {
+    half.hear('a', 10, 'inhale', 5_500);
+    half.hear('b', 17, 'exhale', 5_500);
+    return half.value(5_500);
+  })();
+  assert.ok(Number.isFinite(later));
 });
 
 test('a rate outside what the portal accepts is kept inside it', () => {
@@ -146,12 +225,14 @@ test('sitting begins an inhale at the neutral rate, and goes on by itself: half 
   assert.equal(b.phase(1_000 + 2 * half), 'inhale');
 });
 
-test('held, it is an inhale for as long as it is held; let go, an exhale at the rate it was given, and on by itself', () => {
+test('held, it is an inhale until the top and a hold there for as long as it is held; let go, an exhale at the rate it was given, and on by itself', () => {
   const b = new Breather();
   b.sit(0);
   b.press(500);
   assert.equal(b.phase(500), 'inhale');
-  assert.equal(b.phase(60_000), 'inhale'); // however long
+  assert.equal(b.phase(500 + 30_000 / NEUTRAL_BPM - 1), 'inhale'); // rising for as long as a breath takes to rise
+  assert.equal(b.phase(500 + 30_000 / NEUTRAL_BPM), 'hold'); // then at rest at the top
+  assert.equal(b.phase(60_000), 'hold'); // however long
   b.release(4_000, 12);
   assert.equal(b.rate, 12);
   const half = 30_000 / 12;

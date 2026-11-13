@@ -1,5 +1,5 @@
 // 🌬️ The tree on the gate breathes with whoever else is there (docs/rfc-001-presence-physics.md §17). It listens to `/api/breath` with no key and
-// moves its canopy by what it hears; a touch sits the person down, held it is their own rhythm, a second tap stands them up. The page
+// moves its canopy by what it hears; a touch sits the person down, held it is their own rhythm, and a tap after that changes nothing. The page
 // shows nothing about it: no count, no name, no "connecting", no error. A stream that fails is tried again, quietly; a tab that is hidden
 // neither listens nor sends (and so gives its seat up). Nothing is kept: no cookie, no storage, no id past the stream that has it.
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,7 +17,7 @@ const reducedMotion = (): boolean => typeof matchMedia === 'function' && matchMe
 export type Tree = {
   /** Put on the canopy's group. */
   ref: RefObject<SVGGElement | null>;
-  /** Put on the roots' drawing: they are lit by the exhale. */
+  /** Put on the roots' drawing; its parent, the page, carries `--light`, the one number the sky and the roots are lit by. */
   roots: RefObject<SVGSVGElement | null>;
   /** Whether the tree is leaning a hair off its place, waiting for a first touch (the Missing Screw: nudge, touch, wink, reward). */
   nudge: boolean;
@@ -32,7 +32,7 @@ export type Tree = {
   };
 };
 
-type Person = { seated: boolean; wasSeated: boolean; holding: boolean; timer?: ReturnType<typeof setTimeout>; phase?: Phase; sentAt: number };
+type Person = { seated: boolean; holding: boolean; timer?: ReturnType<typeof setTimeout>; phase?: Phase; sentAt: number };
 
 export function useTree(enabled: boolean): Tree {
   const crown = useRef<SVGGElement | null>(null);
@@ -43,7 +43,7 @@ export function useTree(enabled: boolean): Tree {
   const breather = useRef(new Breather());
   const rhythm = useRef(new Rhythm());
   const me = useRef<string | undefined>(undefined);
-  const person = useRef<Person>({ seated: false, wasSeated: false, holding: false, sentAt: 0 });
+  const person = useRef<Person>({ seated: false, holding: false, sentAt: 0 });
 
   const send = useCallback((rate: number, phase: Phase) => {
     const id = me.current;
@@ -90,8 +90,9 @@ export function useTree(enabled: boolean): Tree {
       const now = performance.now();
       if (!reducedMotion()) {
         crown.current?.style.setProperty('--breath', c.value(now).toFixed(4));
-        roots.current?.style.setProperty('--exhale', c.release(now).toFixed(3));
-      } else roots.current?.style.setProperty('--exhale', '0.35'); // still, and a little lit
+        // one number for the whole scene: the sky is lit by it, and the roots by what the sky gives up
+        roots.current?.parentElement?.style.setProperty('--light', c.light(now).toFixed(3));
+      } else roots.current?.parentElement?.style.setProperty('--light', '0.5'); // still, half and half
       if (p.seated) {
         const phase = breather.current.phase(now);
         if (phase !== p.phase) {
@@ -158,7 +159,6 @@ export function useTree(enabled: boolean): Tree {
     const p = person.current;
     if (!enabled || p.timer !== undefined) return; // a key held down is one press, not many
     const now = performance.now();
-    p.wasSeated = p.seated;
     if (!p.seated) {
       p.seated = true;
       p.phase = undefined; // the next step says the first inhale
@@ -183,13 +183,8 @@ export function useTree(enabled: boolean): Tree {
     if (p.holding) {
       p.holding = false;
       breather.current.release(now, rhythm.current.rate());
-    } else if (p.wasSeated) {
-      // a tap on a tree one is sitting under: they stand up, and their breath goes with them
-      p.seated = false;
-      p.phase = undefined;
-      setSeated(false);
-      circle.current.let('me');
     }
+    // a tap on a tree one is already sitting under changes nothing: a click never resets the breath (it is the knock's, later), and one leaves by leaving
   }, []);
 
   const keyDown = useCallback(
