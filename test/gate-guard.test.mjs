@@ -135,6 +135,17 @@ test('3. one number moves the crown, the sky and the roots, in the same frame, a
   }
 });
 
+test('3. the crown and the roots meet at the trunk: both turn about the centre of its base', () => {
+  const gate = read('ui/src/components/LoginGate.tsx');
+  // the trunk is the first path of the tree: it starts at the left corner of its base (`M<x> 392`) and ends at the right one (`L<x> 392 Z`)
+  const tree = /data-gate="crown"[\s\S]*?d="M(\d+) 392[^"]*L(\d+) 392 Z"/.exec(gate);
+  assert.ok(tree, 'the trunk of the tree is not where the guard looks for it (a path from `M<x> 392` to `L<x> 392 Z`)');
+  const centre = (Number(tree[1]) + Number(tree[2])) / 2;
+  assert.equal(Number(/const TRUNK_X = (\d+);/.exec(gate)?.[1]), centre, 'the roots start off the centre of the trunk: TRUNK_X must be the middle of its base');
+  const origin = /transform-origin:\s*(\d+)px\s+392px/.exec(rule(code(read('ui/src/gate.css')), "[data-gate='crown']"));
+  assert.equal(Number(origin?.[1]), centre, 'the crown turns about a point that is not the foot of its trunk');
+});
+
 test('3. --breath is written in one place, once a frame, from the clock, and read only by the gate', () => {
   const writers = sources('ui/src', ['.ts', '.tsx']).filter((f) => /setProperty\(\s*['"]--breath['"]/.test(code(read(f))));
   assert.deepEqual(writers, ['ui/src/lib/useBreath.ts'], 'only useBreath sets --breath');
