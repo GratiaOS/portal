@@ -89,7 +89,10 @@ test('1. the network door of the tree has not come back: no route, no hub, no ob
 
   const wrangler = JSON.parse(code(read('cloudflare/wrangler.jsonc')).replace(/,(\s*[}\]])/g, '$1'));
   assert.deepEqual(wrangler.durable_objects.bindings.map((b) => b.name), ['PORTAL'], 'the Worker has one object, the portal');
-  assert.ok(wrangler.migrations.some((m) => m.deleted_classes?.includes('Breath')), "the migration that took the tree's object away stays, as history: a migration is never rewritten");
+  // the history of the tree's object is not shipped: no migration creates or deletes it, and the last tag, which a Worker that once had it still holds, is an empty marker
+  assert.ok(!JSON.stringify(wrangler.migrations).includes('Breath'), 'a migration names the tree\'s object: its history is not to be shipped (see the comment in wrangler.jsonc)');
+  assert.deepEqual(wrangler.migrations.map((m) => m.tag), ['v1', 'v3'], 'the migrations are v1 (the portal) and the empty marker v3: wrangler re-applies everything over a Worker whose last tag it cannot find');
+  assert.deepEqual(Object.keys(wrangler.migrations.at(-1)), ['tag'], 'v3 is a marker, with nothing in it');
 });
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------

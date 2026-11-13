@@ -9,6 +9,7 @@
   // the page with the same headers as in Node
   "assets": { "directory": "../ui/dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": true },
   "durable_objects": { "bindings": [{ "name": "PORTAL", "class_name": "Portal" }] },
-  // v2 added an object for the tree on the gate when its breath went over the network; v3 takes it away (it kept nothing): the tree now breathes on the page, from the clock. Both stay, since a migration is history.
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Portal"] }, { "tag": "v2", "new_sqlite_classes": ["Breath"] }, { "tag": "v3", "deleted_classes": ["Breath"] }]
+  // `v3` is a marker with nothing in it, kept on purpose and not a step: a Worker that has already applied it (firegate.space, which once had an object for the tree on the gate, since deleted) must find
+  // its last tag here, or wrangler applies every migration again over it. Anyone else gets `v1`, and `v3` changes nothing. The tree breathes on the page, from the clock, and needs no object.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Portal"] }, { "tag": "v3" }]
 }
