@@ -10,6 +10,7 @@ export * from './sqlite-node.js';
 export * from './sqlite-object.js';
 export * from './sse.js';
 export * from './hub.js';
+export * from './breath.js';
 export * from './stream.js';
 export * from './limiter.js';
 export * from './config.js';
