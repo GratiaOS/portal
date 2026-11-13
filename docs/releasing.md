@@ -56,7 +56,7 @@ gh release create vX.Y.Z --repo GratiaOS/portal --title "El portal X.Y.Z" --note
 
 ## 6. The signal
 
-`SIGNAL.md` says the release is out, what is live where, and what nobody has looked at. `pnpm signal` will say it is **one pull request behind** right after a release (it counts the release pull request itself); that is expected, and the stamp moves with the next real pull request, not with one made for the stamp.
+`SIGNAL.md` says the release is out, what is live where, and what nobody has looked at. The release pull request already changes it, so `pnpm signal` is **current** right after a release: a pull request that touches `SIGNAL.md` has kept it true, and does not count against its stamp (the stamp cannot name the merge commit of the pull request that carries it). A pull request that leaves `SIGNAL.md` alone does count, until the signal says something about it.
 
 ## If something fails
 

@@ -29,12 +29,22 @@ function refresh() {
   }
 }
 
-/** The pull requests merged into main since the stamp (not a merge of main into a branch), but not those that only moved SIGNAL.md: the stamp's own pull request cannot count against it. */
+/**
+ * Whether a merged pull request, by the files it changed, counts against the stamp. One that touched SIGNAL.md has kept it true itself: whoever changes
+ * something and changes the signal with it has done what the signal asks, and counting that pull request would put every signal one behind for ever (the stamp
+ * cannot name the merge commit of the pull request that carries it). One that left SIGNAL.md alone counts, until the signal says something about it.
+ */
+export function countsAgainst(files) {
+  const changed = files.filter(Boolean);
+  return changed.length > 0 && !changed.includes('SIGNAL.md');
+}
+
+/** The pull requests merged into main since the stamp (not a merge of main into a branch) that left SIGNAL.md alone. */
 function mergesSince(sha) {
   for (const ref of ['origin/main', 'main', 'HEAD']) {
     try {
       const merges = git('rev-list', '--first-parent', '--merges', `${sha}..${ref}`).split('\n').filter(Boolean);
-      return merges.filter((merge) => git('diff', '--name-only', `${merge}^1`, merge).split('\n').some((file) => file && file !== 'SIGNAL.md')).length;
+      return merges.filter((merge) => countsAgainst(git('diff', '--name-only', `${merge}^1`, merge).split('\n'))).length;
     } catch {
       /* the next place to look */
     }
