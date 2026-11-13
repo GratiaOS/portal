@@ -139,6 +139,7 @@ The current list is in [SIGNAL.md](SIGNAL.md).
 | --- | --- |
 | run one, step by step | [INSTALL.md](INSTALL.md) |
 | understand how it is made | [docs/how-it-works.md](docs/how-it-works.md) |
+| the tree on the gate, and how it breathes | [docs/the-tree-on-the-gate.md](docs/the-tree-on-the-gate.md) |
 | talk to it from code | [docs/api.md](docs/api.md) |
 | change how it looks | [ui/src/skins/README.md](ui/src/skins/README.md) |
 | take part | [CONTRIBUTING.md](CONTRIBUTING.md) |
