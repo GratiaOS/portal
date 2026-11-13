@@ -23,7 +23,10 @@ const CREST = Math.PI / 2;
 
 export const clampRate = (rate: number): number => Math.min(RATE.max, Math.max(RATE.min, rate));
 
-type Source = { rate: number; phase: Phase; theta: number; at: number; heardAt: number };
+type Source = { rate: number; phase: Phase; theta: number; at: number; heardAt: number; bornAt: number };
+
+/** A source that is new comes in over this long, so that the canopy never jumps to meet it. */
+export const BORN_MS = 1_000;
 
 /** How whole a source is, `dt` ms after it was last heard: 1 while it is fresh, then down to 0 at `GONE_MS`. */
 export function weight(dt: number): number {
@@ -41,8 +44,9 @@ export class Circle {
   private readonly sources = new Map<string, Source>();
 
   /**
-   * A breath was heard from `id`. The oscillator is set by the phase when the phase is a new one (an inhale begins at the bottom, an exhale at
-   * the top), and left to run when it is the same, so that the signal that comes every two seconds does not make the canopy jump.
+   * A breath was heard from `id`. When the phase is a new one, the oscillator turns to it **from where the canopy is**: an inhale goes on rising
+   * from the present value, an exhale goes on falling, a hold stays where it is. Nothing snaps to the bottom or the top, so that a touch, a hold
+   * and a release never make the canopy jump. When it is the same phase, the signal that comes every two seconds only says the source is still here.
    */
   hear(id: string, rate: number, phase: Phase, now: number): void {
     const known = this.sources.get(id);
@@ -51,8 +55,10 @@ export class Circle {
       known.heardAt = now;
       return;
     }
-    const theta = phase === 'inhale' ? TROUGH : phase === 'exhale' ? CREST : known ? thetaAt(known, now) : CREST;
-    this.sources.set(id, { rate: r, phase, theta, at: now, heardAt: now });
+    const here = known ? thetaAt(known, now) : undefined;
+    const y = Math.max(-1, Math.min(1, here === undefined ? this.value(now) : Math.sin(here)));
+    const theta = phase === 'inhale' ? Math.asin(y) : phase === 'exhale' ? Math.PI - Math.asin(y) : (here ?? CREST);
+    this.sources.set(id, { rate: r, phase, theta, at: now, heardAt: now, bornAt: known ? known.bornAt : now });
   }
 
   /** How open the canopy is at `now`: from about -1 (closed) to +1 (open), a little past either with many. Sources that have faded are let go. */
@@ -60,11 +66,12 @@ export class Circle {
     let sum = 0;
     let whole = 0;
     for (const [id, source] of this.sources) {
-      const w = weight(now - source.heardAt);
-      if (w <= 0) {
+      const fade = weight(now - source.heardAt);
+      if (fade <= 0) {
         this.sources.delete(id);
         continue;
       }
+      const w = fade * Math.min(1, Math.max(0, (now - source.bornAt) / BORN_MS));
       sum += w * Math.sin(thetaAt(source, now));
       whole += w;
     }
@@ -75,18 +82,11 @@ export class Circle {
   }
 
   /**
-   * How much the canopy is letting go of its breath at `now`, from 0 (opening, or at rest) to 1 (the fastest fall of the tree's own breath): the
-   * canopy's change over the last moments, turned round. It is what lights the roots, so that they glow on the exhale of everyone there at once.
+   * How far the canopy has let go of its breath at `now`, from 0 (open) to 1 (closed): the same curve as the canopy itself, turned over, so that
+   * whatever is lit by it is lit exactly as the tree closes and dims exactly as it opens. It is what the roots glow with.
    */
-  release(now: number): number {
-    const before = this.value(now - 150);
-    const slope = (this.value(now) - before) / 0.15; // per second
-    return Math.min(1, Math.max(0, -slope / (TAU * (NEUTRAL_BPM / 60))));
-  }
-
-  /** Lets go of one source at once (a person who stands up, not one who leaves: that one fades). */
-  let(id: string): void {
-    this.sources.delete(id);
+  exhaled(now: number): number {
+    return Math.min(1, Math.max(0, (1 - this.value(now)) / 2));
   }
 
   clear(): void {
@@ -94,11 +94,11 @@ export class Circle {
   }
 }
 
-const thetaAt = (source: Source, now: number): number => source.theta + TAU * (source.rate / 60_000) * (now - source.at);
+const thetaAt = (source: Source, now: number): number => (source.phase === 'hold' ? source.theta : source.theta + TAU * (source.rate / 60_000) * (now - source.at));
 
 /**
- * One person's breath. Sitting begins an inhale at the neutral rate and goes on by itself; held, it is an inhale for as long as it is held;
- * let go, it is an exhale at the rate the person's holds have set, and goes on by itself from there.
+ * One person's breath. Sitting begins an inhale at the neutral rate and goes on by itself; held, it is an inhale until it reaches the top, and a
+ * hold there for as long as it is held; let go, it is an exhale at the rate the person's holds have set, and goes on by itself from there.
  */
 export class Breather {
   rate = NEUTRAL_BPM;
@@ -126,7 +126,8 @@ export class Breather {
   }
 
   phase(now: number): Phase {
-    if (this.held) return 'inhale';
+    // held: the breath rises for as long as a breath takes to rise, and then rests at the top until it is let go
+    if (this.held) return now - this.since < 30_000 / this.rate ? 'inhale' : 'hold';
     const half = 30_000 / this.rate;
     const turns = Math.floor(Math.max(0, now - this.since) / half);
     const other: Phase = this.first === 'inhale' ? 'exhale' : 'inhale';
