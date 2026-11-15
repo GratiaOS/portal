@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **A room can be renamed** (`renamedFrom` in `rooms`): what was said in it, the guests who are there and what its knowledge lacked move to the new id and the old one is gone, once, inside the start; a turn is still never changed in what it says. Before, a new id made a new, empty room and the old one stayed in the list. Nothing changes in the database's version.
+- **The rooms are listed in the order of the config**, not by their ids, and the first one is where a person lands. A portal whose `rooms` are not in the order of their ids will see them change places at the next start; a room the config no longer names comes after the others.
 - **The roots start under the trunk.** They started at the middle of the crown (x 566) and the trunk's base is centred on x 560, a few pixels to the left, so the roots hung off to the right of the trunk. They now start, and the crown turns, about the middle of the trunk's base; the guard keeps the two together.
 
 ## 0.4.0 (2026-11-13)
