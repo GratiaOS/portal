@@ -24,6 +24,8 @@ export type ConversationInput = {
   kind?: RoomKind;
   visibility?: Visibility;
   tags?: string[];
+  /** A room's earlier id, when it has been renamed: what was said there, and who may be there, move to the new one. Said once; when the old one is no longer there, it does nothing. */
+  renamedFrom?: string;
 };
 
 /** What a portal keeps: the last `days` and, of each room, the last `messages`, whichever ends first; or everything. */
@@ -211,6 +213,8 @@ function toTurn(row: Row): Turn {
 export class RoomStore {
   private readonly db: Sqlite;
   private readonly now: () => Date;
+  /** Where each room stands in the config, as the last sync gave it: the rooms are listed in that order. */
+  private order = new Map<string, number>();
 
   /** `db` is the portal's database in one of its homes: `nodeSqlite(path)` for a file (`:memory:` for tests), `objectSqlite(storage)` on a Durable Object. */
   constructor(db: Sqlite, options: StoreOptions = {}) {
@@ -293,12 +297,16 @@ export class RoomStore {
     this.db.run('DELETE FROM participants WHERE id = ?', oldId);
   }
 
-  /** Adds new conversations and updates title, visibility and tags. A closed conversation stays closed. */
+  /**
+   * Adds new conversations and updates title, visibility and tags. A closed conversation stays closed. The order of the config is kept
+   * (in memory, given again at each start) and is the order the rooms are listed in.
+   */
   syncConversations(inputs: ConversationInput[]): void {
     const at = this.now().toISOString();
     const upsert = `INSERT INTO conversations (id, title, kind, visibility, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET title = excluded.title, kind = excluded.kind, visibility = excluded.visibility, tags = excluded.tags`;
     this.transaction(() => {
+      for (const input of inputs) if (input.renamedFrom !== undefined) this.renameConversation(input);
       for (const input of inputs) {
         if (!CONVERSATION_ID_PATTERN.test(input.id)) throw new RoomError('invalid', `"${input.id}" is not a valid conversation id`);
         const visibility = input.visibility ?? 'private';
@@ -308,6 +316,32 @@ export class RoomStore {
         this.db.run(upsert, input.id, input.title, kind, visibility, JSON.stringify(input.tags ?? []), at, at);
       }
     });
+    this.order = new Map(inputs.map((input, index) => [input.id, index]));
+  }
+
+  /**
+   * A room that has been renamed keeps what was said in it: the row (when it was made, whether it is closed), every turn, the bindings of
+   * whoever is there and the questions its knowledge lacked move to the new id, and the old one is gone. A turn is still never changed in
+   * what it says, only in where it is, and the trigger that refuses an update is put back at once. It runs inside `syncConversations`'
+   * transaction, and only when the old one is there and the new one is not, so a config that still says `renamedFrom` changes nothing the
+   * second time.
+   */
+  private renameConversation(input: ConversationInput): void {
+    const from = input.renamedFrom as string;
+    if (!CONVERSATION_ID_PATTERN.test(from)) throw new RoomError('invalid', `"${from}" is not a valid conversation id`);
+    if (!CONVERSATION_ID_PATTERN.test(input.id)) throw new RoomError('invalid', `"${input.id}" is not a valid conversation id`);
+    if (from === input.id) return;
+    if (!this.one('SELECT id FROM conversations WHERE id = ?', from) || this.one('SELECT id FROM conversations WHERE id = ?', input.id)) return;
+    this.db.run(
+      'INSERT INTO conversations (id, title, kind, visibility, status, tags, created_at, updated_at) SELECT ?, title, kind, visibility, status, tags, created_at, updated_at FROM conversations WHERE id = ?',
+      input.id, from,
+    );
+    this.db.run('UPDATE bindings SET room_id = ? WHERE room_id = ?', input.id, from);
+    this.db.run('UPDATE knowledge_gaps SET conversation_id = ? WHERE conversation_id = ?', input.id, from);
+    this.db.exec('DROP TRIGGER turns_no_update');
+    this.db.run('UPDATE turns SET conversation_id = ? WHERE conversation_id = ?', input.id, from);
+    this.db.exec(TURNS_NO_UPDATE);
+    this.db.run('DELETE FROM conversations WHERE id = ?', from);
   }
 
   listParticipants(): Participant[] {
@@ -432,8 +466,10 @@ export class RoomStore {
     }));
   }
 
+  /** The rooms, in the order the config gives them; one the config no longer names comes after, by its id. */
   listConversations(): Conversation[] {
-    return (this.db.all('SELECT * FROM conversations ORDER BY id') as Row[]).map(toConversation);
+    const place = (id: string) => this.order.get(id) ?? Number.MAX_SAFE_INTEGER;
+    return (this.db.all('SELECT * FROM conversations ORDER BY id') as Row[]).map(toConversation).sort((a, b) => place(a.id) - place(b.id));
   }
 
   getConversation(id: string): Conversation | undefined {

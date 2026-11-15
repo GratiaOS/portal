@@ -43,6 +43,10 @@ In `portal.local.json`:
 
 A person whose name changes is renamed, not added: give them the new `alias` and `"renamedFrom": "old"` in `participants` (and move their token to the new alias in the tokens file, keeping its value, so the same key still opens). At the next start what they said, the mentions of them, their sign and their place move to the new name, with no one left behind under the old one; what they wrote is as it was written, and `@old` inside a sentence stays as it was typed. It is done once: when the old name is no longer there, `renamedFrom` does nothing, and you can take it out. Only people are renamed.
 
+A room whose id changes is renamed the same way: give it the new `id` and `"renamedFrom": "old"` in `rooms` (and the new id in `guests.room`, if it is the guest room). At the next start what was said there, the guests who are in it and what its knowledge lacked move to the new id, and the old one is gone; `#old` inside a sentence stays as it was typed, and a link to `#old` opens the first room. It is done once too. A room that is only taken out of `rooms` is not removed: it stays, with what was said in it, after the others.
+
+The rooms are listed in the order `rooms` gives them, and the first one is where a person lands.
+
 Then a token for each person, kept in a file of its own (`chmod 600`):
 
 ```bash

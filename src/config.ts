@@ -219,6 +219,14 @@ function renamedFromOf(value: unknown, alias: string, kind: string, index: numbe
   return from;
 }
 
+/** `renamedFrom`: the id a room had before, for a room whose id has changed. */
+function roomRenamedFromOf(value: unknown, id: string, index: number): string {
+  const from = text(value, `rooms[${index}].renamedFrom`);
+  if (!CONVERSATION_ID_PATTERN.test(from)) throw new ConfigError(`rooms[${index}]: "${from}" is not a valid room id`);
+  if (from === id) throw new ConfigError(`rooms[${index}]: renamedFrom is the same as the id`);
+  return from;
+}
+
 /** The name of the portal: one line of words, up to 40 characters (it is a name on a home screen, not a sentence). */
 function portalName(value: unknown): string {
   const name = text(value, 'name');
@@ -284,10 +292,16 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
       ...(entry.kind === undefined ? {} : { kind: roomKind(entry.kind, `rooms[${index}].kind`) }),
       ...(entry.visibility === undefined ? {} : { visibility: entry.visibility as ConversationInput['visibility'] }),
       ...(entry.tags === undefined ? {} : { tags: entry.tags as string[] }),
+      ...(entry.renamedFrom === undefined ? {} : { renamedFrom: roomRenamedFromOf(entry.renamedFrom, id, index) }),
     };
   });
   if (!rooms.length) throw new ConfigError('there must be at least one room');
   if (new Set(rooms.map((c) => c.id)).size !== rooms.length) throw new ConfigError('a room id is used twice');
+  for (const room of rooms) {
+    if (room.renamedFrom !== undefined && rooms.some((other) => other.id === room.renamedFrom)) throw new ConfigError(`renamedFrom "${room.renamedFrom}" is still a room of the config: a room is renamed from one that is no longer there`);
+  }
+  const fromIds = rooms.flatMap((room) => (room.renamedFrom === undefined ? [] : [room.renamedFrom]));
+  if (new Set(fromIds).size !== fromIds.length) throw new ConfigError('two rooms are renamed from the same one');
 
   const nova = raw.nova === undefined ? undefined : parseNova(raw.nova, participants, baseDir);
 

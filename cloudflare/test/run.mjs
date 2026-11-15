@@ -295,6 +295,18 @@ try {
   const hers = (await (await zeus('/api/rooms/general/messages')).json()).turns.find((t) => t.text === 'a word before the new name');
   check(hers?.speakerId === 'human:athena', `what she said is hers under the new name, and as it was said: ${hers?.speakerId}`);
 
+  console.log('\n— a room renamed in the config keeps what was said in it, and the rooms are listed as the config lists them');
+  await stop(dev);
+  const renamedPeople = CONFIG.participants.map((p) => (p.alias === 'Hera' ? { kind: 'human', alias: 'Athena', renamedFrom: 'Hera' } : p));
+  const renamedRooms = [{ id: 'plaza', title: 'General', renamedFrom: 'general' }, { id: 'parking', title: 'Guests', kind: 'guest', renamedFrom: 'guests' }];
+  dev = start({ ...CONFIG, participants: renamedPeople, rooms: renamedRooms, guests: { ...CONFIG.guests, room: 'parking' } }, { Zeus: ZEUS, Athena: HERA });
+  await ready();
+  const listed = (await (await zeus('/api/rooms')).json()).rooms.map((r) => r.id);
+  check(listed.join() === 'plaza,parking', `the old ids are gone, and the plaza is first though "parking" sorts before it: ${listed.join()}`);
+  const moved = (await (await zeus('/api/rooms/plaza/messages?limit=200')).json()).turns.some((t) => t.text === 'a word before the new name');
+  check(moved, 'what was said in the room is there under its new id');
+  check((await zeus('/api/rooms/general/messages')).status === 404, 'and the old id opens nothing');
+
   console.log('\n— wrong keys, counted in the object (last: it turns this caller away)');
   const wrong = [];
   for (let i = 0; i < 12; i += 1) wrong.push((await fetch(`${base}/api/me`, { headers: { Authorization: `Bearer wrong${i}` } })).status);
