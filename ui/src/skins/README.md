@@ -203,4 +203,6 @@ shows now; it has `data-first` while it is the first of its set, which a skin ma
 ## Where something is written
 
 `composer`, `composer-row`, `composer-input`, `composer-send` (`disabled` while there is nothing to send),
-`composer-note` (the calm line under the box, read when the box is focused: a refusal when there is one, and otherwise how to break a line and how far the text is from the limit; a refusal is also said once, as it comes, through an `sr-only` status; the box itself is as tall as its text, up to two fifths of the window, and scrolls inside past that).
+`composer-note` (the calm line under the box, read when the box is focused: a refusal when there is one, and otherwise how to break a line and how far the text is from the limit; a refusal is also said once, as it comes, through an `sr-only` status; the box itself is as tall as its text, up to two fifths of the window that is seen, and scrolls inside past that).
+
+On a phone the keyboard covers part of the window. While it does, the page says so on the root (`data-window`, with `--window-top` and `--window-height` in px) and `index.css` holds the page to that part, for every skin: a skin has nothing to answer, and should not give `#root` a place of its own.

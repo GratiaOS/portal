@@ -29,6 +29,18 @@ body {
 }
 
 /*
+ * On a phone the keyboard rises over the window, and on iOS the window keeps its height under it. While that is so the room says
+ * what part is seen (`lib/useSeenWindow.ts`) and the page is held to it, so that the box and the end of what was said stay above
+ * the keys in every skin. A place, not a look: a skin has nothing to answer here.
+ */
+:root[data-window] #root {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--window-top, 0);
+  height: var(--window-height, 100%);
+}
+
+/*
  * A part that came after contract 1 is hidden until a skin shows it: a skin made for contract 1, from a room's folder and built
  * on nothing, does not know it, and must not find it in its layout at every width. The skins that know it (the built-in ones,
  * and any that builds on one of them) show it with rules of their own, which win over this one.

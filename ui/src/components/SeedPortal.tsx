@@ -34,12 +34,15 @@ export default function SeedPortal({ channel, onSend, note, notice, whispers, t 
 
   useEffect(() => keepDraft(channel, text), [channel, text]);
 
-  // as tall as the text needs, up to two fifths of the window; past that it scrolls inside
+  // as tall as the text needs, up to two fifths of the window that is seen (under a phone's keyboard there is less of it); past that it scrolls inside
   const fit = useCallback(() => {
     const node = box.current;
     if (!node) return;
     node.style.height = 'auto';
-    node.style.height = `${boxHeight(node.scrollHeight, window.innerHeight)}px`;
+    // what the text needs is measured inside the edge of the box and its height is set outside it: without the edge added the box is
+    // always that much too low, so it scrolls by a hair and shows a bar for it
+    const edge = node.offsetHeight - node.clientHeight;
+    node.style.height = `${boxHeight(node.scrollHeight + edge, window.visualViewport?.height ?? window.innerHeight)}px`;
   }, []);
 
   useEffect(fit, [text, fit]);
@@ -48,10 +51,12 @@ export default function SeedPortal({ channel, onSend, note, notice, whispers, t 
   // the height measured in one is wrong in the next, so the first letter would make the box jump)
   useEffect(() => {
     window.addEventListener('resize', fit);
+    window.visualViewport?.addEventListener('resize', fit);
     const look = new MutationObserver(fit);
     look.observe(document.documentElement, { attributes: true, attributeFilter: ['data-skin', 'data-skin-base'] });
     return () => {
       window.removeEventListener('resize', fit);
+      window.visualViewport?.removeEventListener('resize', fit);
       look.disconnect();
     };
   }, [fit]);
