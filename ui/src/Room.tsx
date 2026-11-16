@@ -25,6 +25,7 @@ import { stringsFor } from './lib/strings.ts';
 import type { Hints, SkinInfo } from './lib/types.ts';
 import { useNotify } from './lib/useNotify.ts';
 import { useRoom } from './lib/useRoom.ts';
+import { useSeenWindow } from './lib/useSeenWindow.ts';
 import { useUnread } from './lib/useUnread.ts';
 import { whispersFor } from './lib/whispers.ts';
 
@@ -38,6 +39,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
   const locale = state.you?.locale ?? navigator.language;
   const t = stringsFor(locale);
   useLang(locale);
+  useSeenWindow(); // a keyboard on a phone: the room keeps to the part of the window that is seen
   // a visitor has one room and no one to look up: no list of rooms, no team, no sign, no notifications; only who else is here
   const guest = state.you?.kind === 'guest';
 

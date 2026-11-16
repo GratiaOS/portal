@@ -800,6 +800,39 @@
       display: none;
     }
 
+    /* what was said has the width of the page: the hour sits after the name, on its line, instead of keeping a column of its own
+       (a message that follows another of the same person shows no hour on a touch screen, so its column was empty) */
+    [data-part='message'] {
+      grid-template-columns: auto 1fr;
+      align-items: baseline;
+    }
+
+    [data-part='message-body'] {
+      display: contents;
+    }
+
+    [data-part='speaker'] {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    [data-part='time'] {
+      grid-column: 2;
+      grid-row: 1;
+      padding-top: 0;
+      text-align: left;
+    }
+
+    [data-part='message']:not([data-head]) [data-part='time'] {
+      display: none;
+    }
+
+    [data-part='bubble'] {
+      grid-column: 1 / -1;
+      justify-self: start;
+      min-width: 0;
+    }
+
     [data-part='side'] {
       position: fixed;
       right: 0;
@@ -1171,6 +1204,11 @@
       font-size: 0.875rem;
     }
 
+    /* what is read is the size of what is written */
+    [data-part='bubble'] {
+      font-size: 16px;
+    }
+
     [data-part='composer-input'] {
       min-height: 44px;
       font-size: 16px;
@@ -1186,6 +1224,37 @@
     [data-part='time'],
     [data-part='signal'] {
       font-size: 0.8125rem;
+    }
+  }
+
+  /* on a narrow page the box is as in any chat: one row, the box growing upward and, at its right foot, a small button with an arrow
+     (the word is still its name, for a screen reader); the line under it takes room only when it has something to say */
+  @media (max-width: 47.99rem) {
+    [data-part='composer-row'] {
+      align-items: flex-end;
+    }
+
+    [data-part='composer-send'] {
+      flex-shrink: 0;
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      min-height: 44px;
+      padding: 0;
+      font-size: 0;
+      letter-spacing: 0;
+      border-radius: 9999px;
+    }
+
+    [data-part='composer-send']::before {
+      content: '↑';
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    [data-part='composer-note']:empty {
+      display: none;
     }
   }
 

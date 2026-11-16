@@ -1380,6 +1380,11 @@
       font-size: 0.875rem;
     }
 
+    /* what is read is the size of what is written */
+    [data-part='bubble'] {
+      font-size: 15px;
+    }
+
     [data-part='composer-input'] {
       min-height: 44px;
       font-size: 16px;
@@ -1395,6 +1400,36 @@
     [data-part='time'],
     [data-part='signal'] {
       font-size: 0.8125rem;
+    }
+  }
+
+  /* on a narrow page the box is as in any chat: one row, the box growing upward and, at its right foot, a small button with an arrow
+     (the word is still its name, for a screen reader); the line under it takes room only when it has something to say */
+  @media (max-width: 47.99rem) {
+    [data-part='composer-row'] {
+      align-items: flex-end;
+    }
+
+    [data-part='composer-send'] {
+      flex-shrink: 0;
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      min-height: 44px;
+      padding: 0;
+      font-size: 0;
+      letter-spacing: 0;
+    }
+
+    [data-part='composer-send']::before {
+      content: '↑';
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    [data-part='composer-note']:empty {
+      display: none;
     }
   }
 
