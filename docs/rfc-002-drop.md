@@ -76,7 +76,7 @@ The room says *where*, the type says *how*. The route is named for the type
 | --- | --- |
 | `to` | required; `^\d{1,3}\.\d$`; the frequency of the room it lands in |
 | `fade` | optional; `^\d+(m\|h\|d)$`; default `7d`; capped by the portal (default maximum `30d`) |
-| `payload.body` | required; a string, at most 32 KB |
+| `payload.body` | required; a string, at most 8 KB (`413` over) |
 | `payload.format` | optional; default `"note"` (text or markdown). Reserved for later (a patch, an invite, a JSON object) so the route does not change when something new is carried. A `format` a client does not know is ignored: it shows `body` as plain text, and never blocks the room. |
 
 There is no `from`, no sender, no `answer`. A packet read back carries `type:
@@ -89,15 +89,31 @@ There is no `from`, no sender, no `answer`. A packet read back carries `type:
 ### Writing: `POST /api/drops/ingest`
 
 No token. Anyone who can reach the portal can drop a packet, which is what a
-dead-drop is. What keeps a door that is open from being a flood:
+dead-drop is. There is no shared secret and no challenge in v1 (no Turnstile: it
+would add an outside script to `amigo.sh` and break a plain `curl`). The limits
+below are the only guards, and they are all the portal's own:
 
-* **A frequency that nobody holds is dropped on the floor.** The portal answers
-  every well-formed packet the same, `202` with an empty body, held or not, and
-  stores it only when a participant holds `to`. So an unheld frequency costs no
-  storage, and the answer does not say which frequencies exist.
-* **The limiter the guest door already has**, per address (`429` with
-  `Retry-After`), and a ceiling per frequency (§11).
-* Refusals as elsewhere in the API: `400` bad input, `413` over 32 KB, `415` not JSON.
+| Limit | Value | Over it |
+| --- | --- | --- |
+| body (`payload.body`) | 8 KB | `413` |
+| rate per (address, frequency) | 15 a minute, burst 3 | `429` with `Retry-After` |
+| rate per frequency | 60 a minute | `429` with `Retry-After` |
+| packets alive in a room | 50 | the oldest is let go, the new one is kept |
+
+These are the starting numbers, as agreed, not measured ones; each is a value in
+the config and not a constant in the code.
+
+* **A frequency that nobody holds takes nothing.** The portal answers every
+  well-formed packet with the same `204` and an empty body, held or not, and
+  writes it only when a participant holds `to`. So an unheld frequency costs no
+  storage, and the answer does not say which frequencies exist. "Holds" means a
+  participant is named for it in the config, not that someone has the page open: a
+  drop for a holder who is away waits for them until it fades.
+* **The rates count before the holder is looked up**, so a `429` does not tell
+  held from unheld either.
+* The address limiter is the guest door's (`src/limiter.ts`); the per-frequency
+  one is the same kind of counter, keyed by frequency.
+* Other refusals as elsewhere in the API: `400` bad input, `415` not JSON.
 
 ### Cross-origin, for Amigo's page
 
@@ -206,14 +222,18 @@ it, link to link) is for links and does not change. A drop has none.
 
 ## 11. Open questions
 
-Decided here, and so not open: the room field keeps its word and gains a value
+Decided here, and so not open: the numbers of §5 (an open door, no key, no
+challenge in v1: 8 KB, 15 a minute per address and frequency with a burst of 3, 60
+a minute per frequency, 50 alive); the room field keeps its word and gains a value
 (`kind: 'team' | 'guest' | 'drop'`, `src/authority.ts`); the payload's word is
 `format`; a drop carries no `from`.
 
-1. **How much an open door may take.** The per-address limiter is the guest
-   door's. A frequency that many write to may also need its own ceiling (packets
-   and bytes) and a smaller body than 32 KB; and whether a challenge (Turnstile)
-   belongs on the page that sends. Nothing here is measured.
+1. **A room that is full lets the oldest go.** At 50 packets alive, the oldest
+   is evicted. Whoever writes fast enough to a frequency (60 a minute is its
+   ceiling, so under a minute) can push a holder's real packets out before they are
+   read. Refusing the new packet instead would let the same writer block the
+   frequency. Which harm is smaller is a choice, made here for eviction, that the
+   first real use should check.
 2. **Where a frequency is held.** A `freq` on a participant is the least that
    works. Whether one person holds several, and whether a team may share one, is
    not decided.
