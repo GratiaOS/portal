@@ -155,6 +155,14 @@ export class Hub {
     this.emit('activity', activity);
   }
 
+  /**
+   * Tells one participant, on every connection they have, that something was left on their frequency: only the frequency, never what was left,
+   * and no one else. It is not a turn and has no id, so it is not part of what a connection that comes later is given; nothing is kept of it.
+   */
+  notifyDrop(participantId: string, freq: string): void {
+    this.broadcast(frame('drop', { freq }), (to) => to.id === participantId);
+  }
+
   /** Tells everyone how someone shows now (their sign), as they show in `hello`. Not kept: the store has only the current one. */
   participantChanged(participant: Participant): void {
     this.broadcast(frame('participant', participant), (to) => mayKnow(to, participant));

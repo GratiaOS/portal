@@ -4,7 +4,7 @@ import type { DropsConfig, GuestsConfig } from './config.js';
 import { DEFAULT_FORMAT, FREQ_PATTERN, MAX_FORMAT_LENGTH, parseFade } from './drops.js';
 import { tokenDigest } from './config.js';
 import { GuestRoomFull, admitGuest } from './guests.js';
-import { RoomError } from './domain.js';
+import { RoomError, participantId } from './domain.js';
 import type { Participant } from './domain.js';
 import type { Hub } from './hub.js';
 import { SlidingWindowLimiter, TokenBucket } from './limiter.js';
@@ -213,7 +213,11 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       if (new TextEncoder().encode(body).byteLength > drops.maxBytes) throw new HttpError(413, 'body is too large', { Connection: 'close' });
 
       // only now is a holder looked for: for a frequency nobody holds there is nothing to keep, and the answer does not change
-      if (drops.frequencies.some((f) => f.freq === to)) store.addDrop({ freq: to, body, format: (format as string | undefined) ?? DEFAULT_FORMAT, fadeMs }, drops.capacity);
+      const held = drops.frequencies.find((f) => f.freq === to);
+      if (held) {
+        store.addDrop({ freq: to, body, format: (format as string | undefined) ?? DEFAULT_FORMAT, fadeMs }, drops.capacity);
+        hub.notifyDrop(participantId('human', held.holder), to); // only the frequency, and only to the one who holds it
+      }
       return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store', ...across } });
     } catch (err) {
       if (err instanceof HttpError) throw new HttpError(err.status, err.message, { ...err.headers, ...across });
@@ -269,6 +273,18 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
     if (path === '/api/me') {
       only(request, 'GET');
       return send(200, me);
+    }
+
+    // what is left on a frequency, for the one who holds it: a read lets go of what has faded first, and takes nothing away
+    if (path === '/api/drops') {
+      only(request, 'GET');
+      if (!drops) throw new HttpError(404, 'not found');
+      const freq = url.searchParams.get('freq');
+      if (freq === null || !FREQ_PATTERN.test(freq)) throw new HttpError(400, 'freq must be a frequency such as "99.6"');
+      // a frequency held by someone else and one held by no one are told alike, so this does not say which exist
+      const held = drops.frequencies.find((f) => f.freq === freq && participantId('human', f.holder) === me.id);
+      if (!held) throw new HttpError(403, 'forbidden');
+      return send(200, { freq, title: held.title, drops: store.listDrops(freq).map((d) => ({ id: String(d.id), type: 'drop', payload: { body: d.body, format: d.format }, fadesAt: d.fadesAt })) });
     }
 
     // a guest who leaves ends their own time: the key stops opening anything, the stream closes, and the room has one guest fewer

@@ -165,7 +165,10 @@ packet. For that, and only for that route, the portal answers cross-origin:
 
 `GET /api/drops?freq=99.6` needs `Authorization: Bearer <token>`, the token a
 participant of the portal already has (`docs/api.md`). Only the participant that
-holds the frequency (§8) reads it; anyone else gets `403`.
+holds the frequency (§8) reads it; anyone else gets `403`: a frequency held by
+someone else and one held by no one are told alike, so the answer does not say
+which exist. `400` for a `freq` that is not one; `404` when the portal has no
+`drops` block; `405` for anything but `GET`.
 
 ---
 
@@ -202,16 +205,19 @@ not rooms, so nothing of `access.ts` or of a room's permissions is touched.
 ## 7. The quiet ping
 
 When a packet is accepted into a held frequency, the live stream (`/api/stream`)
-emits one event, to the holder:
+emits one event, to the holder, on every connection they have and to no one else:
 
 ```
 event: drop
 data: { "freq": "99.6" }
 ```
 
-Nothing else: no text, no count. The client lights a small mark beside the view.
-Opening the view and reading is what makes it go out; nothing is recorded about it
-having been seen.
+Nothing else: no text, no count, and no `id`, so it is not part of the cursor of
+what is said and is not given again to a connection that comes later (the view
+lists what is there; the pulse is only for now). Nothing is kept of it. Nothing is
+told for a frequency nobody holds, nor for a packet that was refused. The client
+lights a small mark beside the view. Opening the view and reading is what makes it
+go out; nothing is recorded about it having been seen.
 
 ---
 
@@ -220,6 +226,19 @@ having been seen.
 A frequency is **held** by a participant: the config's `drops.frequencies` names
 it, with its holder (a human) and, if it wants one, a title (`🎁 CTT`). The view is read-only: a list of the packets still alive, each
 opened on its own. There is nothing to write in it and no Reply.
+
+The view is `GET /api/drops?freq=…` (§5), and it answers:
+
+```json
+{ "freq": "99.6", "title": "🎁 CTT", "drops": [
+  { "id": "12", "type": "drop", "payload": { "body": "…", "format": "note" }, "fadesAt": 1794945480000 }
+] }
+```
+
+The newest first. A packet has no sender and no time it was left (`fadesAt` is for
+the page to show a fade as a rhythm, not a date). A read lets go of what has faded
+before it answers, which writes, on a Durable Object too, and takes nothing else
+away: a packet can be read again until it fades.
 
 A packet shows its payload, and nothing else of its origin, because there is no
 origin to show. A person who wants to be known signs the text (`- rdm`); one who
