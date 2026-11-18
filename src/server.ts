@@ -41,6 +41,8 @@ export type StartOptions = {
   llm?: LlmProvider;
   /** Stands in for the model that answers guests, for tests. */
   guestLlm?: LlmProvider;
+  /** How often what is past is let go, in milliseconds: for tests. By default every ten minutes, and every minute at most when there are drops. */
+  forgetEveryMs?: number;
 };
 
 function providerFor(config: NovaConfig): LlmProvider {
@@ -69,6 +71,9 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
     const forget = () => {
       const { turns, gaps } = store.forget(config.retention);
       if (turns || gaps) console.log(`portal: let go of ${turns} message(s) and ${gaps} question(s) past what it keeps`);
+      // what has faded is gone from the file, read or not (a read lets it go too, at once)
+      const gone = store.purgeDrops();
+      if (gone) console.log(`portal: ${gone} drop(s) faded and were let go`);
       // the guest room ends by absence, whatever the retention of the team says
       if (config.guests) {
         const faded = store.forgetGuestTrail(config.guests.trailMinutes * 60_000);
@@ -78,7 +83,9 @@ export async function startRoom(config: RoomConfig, options: StartOptions = {}):
       }
     };
     forget();
-    forgetting = setInterval(forget, config.guests ? Math.min(10, config.guests.forgetAfterMinutes, config.guests.trailMinutes) * 60_000 : 10 * 60_000);
+    const every = config.guests ? Math.min(10, config.guests.forgetAfterMinutes, config.guests.trailMinutes) * 60_000 : 10 * 60_000;
+    // a fade is at least a minute, so a minute is as late as a drop that has faded may be kept in the file
+    forgetting = setInterval(forget, options.forgetEveryMs ?? (config.drops ? Math.min(every, 60_000) : every));
     forgetting.unref();
 
     const live = new Hub(store, { graceMs: options.graceMs, trailMinutes: config.guests?.trailMinutes, visitMinutes: config.guests?.minutes });

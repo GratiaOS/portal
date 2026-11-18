@@ -694,11 +694,6 @@ export class RoomStore {
       .map((row) => ({ id: row.id as number, freq: row.freq as string, format: row.format as string, body: row.body as string, createdAt: row.created_at as number, fadesAt: row.fades_at as number }));
   }
 
-  /** What was left after `since` (milliseconds) and is still kept, as the frequency and the time, for a handler that begins to count what a frequency takes in a minute. Nothing of it says who left it. */
-  droppedSince(since: number): { freq: string; createdAt: number }[] {
-    return this.db.all('SELECT freq, created_at FROM drops WHERE created_at > ? ORDER BY id', since).map((row) => ({ freq: row.freq as string, createdAt: row.created_at as number }));
-  }
-
   /** How many drops a frequency holds as rows, the ones that have faded and not yet been let go among them. */
   countDrops(freq: string): number {
     return (this.one('SELECT COUNT(*) AS n FROM drops WHERE freq = ?', freq) as { n: number }).n;

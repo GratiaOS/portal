@@ -138,12 +138,12 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
   const openStreams = new Map<string, number>();
 
   // the open door of RFC 002: a few at once from one address to one frequency and then a pace, and a ceiling for the frequency from anyone.
-  // What an address did is kept nowhere (nothing here keeps one), so it is forgotten when the handler is; what a frequency took is what the
-  // store kept, and is counted again.
+  // Both are kept in memory and nowhere else, and both begin again when the handler does, for every frequency alike. They are not counted
+  // again from the store: it keeps only what was taken for a frequency that is held, so counting again would make the number of answers
+  // before the first 429 say whether a frequency is held, which is what the same `204` is there not to say.
   const drops = options.drops;
   const dropsFromAddress = drops ? new TokenBucket(drops.perAddress.burst, drops.perAddress.perMinute, options.now) : undefined;
   const dropsToFrequency = drops ? new SlidingWindowLimiter(drops.perFrequency.perMinute, 60_000, options.now) : undefined;
-  if (drops && dropsToFrequency) for (const { freq, createdAt } of store.droppedSince(clock() - 60_000)) dropsToFrequency.remember(freq, createdAt);
 
   // wrong keys are counted per caller (the home says it in `CALLER_HEADER`); a caller over the limit is turned away
   // before the key is even looked at, the right one included, so guessing gains nothing from going faster

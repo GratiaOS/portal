@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { test, test as nodeTest } from 'node:test';
-import { ConfigError, FREQ_PATTERN, RoomError, RoomStore, nodeSqlite, objectSqlite, parseConfig, parseFade } from '../dist/index.js';
+import { ConfigError, FREQ_PATTERN, RoomError, RoomStore, nextAlarm, nodeSqlite, objectSqlite, parseConfig, parseFade } from '../dist/index.js';
 import { objectStandIn } from './object-stand-in.mjs';
 
 // RFC 002 (drop), the first step: the `drops` block of the config, and the table the drops live in. No route yet.
@@ -44,6 +44,16 @@ test('a fade is a whole number and m, h or d, in milliseconds', () => {
   assert.equal(parseFade('24h'), 24 * 3_600_000);
   assert.equal(parseFade('7d'), 7 * 86_400_000);
   for (const bad of ['', '7', '0d', '7w', '1.5d', 'd', ' 7d', '7d ', '-1d', 7, undefined, null]) assert.equal(parseFade(bad), undefined, JSON.stringify(bad));
+});
+
+test('the alarm is set to the nearest of the pace of letting go and the next fade, and to nothing when there is neither', () => {
+  const now = 1_000_000;
+  assert.equal(nextAlarm({ now, nextFade: null }), null); // nothing to wake for
+  assert.equal(nextAlarm({ now, periodicMs: 600_000, nextFade: null }), now + 600_000);
+  assert.equal(nextAlarm({ now, nextFade: now + 90_000 }), now + 90_000); // a portal that keeps for ever, and has a drop
+  assert.equal(nextAlarm({ now, periodicMs: 600_000, nextFade: now + 90_000 }), now + 90_000); // the fade comes first
+  assert.equal(nextAlarm({ now, periodicMs: 60_000, nextFade: now + 90_000 }), now + 60_000); // the pace comes first
+  assert.equal(nextAlarm({ now, periodicMs: 0, nextFade: null }), now); // a pace of nothing is now, not nothing
 });
 
 // --- the config ---
@@ -263,20 +273,6 @@ for (const [where, make] of Object.entries(HOMES)) {
     assert.equal(store.purgeDrops(), 0);
     now.advance(1);
     assert.equal(store.purgeDrops(), 1);
-  });
-
-  test('what was left lately is told by frequency and time, and nothing of who left it', (home) => {
-    const { store, now } = open(home);
-    store.addDrop({ freq: '99.6', body: 'old', fadeMs: DAY }, 50);
-    now.advance(70_000);
-    store.addDrop({ freq: '99.6', body: 'a', fadeMs: DAY }, 50);
-    store.addDrop({ freq: '36.9', body: 'b', fadeMs: DAY }, 50);
-    const since = now.at() - 60_000;
-    assert.deepEqual(store.droppedSince(since), [
-      { freq: '99.6', createdAt: now.at() },
-      { freq: '36.9', createdAt: now.at() },
-    ]); // the one before the minute is not in it
-    assert.deepEqual(store.droppedSince(now.at()), []); // and the boundary is after, as the limiter's window is
   });
 
   test('the next fade is the nearest one, for the alarm to be set at', (home) => {

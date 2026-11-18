@@ -265,20 +265,34 @@ test('a frequency takes 60 a minute from anyone, held or not, and then 429', () 
     await emptyAnswer(await post(drop('99.6', 'later'), { caller: '10.1.0.1' }));
   }));
 
-test('the count for a frequency is picked up again by a handler that begins, from what was kept; the count for an address is not kept', () =>
+test('a restart gives every frequency a fresh minute, held or not and whatever was sent, so the number of 204s before a 429 says nothing', () =>
   within(
     async ({ post, restart }) => {
-      for (let i = 0; i < 60; i += 1) await emptyAnswer(await post(drop('99.6', `n${i}`), { caller: `10.0.${i}.1` }));
+      const sent = async (freq, from, how) => {
+        let taken = 0;
+        for (let i = 0; i < 100; i += 1) {
+          const res = await post(how === 'bad' ? { to: freq } : drop(freq, `n${i}`), { caller: `${from}.${i}` });
+          if (res.status === 429) break;
+          taken += 1;
+        }
+        return taken;
+      };
+      const before = [await sent('99.6', '10.1', 'good'), await sent('12.3', '10.2', 'good'), await sent('13.4', '10.3', 'bad')];
+      assert.deepEqual(before, [60, 60, 60]); // the same whether it is held, not held, or badly made
       restart();
-      assert.equal((await post(drop('99.6', 'x'), { caller: '10.9.9.9' })).status, 429); // a restart gives no second full minute
-      await emptyAnswer(await post(drop('36.9', 'y'), { caller: '10.9.9.9' })); // another frequency is untouched
-      // an address is not remembered: nothing keeps one, so a caller who had used all its tokens has them again
-      for (let i = 0; i < 3; i += 1) await emptyAnswer(await post(drop('36.9', `n${i}`), { caller: '10.8.8.8' }));
-      restart();
-      await emptyAnswer(await post(drop('36.9', 'z'), { caller: '10.8.8.8' }));
+      const after = [await sent('99.6', '10.4', 'good'), await sent('12.3', '10.5', 'good'), await sent('13.4', '10.6', 'bad')];
+      assert.deepEqual(after, [60, 60, 60]); // and the same again: nothing of the held one was remembered and the others forgotten
     },
-    { drops: { capacity: 100 } },
+    { drops: { capacity: 10 } },
   ));
+
+test('an address is kept nowhere either: a caller who had used all its tokens has them again after a restart', () =>
+  within(async ({ post, restart }) => {
+    for (let i = 0; i < 3; i += 1) await emptyAnswer(await post(drop('36.9', `n${i}`), { caller: '10.8.8.8' }));
+    assert.equal((await post(drop('36.9', 'x'), { caller: '10.8.8.8' })).status, 429);
+    restart();
+    await emptyAnswer(await post(drop('36.9', 'z'), { caller: '10.8.8.8' }));
+  }));
 
 test('what is refused for being badly made without a frequency does not count against anyone', () =>
   within(async ({ post }) => {
