@@ -1,42 +1,38 @@
-# RFC: Drop — a room of drops, answered by a frequency
+# RFC: Drop — a one-way box on a frequency
 
 **Status**: Draft
-**Scope**: `portal` — a new room type `drop`; one ingest route; the Firegate view as the sender and the reader
-**Depends on**: rooms and turns (`src/domain.ts`), bearer tokens (`src/tokens.ts`), the live stream (`/api/stream`), forgetting by time (`retention`, guests' `forgetAfterMinutes`)
+**Scope**: `portal` — a new room type `drop`; one open ingest route; a read-only view
+**Depends on**: rooms and turns (`src/domain.ts`), bearer tokens (`src/tokens.ts`), the per-address limiter of the guest door (`src/limiter.ts`), the live stream (`/api/stream`), forgetting by time (`retention`, guests' `forgetAfterMinutes`)
 
 ---
 
 ## 1. Summary
 
-A bottle thrown into the sea needs a way to be answered without a return address
-on file. A `drop` room holds short-lived packets addressed to a **frequency**
-(`36.9`). A packet may carry the frequency it came from; when it does, the
-reader gets a Reply, which is one more packet sent to that frequency.
+A bottle thrown into the sea. A `drop` room holds short-lived packets that
+anyone can put on a **frequency** (`99.6`) without saying who they are, and that
+only the frequency's holder can open. Opened or not, a packet fades.
 
-No thread, no registry. A reply is a packet. A packet fades.
+The shape is small on purpose:
 
-Two worlds, one seam between them:
-
-* **Who has a key is in the portal.** They write, read and answer on frequencies
-  there. The key is their bearer token.
-* **Who has none uses another channel.** Amigo seals a signal and hands over a
-  **link** (`@garden`, as it does today). It never speaks to a portal.
+* **Writing is Amigo's, and open.** Amigo seals a signal and either hands over a
+  link (`@garden`, as today) or drops it on a frequency. A drop has no sender, no
+  `from`, no token.
+* **Reading is the portal's, and needs a key.** The holder opens the box in the
+  Firegate view: a list, one packet at a time, read-only. No Reply button, no
+  thread.
+* **An answer is a new drop.** Whoever wants one writes their own frequency in
+  the text, as one signs with `- rdm`. The reader opens Amigo and drops a new
+  packet there. The system keeps no link between the two.
 
 ```
- with a key                                          without one
- ──────────                                          ───────────
- Firegate view (write, read, Reply) ─┐               amigo.sh (SEAL)
- a CLI, later ───────────────────────┴─▶ POST /api/drops/ingest        │
-                                              │                        ▼
-                                              ▼               Share / Copy: a link,
-                                        drop room (freq)      by any other channel
-                                              │
-                          quiet ping ◀────────┤
-                          the list, opened one by one
-                          Reply (only if the packet has `from`) ─▶ ingest
+ Amigo (SEAL)
+   ├─ FREQ @garden ─▶ Share / Copy: a link, by any other channel   (as today)
+   └─ FREQ 99.6 ────▶ POST /api/drops/ingest ──▶ drop room (99.6) ──▶ quiet ping
+                       open, no key                    │
+                                                        ▼
+                           Firegate view, with the key: the list, opened one
+                           by one, read-only, until it fades
 ```
-
-Amigo does not call the portal. The portal does not call Amigo.
 
 ---
 
@@ -44,14 +40,13 @@ Amigo does not call the portal. The portal does not call Amigo.
 
 | Word | Means |
 | --- | --- |
-| `freq` | the address: `36.9`. Where a packet is delivered. |
-| `type: drop` | how a room behaves, and what a packet in it is: receive-only, a fade on every packet, a Reply only when there is a `from`. (`type: chat` is how `PlazaDelSol` behaves.) |
-| `@garden` | the callsign Amigo already puts on every link. Not a frequency: *a link*. Unrelated to the portal. |
-| the view | what a person opens to read a drop room: a list, one packet at a time. |
+| `freq` | the address: `99.6`. Where a packet is delivered. |
+| `type: drop` | how a room behaves, and what a packet in it is: written by anyone, read by its holder, gone at its fade. (`type: chat` is how `PlazaDelSol` behaves.) |
+| `@garden` | the callsign Amigo already puts on every link. Not a frequency: *a link*. |
+| the view | what a person with a key opens to read a drop room: a list, one packet at a time. |
 
-The room says *where*, the type says *how*. A third type later is a new type, not
-a new route. The route is named for the type (`/api/drops`), not for the first
-thing it was imagined to carry; `/api/rooms` is plural, so this is too.
+The room says *where*, the type says *how*. The route is named for the type
+(`/api/drops`), and plural because `/api/rooms` is.
 
 ---
 
@@ -59,23 +54,21 @@ thing it was imagined to carry; `/api/rooms` is plural, so this is too.
 
 | Principle | Consequence |
 | --- | --- |
-| No registry | Nothing remembers who wrote to whom. A reply creates no thread and no relation. |
+| No registry | Nothing remembers who wrote to whom. There is no sender to remember. |
 | Fade by default | Every packet has a TTL; after it, nothing is left to recover. |
-| Receive-only box | The view is a box, not a chat: no typing indicators, no read receipts, no "seen". |
-| A key opens a door; no key leaves another | Who knows, knows. Without a key the signal goes by a link, outside the portal. |
-| The ping is mute | The live stream says only *something arrived on this frequency*. Never the text, never the sender. |
+| One direction | Amigo writes, Firegate reads. No Reply, no thread, no "seen", no typing. |
+| The key is for reading | Anyone may leave a packet; only the holder opens the box. |
+| The ping is mute | The live stream says only *something arrived on this frequency*. Never the text. |
 
 ---
 
 ## 4. The packet
 
-Sent by a client with a key:
-
 ```json
 {
-  "to": "36.9",
+  "to": "99.6",
   "fade": "7d",
-  "payload": { "body": "Coffee tonight?" }
+  "payload": { "body": "Coffee tonight? - 36.9" }
 }
 ```
 
@@ -83,44 +76,53 @@ Sent by a client with a key:
 | --- | --- |
 | `to` | required; `^\d{1,3}\.\d$`; the frequency of the room it lands in |
 | `fade` | optional; `^\d+(m\|h\|d)$`; default `7d`; capped by the portal (default maximum `30d`) |
-| `payload.body` | required; a string, at most 32 KB, like a room message |
+| `payload.body` | required; a string, at most 32 KB |
 | `payload.format` | optional; default `"note"` (text or markdown). Reserved for later (a patch, an invite, a JSON object) so the route does not change when something new is carried. A `format` a client does not know is ignored: it shows `body` as plain text, and never blocks the room. |
-| `oneway` | optional `true`; the sender wants no answer, so the packet gets no `from` |
 
-The route is the `drop` type, so the body does not repeat it. A packet read back
-carries `type: "drop"`, `from` (when it has one) and `fadesAt`, all set by the
-portal.
-
-`from` is **never taken from the client**. The portal sets it on every packet,
-from the frequency the token's owner holds, unless the sender asks for `oneway`
-or holds no frequency. A person cannot claim a frequency that is not theirs. A
-new drop and a Reply are the same send: there is no flag for either, and no branch
-in the view or in this spec.
-
-A packet to a frequency nobody holds is accepted and fades. The portal never
-checks that anyone listens.
+There is no `from`, no sender, no `answer`. A packet read back carries `type:
+"drop"`, `payload` and `fadesAt`, set by the portal.
 
 ---
 
-## 5. The key, and the one door
+## 5. The open door, and the key
 
-The key is a **bearer token** of a participant of the portal, the same one
-`Authorization: Bearer <token>` already means in `docs/api.md`. There is no
-second secret, no signature and no timestamp to check.
+### Writing: `POST /api/drops/ingest`
 
-```
-POST /api/drops/ingest
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+No token. Anyone who can reach the portal can drop a packet, which is what a
+dead-drop is. What keeps a door that is open from being a flood:
 
-* Refusals as everywhere in the API: `401` no good token, `400` bad input,
-  `413` over 32 KB, `429` too many (the per-person message limit applies).
-* **Same-origin only.** The route sends no CORS header, as nothing else in the
-  API does. A page on another origin, `amigo.sh` included, cannot call it from a
-  browser; this is on purpose, so that no token ever lives on a page that is not
-  the portal's own, and no portal has to name outsiders.
-* A person with no token sends nothing here. Their way out is the link (§9).
+* **A frequency that nobody holds is dropped on the floor.** The portal answers
+  every well-formed packet the same, `202` with an empty body, held or not, and
+  stores it only when a participant holds `to`. So an unheld frequency costs no
+  storage, and the answer does not say which frequencies exist.
+* **The limiter the guest door already has**, per address (`429` with
+  `Retry-After`), and a ceiling per frequency (§11).
+* Refusals as elsewhere in the API: `400` bad input, `413` over 32 KB, `415` not JSON.
+
+### Cross-origin, for Amigo's page
+
+Amigo calls the route **from the browser**, so the Worker of Amigo never sees a
+packet. For that, and only for that route, the portal answers cross-origin:
+
+* `drops.allowOrigins` in the portal's config: a list of exact origins
+  (`"https://amigo.sh"`). **Empty by default**: with nothing in it the route sends
+  no CORS header at all.
+* The match is exact on `Origin`. No `*`, no pattern, no suffix.
+* `OPTIONS /api/drops/ingest` (preflight) answers `204` with
+  `Access-Control-Allow-Origin: <that origin>`, `Access-Control-Allow-Methods:
+  POST, OPTIONS`, `Access-Control-Allow-Headers: content-type`,
+  `Access-Control-Max-Age: 600` and `Vary: Origin`; for an origin not in the list,
+  no CORS header and a plain `403`. The `POST` answer carries `Allow-Origin` and `Vary`.
+* No credentials, no cookies, no `Authorization`: the request has none to carry.
+  CORS is a convenience for a page, not a defence: the door is open to anything
+  that is not a browser, and the limits above are what holds.
+* Every other route of the API stays same-origin.
+
+### Reading: the key
+
+`GET /api/drops?freq=99.6` needs `Authorization: Bearer <token>`, the token a
+participant of the portal already has (`docs/api.md`). Only the participant that
+holds the frequency (§8) reads it; anyone else gets `403`.
 
 ---
 
@@ -144,73 +146,60 @@ addition: a `fadesAt` on each turn.
 
 ## 7. The quiet ping
 
-When a packet is accepted, the live stream (`/api/stream`) emits one event:
+When a packet is accepted into a held frequency, the live stream (`/api/stream`)
+emits one event, to the holder:
 
 ```
 event: drop
-data: { "freq": "36.9" }
+data: { "freq": "99.6" }
 ```
 
-Nothing else: no text, no sender, no count. The client lights a small mark beside
-the view. Opening the view and reading is what makes it go out; nothing is
-recorded about it having been seen.
+Nothing else: no text, no count. The client lights a small mark beside the view.
+Opening the view and reading is what makes it go out; nothing is recorded about it
+having been seen.
 
 ---
 
-## 8. Reading and Reply
-
-`GET /api/drops?freq=36.9` (bearer) → `{ drops: [{ id, type, payload, from?, fadesAt }] }`.
+## 8. The view
 
 A frequency is **held** by a participant: the config names it (`freq` on a
-participant). Only its holder reads it; anyone else gets `403`. Without this, an
-address would be a public board.
+participant). The view is read-only: a list of the packets still alive, each
+opened on its own. There is nothing to write in it and no Reply.
 
-The view is a list, and a packet is opened one at a time. A packet shows its
-payload and no sender: a person who wants to be known signs the text, as in
-`PlazaDelSol` (`- rdm`). It shows no `from` either, only whether a Reply exists.
-
-### Reply
-
-Reply appears on a packet only when it has a `from`. A click opens the same box a
-person writes in, with the destination already filled; sending posts to
-`/api/drops/ingest` with `to = from`, like any other send. The portal sets the new
-packet's `from` to the frequency the replier holds, so the answer can be answered,
-as long as both want to. Nothing links the two packets after they are sent.
-
-A person who wants a single-direction drop (a new one or an answer) chooses
-`oneway`, once, in the box.
-
-A packet with no `from` is read and fades. That is the whole of it.
+A packet shows its payload, and nothing else of its origin, because there is no
+origin to show. A person who wants to be known signs the text (`- rdm`); one who
+wants an answer writes their frequency in it. To answer, the reader opens Amigo
+and drops a new packet on that frequency.
 
 ---
 
 ## 9. Amigo
 
-Amigo is not part of this protocol. It keeps its link flow exactly as it is
-(`Seal → Share / Copy`, `POST /api/dispatch`, one-time read, burn, its own Reply
-by `reply_to`, `docs/worker-semantics.md`), and its `FREQ: @garden` stays the
-callsign of a link.
+Amigo keeps its link flow exactly as it is (`Seal → Share / Copy`,
+`POST /api/dispatch`, one-time read, burn, its own Reply by `reply_to`,
+`docs/worker-semantics.md`), and adds one thing: the `FREQ` of the header, which
+today only names the callsign of a link, can be a frequency. Set to `@garden` the
+signal is a link, as before. Set to a frequency it is a drop, sent from the page
+to the portal (§5), with no sender and no key. The same sealed signal may go both
+ways, as was decided: a link by any channel, and a drop on a frequency.
 
-* A signal reaches a person with a key the way it reaches anyone else: they are
-  handed the link, on any channel, and open it.
-* Amigo has no key, holds no frequency, sends nothing to a portal and reads
-  nothing from one. There is no Amigo code in this RFC to build.
-* Amigo's Reply and the portal's are different things and stay apart. Amigo's
-  deletes the original and opens Home with an answer addressed to it, link to link.
-  The portal's sends a packet to a frequency. They share no code and no state.
+Which portal: an address saved on the device, `https://firegate.space` by default.
+A portal that does not list `https://amigo.sh` in `drops.allowOrigins` refuses the
+browser, and Amigo says so.
 
-Someone who writes only in Amigo is answered by whatever channel their link went
-on.
+Amigo's Reply (it deletes the original and opens Home with an answer addressed to
+it, link to link) is for links and does not change. A drop has none.
 
 ---
 
 ## 10. What this does not do
 
-* No threads, no "conversation with X", no history beyond a packet's own fade.
-* No delivery guarantee: a packet to a frequency nobody holds is accepted and fades.
-* No sender identity beyond what the text says and what `from` allows.
+* No Reply, no thread, no history beyond a packet's own fade.
+* No sender: not a name, not a frequency, not an address that the portal keeps.
+* No delivery guarantee, and no word to the sender: a packet may go to a frequency nobody holds and the answer is the same.
 * No push notification with content.
-* No path from Amigo to a portal: not a browser call, not a Worker proxy, not a token issued to Amigo.
+* No token on Amigo, and none issued to it.
+* No writing from the view.
 * No payload formats beyond `note` yet; `format` is a place kept for them.
 
 ---
@@ -218,17 +207,17 @@ on.
 ## 11. Open questions
 
 Decided here, and so not open: the room field keeps its word and gains a value
-(`kind: 'team' | 'guest' | 'drop'`, `src/authority.ts`), the payload's word is
-`format`, and `type: "drop"` is only on what is read back; and `from` is set on
-every send unless it is `oneway`.
+(`kind: 'team' | 'guest' | 'drop'`, `src/authority.ts`); the payload's word is
+`format`; a drop carries no `from`.
 
-1. **Where a frequency is held, and which one is `from`.** A `freq` on a
-   participant is the least that works. Whether one person holds several (then
-   which one a send uses, or whether the box asks), and whether a team may share
-   one, is not decided.
-2. **A token for a CLI.** There is no CLI in the repositories (`amigo-fm` is the
-   FM band, not a sender). If one comes it is another client of §5 with a token in
-   its config; a token that may write and may not read would make a stolen one
-   worth much less. Not designed.
-3. **Rate.** The per-person message limit applies. A frequency that receives from
-   many people may need its own ceiling.
+1. **How much an open door may take.** The per-address limiter is the guest
+   door's. A frequency that many write to may also need its own ceiling (packets
+   and bytes) and a smaller body than 32 KB; and whether a challenge (Turnstile)
+   belongs on the page that sends. Nothing here is measured.
+2. **Where a frequency is held.** A `freq` on a participant is the least that
+   works. Whether one person holds several, and whether a team may share one, is
+   not decided.
+3. **A drop on a held frequency that has no one reading.** It fades unread. Is
+   that enough, or should the holder be told, once, that something was dropped
+   while they were away (the quiet ping, kept until they open)? That would be a
+   fact that persists.
