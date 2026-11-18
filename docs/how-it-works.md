@@ -23,10 +23,11 @@ A turn is never changed, which the database itself enforces. A portal forgets by
 
 `Hub` is the one way a turn enters the portal (`hub.publish`) and the one place presence lives; `serveStream` puts a connection on it over server-sent events.
 
-- `hello` comes first on every connection: who you are, who is here, the rooms, and `lastSeq`. It has no `id`.
+- `hello` comes first on every connection: who you are, who is here, the rooms, and `lastSeq`. It has no `id`. To a person of the team, and only on a portal that has drops, it also says `heldFrequency: { freq, title }` (`null` when they hold none): the identity of their box, never what is in it, and never another person's.
 - `message` carries a turn, with its `seq` as the event `id`. A client that reconnects sends `Last-Event-ID` and gets what it missed right after `hello`, across all rooms; with no id it gets nothing and reads history over REST. If `lastSeq` in `hello` is lower than the last id a client saw, the room's database was reset and the client should reload its history.
 - `activity` says a companion is working on an answer in a conversation (`thinking`, then `idle`); `hello` carries who is thinking right now. Never stored.
 - `presence` says someone is online or offline, **and never when**: the portal does not know when anyone came or went, so nothing on the wire could be made into a timecard. A human who is gone for less than the grace period (5 s) is not announced as gone, so a refresh does not blink; several tabs count as one person; a companion is always online.
+- `drop` says that something was left on the frequency this person holds: `{ freq }` and nothing else, no text and no count, to that person's connections and to no one else. It has no `id`, so it is not part of what a connection that comes later is given; nothing is kept of it. The page asks again for the box when it comes.
 - `hub.on('turn', …)` is where a companion listens.
 - A comment line is sent every 25 s, and a client that falls 1 MB behind is cut off and resumes from its last id.
 
