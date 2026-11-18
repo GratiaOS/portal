@@ -35,6 +35,7 @@ export function useRoom(token: string, onRefused: () => void) {
         } else if (event === 'presence') dispatch({ type: 'presence', presence: data as Presence });
         else if (event === 'activity') dispatch({ type: 'activity', activity: data as Activity });
         else if (event === 'participant') dispatch({ type: 'participant', participant: data as Participant });
+        else if (event === 'drop') dispatch({ type: 'drop', freq: String((data as { freq?: unknown }).freq) });
       },
     });
     return () => stream.close();

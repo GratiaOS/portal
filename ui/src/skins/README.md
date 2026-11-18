@@ -178,6 +178,28 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `thinking-dots` | its dots, `aria-hidden` | |
 | `dot` | one of them; the page gives it `--i` (0, 1, 2) to stagger them | |
 
+## The box of drops
+
+For someone who holds a frequency (RFC 002), and only for them: a place after the rooms where what was left on it is read. It is a box, not a room: nothing to write, nothing to answer, no sender and no hour. It reuses `channel-view`, `channel-head`, `channel-title`, `signal`, `log`, `empty`, `content`, `text` and the rest of the words, and adds these. They came after contract 1, so a skin made for contract 1 that builds on no built-in look finds a plain list there and still works.
+
+| part | what it is | state |
+| --- | --- | --- |
+| `drops` | the list of packets, newest first (an `ol`) | |
+| `drop` | one packet, which is shown as Amigo shows a signal whose seal is still to be broken. The page gives it `--fade` (0 to 1): how much of it is left, drawn on a scale of time, a week or more being 1 and a minute a trace (a rhythm to look at, never a date) and, for the size of the wax, a skin may set `--s` (84px in Amigo, 64px on a phone) | `data-open` for the one whose seal is broken: one at a time |
+| `drop-state` | its word: SEALED, then OPEN | |
+| `drop-letter` | the closed letter (`aria-hidden`), shown while the seal is whole: the paper and the wax over its lower edge, which a skin leaves room for under it | |
+| `drop-paper` | the paper of it, with five `i` for its faint writing, the same whatever the packet says | |
+| `drop-wax` | the wax seal, the same in every look (deep red wax, a gold ring, the sign gilded) so that it is the same object in Amigo and here; a skin sets where it lies and `--s`, and dresses what is around it. `aria-hidden` | |
+| `drop-wax-lip` | the wax pressed past the die, a darker edge | |
+| `drop-wax-grain` | the mottling in the wax | |
+| `drop-wax-glyph` | the sign the packet was sealed with (one emoji), gilded; the page's own when the packet came with none | |
+| `drop-title` | *Incoming transmission*, under the letter | |
+| `drop-seal` | the button that breaks the seal (🔓, *Break seal*) and, once broken, shuts the packet again (🔒) | `aria-expanded` |
+| `drop-retry` | in the box, when it could not be opened, under the line that says so: the button to try again (it is not there otherwise) | |
+| `drop-fade` | a line under it, `aria-hidden`, that a skin draws as long as `--fade` | |
+| `drop-body` | what the packet holds once the seal is broken: noise that settles into the words (about a second, none with reduced motion), then the same words as a message (`content`, `text`, …) | |
+| `channel-new` | in the channel list, beside the box: the quiet mark that something came. A dot, with no count, no sound and no notice; it goes when the box is looked at | |
+
 ## Inside the words
 
 The words of a message are cut into what they are: `mention` (a person the room says was named, `@Nova`; it has `--hue` as the speaker has,

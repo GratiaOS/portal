@@ -3,7 +3,7 @@ import { ALIAS_PATTERN, CONVERSATION_ID_PATTERN, GAP_REASONS, MAX_TEXT_LENGTH, P
 import type { Binding, RoomKind } from './authority.js';
 import type { Conversation, ConversationStatus, GapReason, KnowledgeGap, Participant, ParticipantKind, Turn, Visibility } from './domain.js';
 import { mayKnow } from './access.js';
-import { DEFAULT_FORMAT, FREQ_PATTERN, MAX_FORMAT_LENGTH } from './drops.js';
+import { DEFAULT_FORMAT, FREQ_PATTERN, MAX_FORMAT_LENGTH, isSigil } from './drops.js';
 import type { Drop } from './drops.js';
 import { extractMentions } from './mentions.js';
 import type { Row, Sqlite } from './sqlite.js';
@@ -174,8 +174,14 @@ CREATE INDEX IF NOT EXISTS drops_by_freq ON drops(freq, fades_at);
 CREATE INDEX IF NOT EXISTS drops_by_fade ON drops(fades_at);
 `;
 
+// The seal a packet was sealed with in Amigo (RFC 002): one emoji, kept beside the packet and no more than that. A column is added only where it is missing.
+const SCHEMA_V10 = (db: Sqlite) => {
+  const have = new Set(db.all('PRAGMA table_info(drops)').map((column) => column.name));
+  if (!have.has('sigil')) db.exec('ALTER TABLE drops ADD COLUMN sigil TEXT;');
+};
+
 /** One entry per version: a database at version n gets the entries from n on, and keeps what it has. */
-const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9];
+const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10];
 const SCHEMA_VERSION = MIGRATIONS.length;
 
 function clamp(value: number | undefined, fallback: number, max: number): number {
@@ -664,21 +670,22 @@ export class RoomStore {
    * room has more than `capacity` alive, the oldest, so the new one stays. What was let go is said in `evicted`. The route has already checked
    * the size, the rates and the fade; this refuses only what is not a drop at all.
    */
-  addDrop(input: { freq: string; body: string; format?: string; fadeMs: number }, capacity: number): { drop: Drop; evicted: number } {
-    const { freq, body, fadeMs } = input;
+  addDrop(input: { freq: string; body: string; format?: string; sigil?: string; fadeMs: number }, capacity: number): { drop: Drop; evicted: number } {
+    const { freq, body, fadeMs, sigil } = input;
     const format = input.format ?? DEFAULT_FORMAT;
     if (typeof freq !== 'string' || !FREQ_PATTERN.test(freq)) throw new RoomError('invalid', 'a frequency is one to three digits, a dot and one digit');
     if (typeof body !== 'string' || !body) throw new RoomError('invalid', 'a drop needs something in it');
     if (typeof format !== 'string' || !format || format.length > MAX_FORMAT_LENGTH) throw new RoomError('invalid', `a format is 1 to ${MAX_FORMAT_LENGTH} characters`);
+    if (sigil !== undefined && !isSigil(sigil)) throw new RoomError('invalid', 'a sigil is one emoji, and small');
     if (!Number.isSafeInteger(fadeMs) || fadeMs < 1) throw new RoomError('invalid', 'a drop fades after a whole number of milliseconds, at least one');
     if (!Number.isSafeInteger(capacity) || capacity < 1) throw new RoomError('invalid', 'a room holds at least one drop');
     const now = this.now().getTime();
     const done = this.transaction(() => {
       const faded = this.db.run('DELETE FROM drops WHERE freq = ? AND fades_at <= ?', freq, now).changes;
-      const { lastInsertRowid } = this.db.run('INSERT INTO drops (freq, format, body, created_at, fades_at) VALUES (?, ?, ?, ?, ?)', freq, format, body, now, now + fadeMs);
+      const { lastInsertRowid } = this.db.run('INSERT INTO drops (freq, format, body, sigil, created_at, fades_at) VALUES (?, ?, ?, ?, ?, ?)', freq, format, body, sigil ?? null, now, now + fadeMs);
       const held = (this.one('SELECT COUNT(*) AS n FROM drops WHERE freq = ?', freq) as { n: number }).n;
       const evicted = held > capacity ? this.db.run('DELETE FROM drops WHERE id IN (SELECT id FROM drops WHERE freq = ? ORDER BY id ASC LIMIT ?)', freq, held - capacity).changes : 0;
-      return { drop: { id: lastInsertRowid, freq, format, body, createdAt: now, fadesAt: now + fadeMs }, evicted, gone: faded + evicted };
+      return { drop: { id: lastInsertRowid, freq, format, body, ...(sigil === undefined ? {} : { sigil }), createdAt: now, fadesAt: now + fadeMs }, evicted, gone: faded + evicted };
     });
     // what was let go leaves the file too, as with everything the portal forgets
     if (done.gone) this.db.afterForget();
@@ -690,8 +697,8 @@ export class RoomStore {
     const now = this.now().getTime();
     if (this.db.run('DELETE FROM drops WHERE freq = ? AND fades_at <= ?', freq, now).changes) this.db.afterForget();
     return this.db
-      .all('SELECT id, freq, format, body, created_at, fades_at FROM drops WHERE freq = ? ORDER BY id DESC', freq)
-      .map((row) => ({ id: row.id as number, freq: row.freq as string, format: row.format as string, body: row.body as string, createdAt: row.created_at as number, fadesAt: row.fades_at as number }));
+      .all('SELECT id, freq, format, body, sigil, created_at, fades_at FROM drops WHERE freq = ? ORDER BY id DESC', freq)
+      .map((row) => ({ id: row.id as number, freq: row.freq as string, format: row.format as string, body: row.body as string, ...(row.sigil ? { sigil: row.sigil as string } : {}), createdAt: row.created_at as number, fadesAt: row.fades_at as number }));
   }
 
   /** How many drops a frequency holds as rows, the ones that have faded and not yet been let go among them. */

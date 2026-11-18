@@ -57,6 +57,18 @@ export type Strings = {
   roomAway: string;
   tooManyKeys: string;
   channels: string;
+  /** The box of drops (RFC 002): a packet, the button that opens it and shuts it, what is said when the box is empty or cannot be opened, the list for a screen reader, and the quiet mark that something came. */
+  dropTitle: string;
+  dropBreak: string;
+  dropSealed: string;
+  dropOpened: string;
+  dropShut: string;
+  dropEmpty: string;
+  dropFailed: string;
+  dropTuning: string;
+  dropRetry: string;
+  dropList: string;
+  dropNew: string;
   people: string;
   here: string;
   notHere: string;
@@ -153,6 +165,17 @@ const ro: Strings = {
   roomAway: 'Nu ajung la portal acum. Încearcă din nou în câteva clipe.',
   tooManyKeys: 'Prea multe chei greșite la rând. Așteaptă puțin și încearcă din nou.',
   channels: 'Camere',
+  dropTitle: 'Transmisie primită',
+  dropBreak: 'Desigilează',
+  dropSealed: 'SIGILAT',
+  dropOpened: 'DESCHIS',
+  dropShut: 'Închide',
+  dropEmpty: 'Nu a rămas nimic aici.',
+  dropFailed: 'Nu am putut deschide cutia. Încearcă din nou puțin mai târziu.',
+  dropTuning: 'ACORDEZ…',
+  dropRetry: 'Încearcă din nou',
+  dropList: 'Pachete',
+  dropNew: 'A venit ceva',
   people: 'Oameni',
   here: 'e aici',
   notHere: 'nu e aici',
@@ -239,6 +262,17 @@ const en: Strings = {
   roomAway: 'The portal is out of reach right now. Try again in a moment.',
   tooManyKeys: 'Too many wrong keys in a row. Wait a little and try again.',
   channels: 'Rooms',
+  dropTitle: 'Incoming transmission',
+  dropBreak: 'Break seal',
+  dropSealed: 'SEALED',
+  dropOpened: 'OPEN',
+  dropShut: 'Close',
+  dropEmpty: 'Nothing left here.',
+  dropFailed: 'Could not open the box. Try again in a little while.',
+  dropTuning: 'TUNING…',
+  dropRetry: 'Try again',
+  dropList: 'Packets',
+  dropNew: 'Something came',
   people: 'People',
   here: 'is here',
   notHere: 'is not here',
@@ -325,6 +359,17 @@ const es: Strings = {
   roomAway: 'No llego al portal ahora. Inténtalo de nuevo en un momento.',
   tooManyKeys: 'Demasiadas llaves incorrectas seguidas. Espera un poco e inténtalo de nuevo.',
   channels: 'Salas',
+  dropTitle: 'Transmisión entrante',
+  dropBreak: 'Romper sello',
+  dropSealed: 'SELLADO',
+  dropOpened: 'ABIERTO',
+  dropShut: 'Cerrar',
+  dropEmpty: 'No queda nada aquí.',
+  dropFailed: 'No se pudo abrir la caja. Prueba de nuevo en un rato.',
+  dropTuning: 'SINTONIZANDO…',
+  dropRetry: 'Prueba otra vez',
+  dropList: 'Paquetes',
+  dropNew: 'Llegó algo',
   people: 'Personas',
   here: 'está aquí',
   notHere: 'no está aquí',

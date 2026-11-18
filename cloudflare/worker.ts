@@ -71,7 +71,7 @@ export class Portal extends DurableObject<Env> {
     // an alarm is set when there is something to wake for: the pace of letting go, and the time the nearest drop fades
     void this.ctx.storage.getAlarm().then((at) => (at === null ? this.arrange() : undefined));
 
-    const hub = new Hub(store, { trailMinutes: config.guests?.trailMinutes, visitMinutes: config.guests?.minutes });
+    const hub = new Hub(store, { trailMinutes: config.guests?.trailMinutes, visitMinutes: config.guests?.minutes, drops: config.drops });
     if (config.nova) this.wakeNova(config, config.nova, store, hub);
     if (config.guests?.nova.enabled && config.guests.nova.nova) this.wakeGuestNova(config.guests, config.guests.nova.nova, store, hub);
 

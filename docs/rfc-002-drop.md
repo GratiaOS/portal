@@ -78,6 +78,7 @@ The room says *where*, the type says *how*. The route is named for the type
 | `to` | required; `^\d{1,3}\.\d$`; the frequency of the room it lands in |
 | `fade` | optional; `^\d+(m\|h\|d)$`; default `7d`; capped by the portal (default maximum `30d`) |
 | `payload.body` | required; a string, at most 8 KB (`413` over) |
+| `payload.sigil` | optional; one emoji (a flag, a skin tone or a joined pair is one), at most 16 bytes of UTF-8; `400` otherwise, so a joiner cannot make a bomb. The seal the packet was sealed with in Amigo: it says how it was sealed, never who sealed it. A packet without one is shown with the page's own (the same Amigo puts on a signal that has none, 🐲) |
 | `payload.format` | optional; default `"note"` (text or markdown). Reserved for later (a patch, an invite, a JSON object) so the route does not change when something new is carried. A `format` a client does not know is ignored: it shows `body` as plain text, and never blocks the room. |
 
 There is no `from`, no sender, no `answer`. A packet read back carries `type:
@@ -231,7 +232,7 @@ The view is `GET /api/drops?freq=…` (§5), and it answers:
 
 ```json
 { "freq": "99.6", "title": "🎁 CTT", "drops": [
-  { "id": "12", "type": "drop", "payload": { "body": "…", "format": "note" }, "fadesAt": 1794945480000 }
+  { "id": "12", "type": "drop", "payload": { "body": "…", "format": "note", "sigil": "🦁" }, "fadesAt": 1794945480000 }
 ] }
 ```
 
@@ -239,6 +240,28 @@ The newest first. A packet has no sender and no time it was left (`fadesAt` is f
 the page to show a fade as a rhythm, not a date). A read lets go of what has faded
 before it answers, which writes, on a Durable Object too, and takes nothing else
 away: a packet can be read again until it fades.
+
+### On the page
+
+The page learns which frequency a person holds from `hello`, in a field of its own, `heldFrequency: { freq, title }`: the identity of the box, never what is
+in it, and never another person's. It is `null` when the portal has drops and this person holds none, absent when the portal has no `drops` block, and
+absent for a visitor, who is told nothing of drops. The box is one more entry after the rooms, apart from them: a place one steps into, asked for by a
+hash no room can have (`#~drops`, since a room's id starts with a letter or a digit), and it is not a room. Opened, it asks for the list and asks again
+each time the stream says something came; left, the page lets go of it (it keeps no copy). When something comes while the box is not open, the entry
+shows a dot: no count, no sound, no notice, and nothing in the title of the tab; it goes when the box is looked at.
+
+A packet is shown as Amigo shows a signal whose seal is still to be broken, and one is open at a time. Sealed, it says SEALED, shows the closed letter (faint
+writing, the same whatever it says) with the wax seal over its lower edge and the sigil it was sealed with gilded in it (the page's own when it came with
+none), the title *Incoming transmission* and a button, 🔓 *Break seal*. The wax is drawn the same in every look, so that it is the same object in Amigo and in
+the portal; the looks dress what is around it. Broken, the letter goes, the packet says OPEN, and its words settle out of noise in about a second (at once for
+someone who asks for less motion; a screen reader is given the words once they have settled, not the noise), and the button becomes 🔒 *Close*, which seals it
+again on this page only, as it keeps nothing. There is no reply, no copy and no burn: a block of code in a packet has no button to copy it either (the text can still be
+selected, as in any page). The words are put in a polite live region when they have settled, so that a screen reader says them without being moved.
+While the first answer is awaited the page says it is tuning, as Amigo's Room does; an empty box is not told as empty (it is only quiet, since an absent thing is
+not a fact to show); and a box that could not be opened says so, with a button to try again. Its words are shown as a message's are (prose, an address, `#tag`,
+code), and a `format` the page does not know is shown as the words it holds. A packet whose fade is reached leaves the list the next time the page counts,
+open or not. How much is left of a packet is a line that thins, on a scale of time (a week or more is full, a minute is a trace): a rhythm, never a date or a
+number.
 
 A packet shows its payload, and nothing else of its origin, because there is no
 origin to show. A person who wants to be known signs the text (`- rdm`); one who

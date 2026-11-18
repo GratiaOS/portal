@@ -54,4 +54,12 @@ export type Hello = {
   /** Said only to a visitor: how long what is said in their room lasts. */
   trailMinutes?: number;
   visitMinutes?: number;
+  /** Said only to the team, and only by a portal that has drops: the frequency this person holds (`null` when none). Absent: no drops here. */
+  heldFrequency?: { freq: string; title: string } | null;
 };
+
+/** One packet left on a frequency, as the room gives it: no sender and no time it was left, only when it goes (milliseconds). */
+export type Drop = { id: string; type: 'drop'; payload: { body: string; format: string; /** The seal it was sealed with in Amigo, when it came with one. */ sigil?: string }; fadesAt: number };
+
+/** What `GET /api/drops` gives the one who holds the frequency, the newest packet first. */
+export type DropBox = { freq: string; title: string; drops: Drop[] };
