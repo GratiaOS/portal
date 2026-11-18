@@ -114,6 +114,26 @@ budget she keeps.
   in a plain line. What a visitor asks is never put on the list of what the knowledge lacked.
 - On Cloudflare she is the same, with her own secret for the engine's key (the name `guests.nova.llm.apiKeyEnv` gives; set it with `wrangler secret put`, as for the team's) and her folder bundled apart from the team's at each `pnpm cloudflare:deploy`. Without the secret she does not answer guests, and the log says so; a folder changed after the deploy waits for the next one.
 
+### Drops: a one-way box on a frequency (optional)
+
+A portal can have boxes that anyone may leave a short packet in, without saying who they are and without a key, and that only one person opens. It is [RFC 002](docs/rfc-002-drop.md). Without a `drops` block there is nothing of it: the routes answer `404` and nothing else changes.
+
+```json
+"drops": {
+  "frequencies": [{ "freq": "99.6", "title": "🎁 CTT", "holder": "rdm" }],
+  "allowOrigins": ["https://amigo.sh"]
+}
+```
+
+- `frequencies`: each a `freq` (one to three digits, a dot, one digit), an optional `title` (one line, up to 40 characters; the frequency itself when left out) and a `holder`, the alias of a person (`human`). One holder to a frequency and one frequency to a person, in this version. The holder opens the box in the page, as one more entry after the rooms, and is the only one who can.
+- `allowOrigins`: the exact origins whose pages may leave a packet from a browser (`"https://amigo.sh"`, no path, no `*`). **Empty by default**: the route then sends no CORS header at all, and only something that is not a browser can reach it. A portal that does not list the origin of a page cannot be written to from that page.
+- The limits of the door, which has no key (the numbers are what guards it, and they are starting values, not measured ones): `maxBytes` 8192 (the body, in UTF-8), `perAddress` `{ "perMinute": 15, "burst": 3 }` (for one address on one frequency), `perFrequency` `{ "perMinute": 60 }`, `capacity` 50 (packets alive on a frequency; past it the oldest is let go), and `fade` `{ "default": "7d", "max": "30d" }` (a longer one is cut to the longest, which can be at most `90d`).
+- A packet to a frequency nobody holds is taken and kept nowhere, and the answer is the same `204`, so the answer says nothing of which frequencies exist. Packets are not kept by `retention`: each lives for its own fade and is gone from the file at it (on Node a timer lets go of what has faded at least once a minute; on Cloudflare the object's alarm is set to the nearest fade).
+- **The address** the limits count by is the one the home says: the socket's, or the header `clientIpHeader` names behind a proxy, and `cf-connecting-ip` on Cloudflare. Behind a proxy that is not named there, everyone has the proxy's address and shares one bucket, so name it (see "Run").
+- On Cloudflare the block goes up with the rest of `PORTAL_CONFIG` (`wrangler secret put`), and the object adopts it when it goes idle or within five minutes.
+
+What a person with a frequency needs from outside is a way to leave a packet: Amigo (amigo.sh) sends one from its page, tuned on the frequency, to the portal named by its build (`https://firegate.space` unless told another).
+
 ### The tree on the gate
 
 Nothing to set. The olive tree on the gate breathes by itself, eight breaths a minute counted from the same instant for everyone, on the page and from the clock, so two people who open the gate together see the same pulse; nothing is sent, nothing is kept, and nothing is pressed. With less motion asked for by the system, the tree stands still.

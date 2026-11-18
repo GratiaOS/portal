@@ -1,6 +1,6 @@
 # RFC: Drop — a one-way box on a frequency
 
-**Status**: Draft
+**Status**: Built, unreleased (the portal's side is in `main`: config, store, ingest, read, stream, the page; Amigo's side is a pull request in GratiaOS/gratiaos)
 **Scope**: `portal` — a new room type `drop`; one open ingest route; a read-only view
 **Depends on**: the participants of the config, bearer tokens (`src/tokens.ts`), the per-address limiter of the guest door (`src/limiter.ts`), the live stream (`/api/stream`), forgetting by time (`retention`, guests' `forgetAfterMinutes`)
 
