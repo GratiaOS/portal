@@ -567,10 +567,29 @@
     border-radius: 0.75rem;
   }
 
-  [data-part='drop-seal'] {
-    @apply rounded-xl px-4 py-2.5 text-[15px];
-    background: var(--accent);
-    color: var(--accent-ink);
+  /* the button that breaks a seal: not glass and not the blue of the rest, but a bubble of acid lime (opaque: no blur, no gradient) drawn with a marker (a fine ink line) and set down like a sticker (a small shadow below it that it sinks into when pressed). Only this part: the accent of the page keeps its roles. */
+  [data-part='drop'] [data-part='drop-seal'] {
+    @apply px-6 py-2.5 text-[15px];
+    width: fit-content;
+    margin-inline: auto;
+    border-radius: 9999px;
+    background: oklch(0.88 0.19 112);
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+    box-shadow: 0 3px 0 var(--ink);
+  }
+
+  [data-part='drop'] [data-part='drop-seal']:active {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-part='drop'] [data-part='drop-seal'] {
+      transition:
+        transform 90ms ease-out,
+        box-shadow 90ms ease-out;
+    }
   }
 
   [data-part='drop-fade'] {
