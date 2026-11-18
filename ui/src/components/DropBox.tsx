@@ -39,9 +39,9 @@ function Packet({ drop, open, now, onToggle, t }: { drop: Drop; open: boolean; n
         </>
       )}
       {open && (
-        <div data-part="drop-body">
+        <div data-part="drop-body" aria-live="polite" aria-atomic="true">
           {/* settling out of noise; the words themselves are read only once they have settled, so a screen reader is not given noise */}
-          {tuning.done ? <Words body={drop.payload.body} mentioned={[]} meId={undefined} channelIds={[]} t={t} /> : <p aria-hidden data-part="text">{tuning.shown}</p>}
+          {tuning.done ? <Words body={drop.payload.body} mentioned={[]} meId={undefined} channelIds={[]} t={t} copyable={false} /> : <p aria-hidden data-part="text">{tuning.shown}</p>}
         </div>
       )}
       <span aria-hidden data-part="drop-fade" />
@@ -57,7 +57,7 @@ function Packet({ drop, open, now, onToggle, t }: { drop: Drop; open: boolean; n
  * own, one packet open at a time; it has no sender and no hour. There is nothing to write here and nothing to answer: whoever wants an answer wrote their
  * own frequency in the words. A packet whose fade is reached is not in the list the next time the page counts, whether or not it was open.
  */
-export default function DropBox({ title, drops, now, loaded, failed, connection, t }: { title: string; drops: Drop[]; now: number; loaded: boolean; failed: boolean; connection: Connection; t: Strings }) {
+export default function DropBox({ title, drops, now, loaded, failed, retry, connection, t }: { title: string; drops: Drop[]; now: number; loaded: boolean; failed: boolean; retry: () => void; connection: Connection; t: Strings }) {
   const [openId, setOpenId] = useState<string | undefined>(undefined);
   return (
     <section aria-label={title} data-part="channel-view">
@@ -66,10 +66,21 @@ export default function DropBox({ title, drops, now, loaded, failed, connection,
         <SignalQuality connection={connection} t={t} />
       </header>
       <div data-part="log">
-        {failed && (
+        {/* while the first answer is awaited the page says so, as Amigo's Room does ("tuning"); a box that is empty is not told as empty: it is only quiet */}
+        {!loaded && !failed && (
           <p data-part="empty" role="status">
-            {t.dropFailed}
+            {t.dropTuning}
           </p>
+        )}
+        {failed && (
+          <>
+            <p data-part="empty" role="status">
+              {t.dropFailed}
+            </p>
+            <button type="button" data-part="drop-retry" onClick={retry}>
+              {t.dropRetry}
+            </button>
+          </>
         )}
         {loaded && !failed && drops.length === 0 && (
           <p data-part="sr-only" role="status">

@@ -65,6 +65,8 @@ export type Strings = {
   dropShut: string;
   dropEmpty: string;
   dropFailed: string;
+  dropTuning: string;
+  dropRetry: string;
   dropList: string;
   dropNew: string;
   people: string;
@@ -170,6 +172,8 @@ const ro: Strings = {
   dropShut: 'Închide',
   dropEmpty: 'Nu a rămas nimic aici.',
   dropFailed: 'Nu am putut deschide cutia. Încearcă din nou puțin mai târziu.',
+  dropTuning: 'ACORDEZ…',
+  dropRetry: 'Încearcă din nou',
   dropList: 'Pachete',
   dropNew: 'A venit ceva',
   people: 'Oameni',
@@ -265,6 +269,8 @@ const en: Strings = {
   dropShut: 'Close',
   dropEmpty: 'Nothing left here.',
   dropFailed: 'Could not open the box. Try again in a little while.',
+  dropTuning: 'TUNING…',
+  dropRetry: 'Try again',
   dropList: 'Packets',
   dropNew: 'Something came',
   people: 'People',
@@ -360,6 +366,8 @@ const es: Strings = {
   dropShut: 'Cerrar',
   dropEmpty: 'No queda nada aquí.',
   dropFailed: 'No se pudo abrir la caja. Prueba de nuevo en un rato.',
+  dropTuning: 'SINTONIZANDO…',
+  dropRetry: 'Prueba otra vez',
   dropList: 'Paquetes',
   dropNew: 'Llegó algo',
   people: 'Personas',

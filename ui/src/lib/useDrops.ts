@@ -11,6 +11,7 @@ export function useDrops(api: ReturnType<typeof createApi>, held: { freq: string
   const [box, setBox] = useState<DropBox | undefined>(undefined);
   const [failed, setFailed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [again, setAgain] = useState(0);
   const freq = held?.freq;
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export function useDrops(api: ReturnType<typeof createApi>, held: { freq: string
     return () => {
       cancelled = true;
     };
-  }, [api, freq, pulse, open]);
+  }, [api, freq, pulse, open, again]);
 
   useEffect(() => {
     if (!open) return;
@@ -41,5 +42,5 @@ export function useDrops(api: ReturnType<typeof createApi>, held: { freq: string
   }, [open]);
 
   const drops = useMemo(() => stillThere(box?.drops ?? [], now), [box, now]);
-  return { drops, now, loaded: box !== undefined, failed };
+  return { drops, now, loaded: box !== undefined, failed, retry: () => setAgain((n) => n + 1) };
 }

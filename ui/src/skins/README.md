@@ -195,6 +195,7 @@ For someone who holds a frequency (RFC 002), and only for them: a place after th
 | `drop-wax-glyph` | the sign the packet was sealed with (one emoji), gilded; the page's own when the packet came with none | |
 | `drop-title` | *Incoming transmission*, under the letter | |
 | `drop-seal` | the button that breaks the seal (🔓, *Break seal*) and, once broken, shuts the packet again (🔒) | `aria-expanded` |
+| `drop-retry` | in the box, when it could not be opened, under the line that says so: the button to try again (it is not there otherwise) | |
 | `drop-fade` | a line under it, `aria-hidden`, that a skin draws as long as `--fade` | |
 | `drop-body` | what the packet holds once the seal is broken: noise that settles into the words (about a second, none with reduced motion), then the same words as a message (`content`, `text`, …) | |
 | `channel-new` | in the channel list, beside the box: the quiet mark that something came. A dot, with no count, no sound and no notice; it goes when the box is looked at | |

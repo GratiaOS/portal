@@ -255,7 +255,10 @@ writing, the same whatever it says) with the wax seal over its lower edge and th
 none), the title *Incoming transmission* and a button, 🔓 *Break seal*. The wax is drawn the same in every look, so that it is the same object in Amigo and in
 the portal; the looks dress what is around it. Broken, the letter goes, the packet says OPEN, and its words settle out of noise in about a second (at once for
 someone who asks for less motion; a screen reader is given the words once they have settled, not the noise), and the button becomes 🔒 *Close*, which seals it
-again on this page only, as it keeps nothing. There is no reply, no copy and no burn. Its words are shown as a message's are (prose, an address, `#tag`,
+again on this page only, as it keeps nothing. There is no reply, no copy and no burn: a block of code in a packet has no button to copy it either (the text can still be
+selected, as in any page). The words are put in a polite live region when they have settled, so that a screen reader says them without being moved.
+While the first answer is awaited the page says it is tuning, as Amigo's Room does; an empty box is not told as empty (it is only quiet, since an absent thing is
+not a fact to show); and a box that could not be opened says so, with a button to try again. Its words are shown as a message's are (prose, an address, `#tag`,
 code), and a `format` the page does not know is shown as the words it holds. A packet whose fade is reached leaves the list the next time the page counts,
 open or not. How much is left of a packet is a line that thins, on a scale of time (a week or more is full, a minute is a trace): a rhythm, never a date or a
 number.

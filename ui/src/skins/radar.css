@@ -750,6 +750,20 @@
     border-radius: 50%;
   }
 
+  [data-part='drop-retry'] {
+    display: flex;
+    justify-content: center;
+    width: calc(100% - 2 * var(--pad));
+    margin: 0.5rem var(--pad);
+    padding: 0.5rem 0.75rem;
+    letter-spacing: 0.08em;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--rule);
+  }
+
   [data-part='drop-state'] {
     margin: 0 0 0.25rem;
     font-size: 11px;
@@ -1596,6 +1610,7 @@
     [data-part='skin-option'],
     [data-part='channel'],
     [data-part='drop-seal'],
+    [data-part='drop-retry'],
     [data-part='signout'],
     [data-part='install'],
     [data-part='code-copy'],
@@ -1611,7 +1626,8 @@
     }
 
     /* the button that breaks a seal stays a full row: only its height is made for a finger */
-    [data-part='drop-seal'] {
+    [data-part='drop-seal'],
+    [data-part='drop-retry'] {
       display: flex;
       justify-content: center;
     }

@@ -313,7 +313,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
       </aside>
 
       <main data-part="main">
-        {onDrops && state.held && <DropBox title={state.held.title} drops={box.drops} now={box.now} loaded={box.loaded} failed={box.failed} connection={state.connection} t={t} />}
+        {onDrops && state.held && <DropBox title={state.held.title} drops={box.drops} now={box.now} loaded={box.loaded} failed={box.failed} retry={box.retry} connection={state.connection} t={t} />}
         {selected && (
           <ChannelView
             channelId={selected.id}
