@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { test, test as nodeTest } from 'node:test';
-import { ConfigError, FREQ_PATTERN, RoomError, RoomStore, nextAlarm, nodeSqlite, objectSqlite, parseConfig, parseFade } from '../dist/index.js';
+import { ConfigError, FREQ_PATTERN, MAX_SIGIL_BYTES, RoomError, RoomStore, isSigil, nextAlarm, nodeSqlite, objectSqlite, parseConfig, parseFade } from '../dist/index.js';
 import { objectStandIn } from './object-stand-in.mjs';
 
 // RFC 002 (drop), the first step: the `drops` block of the config, and the table the drops live in. No route yet.
@@ -44,6 +44,13 @@ test('a fade is a whole number and m, h or d, in milliseconds', () => {
   assert.equal(parseFade('24h'), 24 * 3_600_000);
   assert.equal(parseFade('7d'), 7 * 86_400_000);
   for (const bad of ['', '7', '0d', '7w', '1.5d', 'd', ' 7d', '7d ', '-1d', 7, undefined, null]) assert.equal(parseFade(bad), undefined, JSON.stringify(bad));
+});
+
+test('a sigil is one emoji and at most 16 bytes of UTF-8: the seal a packet was sealed with', () => {
+  assert.equal(MAX_SIGIL_BYTES, 16);
+  for (const ok of ['🐲', '❤️', '🧑‍💻', '🇷🇴', '🦁']) assert.equal(isSigil(ok), true, ok);
+  // not one emoji: nothing, a letter, a digit, two, a blank; and one that is joined past the cap (a family is 25 bytes), so a joiner cannot make a bomb
+  for (const bad of ['', 'a', '1', '🐲🐲', ' ', '\n', '👨‍👩‍👧‍👦', '🐲\u200d'.repeat(8), 7, null, undefined]) assert.equal(isSigil(bad), false, JSON.stringify(bad));
 });
 
 test('the alarm is set to the nearest of the pace of letting go and the next fade, and to nothing when there is neither', () => {
@@ -207,6 +214,24 @@ for (const [where, make] of Object.entries(HOMES)) {
     assert.equal(read[0].createdAt, now.at());
     assert.equal(read[0].fadesAt, now.at() + DAY);
     assert.deepEqual(store.listDrops('36.9'), []); // another frequency holds none of them
+  });
+
+  test('a packet may carry the sigil it was sealed with, and a drop without one has none to show', (home) => {
+    const { store } = open(home);
+    const sealed = store.addDrop({ freq: '99.6', body: 'x', sigil: '🦁', fadeMs: DAY }, 50);
+    const plain = store.addDrop({ freq: '99.6', body: 'y', fadeMs: DAY }, 50);
+    assert.equal(sealed.drop.sigil, '🦁');
+    assert.equal('sigil' in plain.drop, false);
+    const [newest, older] = store.listDrops('99.6');
+    assert.equal('sigil' in newest, false);
+    assert.equal(older.sigil, '🦁');
+    assert.deepEqual(Object.keys(newest).sort(), ['body', 'createdAt', 'fadesAt', 'format', 'freq', 'id']); // as before: nothing is added to a drop that has no sigil
+  });
+
+  test('a sigil that is not one emoji of at most 16 bytes is refused, and nothing is kept', (home) => {
+    const { store } = open(home);
+    for (const sigil of ['', 'a', '🐲🐲', '👨‍👩‍👧‍👦', 7, null]) refuses(() => store.addDrop({ freq: '99.6', body: 'x', sigil, fadeMs: DAY }, 50));
+    assert.equal(store.countDrops('99.6'), 0);
   });
 
   test('a drop that is not well made is refused: the store holds what the route has already checked, and no more', (home) => {

@@ -9,7 +9,10 @@
 import { startsWithPicture } from '../lib/format.ts';
 import type { Conversation } from '../lib/types.ts';
 
-export default function ChannelList({ channels, selected, onSelect, label }: { channels: Conversation[]; selected: string | undefined; onSelect: (id: string) => void; label: string }) {
+/** The box of drops one holds, as one more entry after the rooms: it is a place to step into, and it is not a room. `fresh` is the quiet mark that something came. */
+export type DropEntry = { title: string; current: boolean; fresh: boolean; freshLabel: string; onSelect: () => void };
+
+export default function ChannelList({ channels, selected, onSelect, label, drops }: { channels: Conversation[]; selected: string | undefined; onSelect: (id: string) => void; label: string; drops?: DropEntry }) {
   return (
     <nav aria-label={label} data-part="channel-list">
       {channels.map((channel) => {
@@ -31,6 +34,12 @@ export default function ChannelList({ channels, selected, onSelect, label }: { c
           </button>
         );
       })}
+      {drops && (
+        <button type="button" aria-current={drops.current ? 'true' : undefined} onClick={drops.onSelect} data-part="channel">
+          {drops.title}
+          {drops.fresh && <span role="img" aria-label={drops.freshLabel} data-part="channel-new" />}
+        </button>
+      )}
     </nav>
   );
 }

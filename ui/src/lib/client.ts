@@ -1,6 +1,6 @@
 import { createSseParser } from './sse.ts';
 import type { SseFrame } from './sse.ts';
-import type { Conversation, Hints, Participant, SkinInfo, Turn } from './types.ts';
+import type { Conversation, DropBox, Hints, Participant, SkinInfo, Turn } from './types.ts';
 
 export type Connection = 'connecting' | 'live' | 'reconnecting' | 'refused';
 
@@ -47,6 +47,8 @@ export function createApi(token: string, fetchImpl: typeof fetch = fetch) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sign }),
       }).then((r) => r.participant),
+    /** What is left on the frequency this person holds. A frequency that is not theirs is a 403, whoever holds it. */
+    drops: (freq: string) => call<DropBox>(`/api/drops?freq=${encodeURIComponent(freq)}`),
     /** A visitor leaves: their time ends now, at the portal too, not only on this page. */
     leave: () => call<{ left: boolean }>('/api/guest/leave', { method: 'POST' }),
     say: (channel: string, text: string) =>

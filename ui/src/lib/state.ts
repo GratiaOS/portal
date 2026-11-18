@@ -18,6 +18,10 @@ export type RoomState = {
   /** Only for a visitor: how long what is said lasts (minutes). The page lets turns fade by it and drops them from memory past it. */
   trailMinutes?: number;
   visitMinutes?: number;
+  /** The frequency this person holds: `undefined` when the portal has no drops, `null` when it has and they hold none. */
+  held?: { freq: string; title: string } | null;
+  /** How many times the room has said that something came on the frequency held: only a reason to ask again, never what came. */
+  dropPulse: number;
 };
 
 export type RoomAction =
@@ -28,6 +32,7 @@ export type RoomAction =
   | { type: 'presence'; presence: Presence }
   | { type: 'participant'; participant: Participant }
   | { type: 'activity'; activity: Activity }
+  | { type: 'drop'; freq: string }
   | { type: 'forget'; before: number };
 
 export const initialState: RoomState = {
@@ -38,6 +43,7 @@ export const initialState: RoomState = {
   turns: {},
   more: {},
   connection: 'connecting',
+  dropPulse: 0,
 };
 
 /** Turns in order of `seq`, each once. The same turn arrives from the stream and from the call that sent it. */
@@ -61,6 +67,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
         you: hello.you,
         trailMinutes: hello.trailMinutes,
         visitMinutes: hello.visitMinutes,
+        held: hello.heldFrequency,
         participants: hello.participants,
         presence: Object.fromEntries(hello.presence.map((p) => [p.participantId, p])),
         thinking: hello.activity.filter((a) => a.state === 'thinking'),
@@ -100,6 +107,10 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
 
     case 'presence':
       return { ...state, presence: { ...state.presence, [action.presence.participantId]: action.presence } };
+
+    case 'drop':
+      // a pulse is for the frequency this person holds and for no other; it is not a turn, and moves nothing of what is said
+      return state.held && state.held.freq === action.freq ? { ...state, dropPulse: state.dropPulse + 1 } : state;
 
     case 'forget': {
       // what has outlived the trail goes from memory: nothing of it is kept anywhere else (no storage), so this is the end of it on this machine

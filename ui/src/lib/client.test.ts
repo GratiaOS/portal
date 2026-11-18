@@ -166,3 +166,20 @@ test('a visitor who leaves tells the portal, with their own key and a POST, so t
   assert.deepEqual(await api.leave(), { left: true });
   assert.deepEqual(seen, [{ url: '/api/guest/leave', method: 'POST', authorization: 'Bearer visitor-key' }]);
 });
+
+test('the box of a frequency is asked for with the key, and what comes back is the box', async () => {
+  const seen: { url: string; auth: string | null }[] = [];
+  const fetchImpl = (url: string | URL | Request, init?: RequestInit) => {
+    seen.push({ url: String(url), auth: new Headers(init?.headers).get('authorization') });
+    return Promise.resolve(Response.json({ freq: '99.6', title: '🎁 CTT', drops: [{ id: '1', type: 'drop', payload: { body: 'hi', format: 'note' }, fadesAt: 5 }] }));
+  };
+  const box = await createApi('tok', fetchImpl as typeof fetch).drops('99.6');
+  assert.deepEqual(seen, [{ url: '/api/drops?freq=99.6', auth: 'Bearer tok' }]);
+  assert.equal(box.title, '🎁 CTT');
+  assert.equal(box.drops[0]?.payload.body, 'hi');
+});
+
+test('a box that is not ours to open is a refusal with its status', async () => {
+  const fetchImpl = () => Promise.resolve(Response.json({ error: 'forbidden' }, { status: 403 }));
+  await assert.rejects(createApi('tok', fetchImpl as typeof fetch).drops('12.3'), (err: unknown) => err instanceof ApiError && err.status === 403);
+});

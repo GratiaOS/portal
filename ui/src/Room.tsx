@@ -3,6 +3,7 @@ import SignalQuality from './components/SignalQuality.tsx';
 import { fadeOf, inTrail, opacityOf } from './lib/trail.ts';
 import ChannelList from './components/ChannelList.tsx';
 import ChannelView from './components/ChannelView.tsx';
+import DropBox from './components/DropBox.tsx';
 import NotifyButton from './components/NotifyButton.tsx';
 import PeopleList from './components/PeopleList.tsx';
 import FieldWhispers from './components/FieldWhispers.tsx';
@@ -14,6 +15,7 @@ import { ApiError } from './lib/client.ts';
 import { rowsOf } from './lib/format.ts';
 import { peopleOf, thinkingIn } from './lib/people.ts';
 import { useArrived } from './lib/arrivals.ts';
+import { DROPS_HASH, wantsDrops } from './lib/drops.ts';
 import { useSpoke } from './lib/spoke.ts';
 import { leavingEndsAVisit } from './lib/guest.ts';
 import { useLang } from './lib/lang.ts';
@@ -23,6 +25,7 @@ import { SAY_FROM, minutesLeft } from './lib/visit.ts';
 import { useInstall } from './lib/install.ts';
 import { stringsFor } from './lib/strings.ts';
 import type { Hints, SkinInfo } from './lib/types.ts';
+import { useDrops } from './lib/useDrops.ts';
 import { useNotify } from './lib/useNotify.ts';
 import { useRoom } from './lib/useRoom.ts';
 import { useSeenWindow } from './lib/useSeenWindow.ts';
@@ -80,9 +83,18 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
     };
   }, []);
 
-  const selected = state.conversations.find((c) => c.id === wanted) ?? state.conversations[0];
+  // the box of drops is a place one holds, apart from the rooms: asked for by a hash no room can have, and only by someone who holds a frequency
+  const onDrops = !!state.held && wantsDrops(wanted);
+  const selected = onDrops ? undefined : (state.conversations.find((c) => c.id === wanted) ?? state.conversations[0]);
   const channelId = selected?.id;
   const { here: looking, start } = useUnread(state, channelId, TITLE);
+  // that something came is a quiet mark and nothing more: no count, no notice, nothing in the title; it goes when the box is looked at
+  const [seenPulse, setSeenPulse] = useState(0);
+  useEffect(() => {
+    if (onDrops && looking) setSeenPulse(state.dropPulse);
+  }, [onDrops, looking, state.dropPulse]);
+  const fresh = !onDrops && state.dropPulse > seenPulse;
+  const box = useDrops(api, state.held, state.dropPulse, onDrops);
   useNotify(state, looking, start, t, !guest, TITLE); // a visitor's messages are never shown as notifications of the computer
 
   // the first page of a channel's history, once, when it is first looked at
@@ -151,7 +163,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
   const trigger = useRef<HTMLButtonElement>(null);
   const side = useRef<HTMLElement>(null);
   const opened = useRef(false);
-  useEffect(() => setSheet(false), [channelId]);
+  useEffect(() => setSheet(false), [channelId, onDrops]);
   useEffect(() => {
     if (sheet) {
       opened.current = true;
@@ -210,7 +222,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
     <div data-part="room" data-sheet={sheet ? '' : undefined}>
       <header data-part="topbar">
         <button type="button" data-part="topbar-room" ref={trigger} aria-expanded={sheet} aria-controls="side" aria-label={t.menu} onClick={() => setSheet((open) => !open)}>
-          <span data-part="topbar-title">{selected?.title}</span>
+          <span data-part="topbar-title">{onDrops ? state.held?.title : selected?.title}</span>
           <span aria-hidden data-part="topbar-caret">
             ▾
           </span>
@@ -234,7 +246,13 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             <p data-part="label">
               {t.channels}
             </p>
-            <ChannelList channels={state.conversations} selected={channelId} onSelect={(id) => (location.hash = encodeURIComponent(id))} label={t.channels} />
+            <ChannelList
+              channels={state.conversations}
+              selected={channelId}
+              onSelect={(id) => (location.hash = encodeURIComponent(id))}
+              label={t.channels}
+              drops={state.held ? { title: state.held.title, current: onDrops, fresh, freshLabel: t.dropNew, onSelect: () => (location.hash = DROPS_HASH) } : undefined}
+            />
           </div>
         )}
         <div data-part="side-foot">
@@ -295,6 +313,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
       </aside>
 
       <main data-part="main">
+        {onDrops && state.held && <DropBox title={state.held.title} drops={box.drops} now={box.now} loaded={box.loaded} failed={box.failed} connection={state.connection} t={t} />}
         {selected && (
           <ChannelView
             channelId={selected.id}

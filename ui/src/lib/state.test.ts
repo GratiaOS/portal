@@ -115,3 +115,30 @@ test('a visitor\'s page lets go of turns older than the trail, and of none else'
   assert.deepEqual(after.turns.guests?.map((t) => t.seq), [2]);
   assert.equal(roomReducer(after, { type: 'forget', before: Date.parse('2026-11-10T10:10:00Z') }), after, 'nothing more to let go: the state is the same one');
 });
+
+test('hello says which frequency a person holds, or that they hold none, or nothing when the portal has no drops', () => {
+  assert.equal(run([{ type: 'hello', hello: hello(1) }]).held, undefined); // the portal says nothing of drops
+  assert.deepEqual(run([{ type: 'hello', hello: { ...hello(1), heldFrequency: { freq: '99.6', title: '🎁 CTT' } } }]).held, { freq: '99.6', title: '🎁 CTT' });
+  assert.equal(run([{ type: 'hello', hello: { ...hello(1), heldFrequency: null } }]).held, null); // none held: not the same as no drops
+  // a portal that stopped having them, seen again after a break
+  const had = run([{ type: 'hello', hello: { ...hello(1), heldFrequency: { freq: '99.6', title: '99.6' } } }]);
+  assert.equal(run([{ type: 'hello', hello: hello(1) }], had).held, undefined);
+});
+
+test('the pulse of a drop is counted for the frequency held, and for no other', () => {
+  const held = run([{ type: 'hello', hello: { ...hello(1), heldFrequency: { freq: '99.6', title: '99.6' } } }]);
+  assert.equal(held.dropPulse, 0);
+  const once = run([{ type: 'drop', freq: '99.6' }], held);
+  assert.equal(once.dropPulse, 1);
+  assert.equal(run([{ type: 'drop', freq: '99.6' }], once).dropPulse, 2);
+  assert.equal(run([{ type: 'drop', freq: '36.9' }], held).dropPulse, 0); // not the frequency this person holds
+  assert.equal(run([{ type: 'drop', freq: '99.6' }]).dropPulse, 0); // nothing held yet
+  assert.equal(run([{ type: 'drop', freq: '99.6' }], run([{ type: 'hello', hello: { ...hello(1), heldFrequency: null } }])).dropPulse, 0);
+});
+
+test('a pulse is not a turn: it moves no cursor and adds nothing to what is said', () => {
+  const held = run([{ type: 'hello', hello: { ...hello(7), heldFrequency: { freq: '99.6', title: '99.6' } } }]);
+  const after = run([{ type: 'drop', freq: '99.6' }], held);
+  assert.equal(after.cursor, held.cursor);
+  assert.deepEqual(after.turns, held.turns);
+});

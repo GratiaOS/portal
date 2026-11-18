@@ -1,7 +1,7 @@
 import { canIn, isLive } from './access.js';
 import { fromAcceptLanguage } from './locale.js';
 import type { DropsConfig, GuestsConfig } from './config.js';
-import { DEFAULT_FORMAT, FREQ_PATTERN, MAX_FORMAT_LENGTH, parseFade } from './drops.js';
+import { DEFAULT_FORMAT, FREQ_PATTERN, MAX_FORMAT_LENGTH, isSigil, parseFade } from './drops.js';
 import { tokenDigest } from './config.js';
 import { GuestRoomFull, admitGuest } from './guests.js';
 import { RoomError, participantId } from './domain.js';
@@ -201,9 +201,10 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       if (busy > 0) throw new HttpError(429, 'too many drops on this frequency just now, wait a little', { 'Retry-After': String(Math.ceil(busy / 1000)) });
 
       if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) throw new HttpError(400, 'payload must be an object');
-      const { body, format } = payload as Record<string, unknown>;
+      const { body, format, sigil } = payload as Record<string, unknown>;
       if (typeof body !== 'string' || !body) throw new HttpError(400, 'payload.body must be text, and not empty');
       if (format !== undefined && (typeof format !== 'string' || !format || format.length > MAX_FORMAT_LENGTH)) throw new HttpError(400, `payload.format must be 1 to ${MAX_FORMAT_LENGTH} characters`);
+      if (sigil !== undefined && !isSigil(sigil)) throw new HttpError(400, 'payload.sigil must be one emoji, and small');
       let fadeMs = drops.fade.defaultMs;
       if (fade !== undefined) {
         const asked = parseFade(fade);
@@ -215,7 +216,7 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       // only now is a holder looked for: for a frequency nobody holds there is nothing to keep, and the answer does not change
       const held = drops.frequencies.find((f) => f.freq === to);
       if (held) {
-        store.addDrop({ freq: to, body, format: (format as string | undefined) ?? DEFAULT_FORMAT, fadeMs }, drops.capacity);
+        store.addDrop({ freq: to, body, format: (format as string | undefined) ?? DEFAULT_FORMAT, ...(sigil === undefined ? {} : { sigil: sigil as string }), fadeMs }, drops.capacity);
         hub.notifyDrop(participantId('human', held.holder), to); // only the frequency, and only to the one who holds it
       }
       return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store', ...across } });
@@ -284,7 +285,7 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       // a frequency held by someone else and one held by no one are told alike, so this does not say which exist
       const held = drops.frequencies.find((f) => f.freq === freq && participantId('human', f.holder) === me.id);
       if (!held) throw new HttpError(403, 'forbidden');
-      return send(200, { freq, title: held.title, drops: store.listDrops(freq).map((d) => ({ id: String(d.id), type: 'drop', payload: { body: d.body, format: d.format }, fadesAt: d.fadesAt })) });
+      return send(200, { freq, title: held.title, drops: store.listDrops(freq).map((d) => ({ id: String(d.id), type: 'drop', payload: { body: d.body, format: d.format, ...(d.sigil ? { sigil: d.sigil } : {}) }, fadesAt: d.fadesAt })) });
     }
 
     // a guest who leaves ends their own time: the key stops opening anything, the stream closes, and the room has one guest fewer

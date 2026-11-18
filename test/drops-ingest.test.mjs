@@ -144,6 +144,16 @@ test('what the packet says of its payload and its fade is kept, a `from` it clai
     assert.deepEqual(Object.keys(kept).sort(), ['body', 'createdAt', 'fadesAt', 'format', 'freq', 'id']);
   }));
 
+test('a packet sealed in Amigo may carry its sigil, one emoji, and a bad one is refused before anything is kept', () =>
+  within(async ({ post, store }) => {
+    await emptyAnswer(await post(drop('99.6', 'sealed', { payload: { sigil: '🦁' } }), { caller: '192.0.2.1' }));
+    await emptyAnswer(await post(drop('99.6', 'plain'), { caller: '192.0.2.2' }));
+    assert.deepEqual(store.listDrops('99.6').map((d) => [d.body, d.sigil]), [['plain', undefined], ['sealed', '🦁']]);
+    const bad = ['', 'a', '🐲🐲', '👨‍👩‍👧‍👦', 7, null, ' '];
+    for (const [i, sigil] of bad.entries()) assert.equal((await post(drop('36.9', 'x', { payload: { sigil } }), { caller: `198.51.100.${i}` })).status, 400, JSON.stringify(sigil));
+    assert.equal(store.countDrops('36.9'), 0);
+  }));
+
 test('a fade longer than the longest is cut to it; one that is not a fade is refused', () =>
   within(async ({ post, store }) => {
     await emptyAnswer(await post(drop('99.6', 'long', { fade: '365d' })));

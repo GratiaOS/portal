@@ -1,4 +1,6 @@
 import { canIn, endOfGuest, mayKnow } from './access.js';
+import type { DropsConfig } from './config.js';
+import { participantId } from './domain.js';
 import type { Conversation, Participant, Presence, Turn } from './domain.js';
 import { frame } from './sse.js';
 import type { RoomStore } from './store.js';
@@ -29,6 +31,8 @@ export type Hello = {
   trailMinutes?: number;
   /** Only to a guest: how long a visit lasts (`guests.minutes`), so that the page can say which of the snails of the visit it is on. */
   visitMinutes?: number;
+  /** Only to a person of the team, and only for a portal that has drops: which frequency they hold (`null` when none), never what is on it. */
+  heldFrequency?: { freq: string; title: string } | null;
 };
 
 export type HubEvents = {
@@ -46,6 +50,8 @@ export type HubOptions = {
   visitMinutes?: number;
   /** The clock a guest's binding is read by, in milliseconds. For tests; defaults to the real one. */
   now?: () => number;
+  /** The drops of the config, so that `hello` can say which frequency a person holds. Without them `hello` says nothing of drops. */
+  drops?: DropsConfig;
 };
 
 /** Those who come and go, and are shown offline when they are not there: people and visitors. A companion is there while the portal runs. */
@@ -70,6 +76,7 @@ export class Hub {
   private readonly trailMinutes?: number;
   private readonly visitMinutes?: number;
   private readonly now: () => number;
+  private readonly drops?: DropsConfig;
 
   constructor(
     private readonly store: RoomStore,
@@ -79,6 +86,7 @@ export class Hub {
     this.trailMinutes = options.trailMinutes;
     this.visitMinutes = options.visitMinutes;
     this.now = options.now ?? Date.now;
+    this.drops = options.drops;
   }
 
   /** Listen to what happens in the room: every turn, from a person or a companion, and every change of presence. */
@@ -128,6 +136,8 @@ export class Hub {
       lastSeq: this.store.lastSeq(),
       ...(participant.kind === 'guest' && this.trailMinutes !== undefined ? { trailMinutes: this.trailMinutes } : {}),
       ...(participant.kind === 'guest' && this.visitMinutes !== undefined ? { visitMinutes: this.visitMinutes } : {}),
+      // the identity of the box, for the page to ask for what is in it: said to the team alone, and only where the portal has drops
+      ...(this.drops && participant.kind !== 'guest' ? { heldFrequency: this.heldBy(participant) } : {}),
     };
     if (this.deliver(connection, frame('hello', hello))) this.replay(connection, lastEventId);
 
@@ -137,6 +147,11 @@ export class Hub {
       open = false;
       this.drop(connection);
     };
+  }
+
+  private heldBy(participant: Participant): { freq: string; title: string } | null {
+    const held = this.drops?.frequencies.find((f) => participantId('human', f.holder) === participant.id);
+    return held ? { freq: held.freq, title: held.title } : null;
   }
 
   /** Says that someone starts or stops working on an answer in a conversation. Saying it twice changes nothing. */

@@ -95,6 +95,15 @@ test('the holder reads what is left on their frequency, newest first, with its t
     assert.equal(drops[1].fadesAt, START + 2 * 3_600_000);
   }));
 
+test('a packet sealed with a sigil says which, and one without says nothing of it', () =>
+  within(async ({ zeus, drop, clock }) => {
+    await drop('99.6', 'plain');
+    clock.t += 5000;
+    await drop('99.6', 'sealed', { payload: { body: 'sealed', sigil: '🦁' } });
+    const { drops } = await (await zeus('/api/drops?freq=99.6')).json();
+    assert.deepEqual(drops.map((d) => d.payload), [{ body: 'sealed', format: 'note', sigil: '🦁' }, { body: 'plain', format: 'note' }]);
+  }));
+
 test('a title is the frequency unless the config says', () =>
   within(async ({ hera }) => {
     assert.deepEqual(await (await hera('/api/drops?freq=36.9')).json(), { freq: '36.9', title: '36.9', drops: [] });
