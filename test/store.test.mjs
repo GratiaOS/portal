@@ -337,7 +337,7 @@ test('a database made before the gap log gets it, and keeps everything it had', 
   assert.equal(after.listGaps().length, 1);
   after.close();
 
-  home.raw((db) => assert.equal(home.version(db), 8));
+  home.raw((db) => assert.equal(home.version(db), 9));
 });
 
 test('a database made before rooms had a kind, and guests had bindings, keys and a ledger, gets them, and every room it had is a team room', (home) => {
@@ -366,7 +366,26 @@ test('a database made before rooms had a kind, and guests had bindings, keys and
   assert.equal(after.spendQuestion({ ledgerId: 'l1', budget: 1, now: 11, perHour: 5 }), 'spent');
   after.close();
 
-  home.raw((db) => assert.equal(home.version(db), 8));
+  home.raw((db) => assert.equal(home.version(db), 9));
+});
+
+test('a database made before drops gets their table, and keeps what it had', (home) => {
+  const before = room(home);
+  say(before, 'general', 'human:zeus', 'de dinainte');
+  before.close();
+
+  home.raw((db) => {
+    db.exec('DROP TABLE drops;'); // as it was before this table existed
+    home.setVersion(db, 8);
+  });
+
+  const after = new RoomStore(home.open(), { now: ticking() });
+  assert.deepEqual(after.listTurns('general').map((t) => t.text), ['de dinainte']);
+  assert.equal(after.addDrop({ freq: '99.6', body: 'x', fadeMs: 86_400_000 }, 50).evicted, 0);
+  assert.equal(after.countDrops('99.6'), 1);
+  after.close();
+
+  home.raw((db) => assert.equal(home.version(db), 9));
 });
 
 // --- what the portal keeps ---

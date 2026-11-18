@@ -2,7 +2,7 @@
 
 **Status**: Draft
 **Scope**: `portal` — a new room type `drop`; one open ingest route; a read-only view
-**Depends on**: rooms and turns (`src/domain.ts`), bearer tokens (`src/tokens.ts`), the per-address limiter of the guest door (`src/limiter.ts`), the live stream (`/api/stream`), forgetting by time (`retention`, guests' `forgetAfterMinutes`)
+**Depends on**: the participants of the config, bearer tokens (`src/tokens.ts`), the per-address limiter of the guest door (`src/limiter.ts`), the live stream (`/api/stream`), forgetting by time (`retention`, guests' `forgetAfterMinutes`)
 
 ---
 
@@ -41,7 +41,8 @@ The shape is small on purpose:
 | Word | Means |
 | --- | --- |
 | `freq` | the address: `99.6`. Where a packet is delivered. |
-| `type: drop` | how a room behaves, and what a packet in it is: written by anyone, read by its holder, gone at its fade. (`type: chat` is how `PlazaDelSol` behaves.) |
+| `type: drop` | how a box behaves, and what a packet in it is: written by anyone, read by its holder, gone at its fade. (`type: chat` is how `PlazaDelSol` behaves.) It is a kind of thing the portal keeps, **not** a value of a room's `kind` (`team`, `guest`): a drop box is not a conversation. |
+| holder | the one person named for a frequency in the config's `drops` block. One holder to a frequency, one frequency to a holder, in this first version. |
 | `@garden` | the callsign Amigo already puts on every link. Not a frequency: *a link*. |
 | the view | what a person with a key opens to read a drop room: a list, one packet at a time. |
 
@@ -145,18 +146,26 @@ holds the frequency (§8) reads it; anyone else gets `403`.
 ## 6. Storage
 
 Drops live in the portal's own store (the Durable Object `Portal` with SQLite on
-Cloudflare, SQLite on Node), as turns in a conversation of type `drop`, with one
-addition: a `fadesAt` on each turn.
+Cloudflare, SQLite on Node), in a table of their own, `drops`: the frequency, the
+format, the body, when it was left and when it goes (`fades_at`). They are **not
+turns**: a turn has a speaker, and its `seq` is the order of what is said and the
+cursor of the stream, and a drop has no one who said it and must not move either.
+The frequencies, their holders and the limits are the `drops` block of the config,
+not rooms, so nothing of `access.ts` or of a room's permissions is touched.
 
-* **Read-time purge.** Every read of a drop room first removes what has
-  `fadesAt < now`, then answers with what is left. A packet that has faded is never
+* **Read-time purge.** Every read of a frequency first removes what has
+  `fades_at <= now` (the second a fade is reached, the drop is gone), then answers
+  with what is left. A packet that has faded is never
   returned, even if nothing has swept it yet.
 * **Passive sweep.** The object's alarm (already used for retention and for
-  forgetting guests) is set to the nearest `fadesAt`, and clears the room when it
-  fires. When nobody reads, the box still empties.
+  forgetting guests) is set to the nearest `fades_at`, and clears what has faded
+  when it fires. When nobody reads, the box still empties. What is let go leaves the
+  file too, as with everything the portal forgets.
+* **A full room lets the oldest go**, in the same step that keeps the new one: first
+  what has faded on that frequency, then, past the capacity, the oldest alive.
 * **Global retention does not keep drops.** `retention.days` and
-  `retention.messages` apply to `chat`; a `drop` turn lives for its own `fade` and
-  no longer.
+  `retention.messages` apply to what is said; a drop lives for its own `fade` and no
+  longer, and is not let go by retention before it.
 
 ---
 
@@ -178,8 +187,8 @@ having been seen.
 
 ## 8. The view
 
-A frequency is **held** by a participant: the config names it (`freq` on a
-participant). The view is read-only: a list of the packets still alive, each
+A frequency is **held** by a participant: the config's `drops.frequencies` names
+it, with its holder (a human) and, if it wants one, a title (`🎁 CTT`). The view is read-only: a list of the packets still alive, each
 opened on its own. There is nothing to write in it and no Reply.
 
 A packet shows its payload, and nothing else of its origin, because there is no
@@ -224,9 +233,10 @@ it, link to link) is for links and does not change. A drop has none.
 
 Decided here, and so not open: the numbers of §5 (an open door, no key, no
 challenge in v1: 8 KB, 15 a minute per address and frequency with a burst of 3, 60
-a minute per frequency, 50 alive); the room field keeps its word and gains a value
-(`kind: 'team' | 'guest' | 'drop'`, `src/authority.ts`); the payload's word is
-`format`; a drop carries no `from`.
+a minute per frequency, 50 alive); a drop is not a room and not a turn: it has its
+own table and its own block of the config, and the room's `kind` is untouched; the
+payload's word is `format`; a drop carries no `from`; a person holds one frequency
+and a frequency has one holder, in this version.
 
 1. **A room that is full lets the oldest go.** At 50 packets alive, the oldest
    is evicted. Whoever writes fast enough to a frequency (60 a minute is its
@@ -234,9 +244,9 @@ a minute per frequency, 50 alive); the room field keeps its word and gains a val
    read. Refusing the new packet instead would let the same writer block the
    frequency. Which harm is smaller is a choice, made here for eviction, that the
    first real use should check.
-2. **Where a frequency is held.** A `freq` on a participant is the least that
-   works. Whether one person holds several, and whether a team may share one, is
-   not decided.
+2. **A frequency held by more than one.** One person to a frequency is the first
+   version. Whether one person may hold several, or a team share one, is not
+   decided.
 3. **A drop on a held frequency that has no one reading.** It fades unread. Is
    that enough, or should the holder be told, once, that something was dropped
    while they were away (the quiet ping, kept until they open)? That would be a

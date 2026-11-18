@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { ALIAS_PATTERN, CONVERSATION_ID_PATTERN, PARTICIPANT_KINDS, isSign, participantId } from './domain.js';
+import { FREQ_PATTERN, parseFade } from './drops.js';
 import { DEFAULT_RETENTION } from './store.js';
 import type { ConversationInput, ParticipantInput, Retention } from './store.js';
 
@@ -79,6 +80,27 @@ export type GuestNovaConfig = {
   perHour: number;
 };
 
+/**
+ * The drops, after RFC 002: a frequency each held by one person, who alone reads what is left on it, and the limits of the open door that
+ * leaves it there. Absent: this portal has none. The numbers are the ones agreed for the first use, not measured ones.
+ */
+export type DropsConfig = {
+  /** One holder to a frequency and one frequency to a holder, in this first version. */
+  frequencies: { freq: string; title: string; holder: string }[];
+  /** The exact origins whose pages may call the ingest route from a browser. Empty: no CORS header at all. */
+  allowOrigins: string[];
+  /** The most a drop's body may be, in bytes; `413` over it. */
+  maxBytes: number;
+  /** Drops from one address to one frequency: this many a minute, and up to `burst` at once. */
+  perAddress: { perMinute: number; burst: number };
+  /** Drops to one frequency from anyone, a minute. */
+  perFrequency: { perMinute: number };
+  /** Drops alive on one frequency; past it the oldest is let go. */
+  capacity: number;
+  /** When a drop goes, in milliseconds: when it does not say, and the longest it may ask for. */
+  fade: { defaultMs: number; maxMs: number };
+};
+
 export type RoomConfig = {
   port: number;
   /** `127.0.0.1` unless said otherwise: anything wider belongs behind TLS. */
@@ -94,6 +116,7 @@ export type RoomConfig = {
   /** What the portal keeps: by default the last 14 days and the last 999 messages of each room, whichever ends first. */
   retention: Retention;
   guests?: GuestsConfig;
+  drops?: DropsConfig;
   /**
    * A file that holds the tokens of the humans, `{ "Alias": "token" }`, apart from the config: the config says who and what, this says
    * who may come in. It can be kept out of version control and read by few (`chmod 600`); the room warns if others can read it.
@@ -179,6 +202,95 @@ function parseGuestNova(raw: unknown, participants: ConfigParticipant[], teamNov
     if (err instanceof ConfigError) throw new ConfigError(err.message.replace(/\bnova\./g, 'guests.nova.'));
     throw err;
   }
+}
+
+const MAX_DROP_FADE_MS = 90 * 86_400_000;
+
+/** One line, up to 40 characters, as a portal's name is: it is the title of a frequency on a page. */
+function dropTitle(value: unknown, name: string): string {
+  if (typeof value !== 'string' || !value.trim() || value.length > 40 || /[\n\r<>]/.test(value)) {
+    throw new ConfigError(`${name} must be one line of 1 to 40 characters, without < or >`);
+  }
+  return value;
+}
+
+/** An exact origin: scheme, host and port, and nothing after (`https://amigo.sh`). No wildcard, since the match is by equality. */
+function dropOrigin(value: unknown, name: string): string {
+  const refusal = new ConfigError(`${name} must be an exact origin such as "https://amigo.sh" (http or https, no path, no *)`);
+  if (typeof value !== 'string' || value.includes('*')) throw refusal;
+  let origin: string;
+  let protocol: string;
+  try {
+    const url = new URL(value);
+    origin = url.origin;
+    protocol = url.protocol;
+  } catch {
+    throw refusal;
+  }
+  if ((protocol !== 'http:' && protocol !== 'https:') || origin !== value) throw refusal;
+  return value;
+}
+
+function dropFade(value: unknown, fallbackMs: number, name: string): number {
+  if (value === undefined) return fallbackMs;
+  const ms = parseFade(value);
+  if (ms === undefined) throw new ConfigError(`${name} must be a fade such as "7d" (a whole number, then m, h or d)`);
+  return ms;
+}
+
+function parseDrops(raw: unknown, participants: ConfigParticipant[]): DropsConfig {
+  if (!isRecord(raw)) throw new ConfigError('drops must be an object');
+  if (!Array.isArray(raw.frequencies) || raw.frequencies.length < 1) throw new ConfigError('drops.frequencies must be a list of at least one frequency');
+  const frequencies = raw.frequencies.map((entry, index) => {
+    const at = `drops.frequencies[${index}]`;
+    if (!isRecord(entry)) throw new ConfigError(`${at} must be an object`);
+    if (typeof entry.freq !== 'string' || !FREQ_PATTERN.test(entry.freq)) {
+      throw new ConfigError(`${at}.freq must be a frequency such as "99.6" (one to three digits, a dot, one digit)`);
+    }
+    const holder = text(entry.holder, `${at}.holder`);
+    const person = participants.find((p) => p.alias.toLowerCase() === holder.toLowerCase());
+    if (!person) throw new ConfigError(`${at}: "${holder}" is not a participant`);
+    if (person.kind !== 'human') throw new ConfigError(`${at}: "${person.alias}" must be a human: a frequency is held by a person`);
+    return { freq: entry.freq, title: entry.title === undefined ? entry.freq : dropTitle(entry.title, `${at}.title`), holder: person.alias };
+  });
+  const seen = new Set<string>();
+  const holders = new Set<string>();
+  for (const { freq, holder } of frequencies) {
+    if (seen.has(freq)) throw new ConfigError(`the frequency "${freq}" is used twice`);
+    seen.add(freq);
+    if (holders.has(holder)) throw new ConfigError(`"${holder}" holds two frequencies: in this version a person holds one`);
+    holders.add(holder);
+  }
+
+  if (raw.allowOrigins !== undefined && !Array.isArray(raw.allowOrigins)) throw new ConfigError('drops.allowOrigins must be a list of origins');
+  const allowOrigins = (raw.allowOrigins ?? []).map((origin: unknown, index: number) => dropOrigin(origin, `drops.allowOrigins[${index}]`));
+  for (const origin of allowOrigins) {
+    if (allowOrigins.indexOf(origin) !== allowOrigins.lastIndexOf(origin)) throw new ConfigError(`drops.allowOrigins: "${origin}" is there twice`);
+  }
+
+  const perAddress = raw.perAddress === undefined ? {} : raw.perAddress;
+  if (!isRecord(perAddress)) throw new ConfigError('drops.perAddress must be an object');
+  const perFrequency = raw.perFrequency === undefined ? {} : raw.perFrequency;
+  if (!isRecord(perFrequency)) throw new ConfigError('drops.perFrequency must be an object');
+  const fade = raw.fade === undefined ? {} : raw.fade;
+  if (!isRecord(fade)) throw new ConfigError('drops.fade must be an object');
+  const maxMs = dropFade(fade.max, 30 * 86_400_000, 'drops.fade.max');
+  if (maxMs > MAX_DROP_FADE_MS) throw new ConfigError('drops.fade.max must be at most 90d: a drop that does not fade soon is not a drop');
+  const defaultMs = dropFade(fade.default, 7 * 86_400_000, 'drops.fade.default');
+  if (defaultMs > maxMs) throw new ConfigError('drops.fade.default must not be longer than drops.fade.max');
+
+  return {
+    frequencies,
+    allowOrigins,
+    maxBytes: whole(raw.maxBytes, 8192, 'drops.maxBytes', { min: 1, max: 32_768 }),
+    perAddress: {
+      perMinute: whole(perAddress.perMinute, 15, 'drops.perAddress.perMinute', { min: 1, max: 1000 }),
+      burst: whole(perAddress.burst, 3, 'drops.perAddress.burst', { min: 1, max: 100 }),
+    },
+    perFrequency: { perMinute: whole(perFrequency.perMinute, 60, 'drops.perFrequency.perMinute', { min: 1, max: 10_000 }) },
+    capacity: whole(raw.capacity, 50, 'drops.capacity', { min: 1, max: 1000 }),
+    fade: { defaultMs, maxMs },
+  };
 }
 
 function roomKind(value: unknown, name: string): 'team' | 'guest' {
@@ -324,6 +436,7 @@ export function parseConfig(raw: unknown, baseDir: string = process.cwd()): Room
     maxStreamsPerParticipant: whole(raw.maxStreamsPerParticipant, 10, 'maxStreamsPerParticipant', { min: 1, max: 100 }),
     retention: parseRetention(raw.retention),
     ...(raw.guests === undefined ? {} : { guests: parseGuests(raw.guests, rooms, participants, nova, baseDir) }),
+    ...(raw.drops === undefined ? {} : { drops: parseDrops(raw.drops, participants) }),
     ...(raw.tokensFile === undefined ? {} : { tokensFile: resolve(baseDir, text(raw.tokensFile, 'tokensFile')) }),
     ...(raw.clientIpHeader === undefined ? {} : { clientIpHeader: text(raw.clientIpHeader, 'clientIpHeader') }),
     ...(raw.staticDir === undefined ? {} : { staticDir: resolve(baseDir, text(raw.staticDir, 'staticDir')) }),

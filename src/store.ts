@@ -3,6 +3,8 @@ import { ALIAS_PATTERN, CONVERSATION_ID_PATTERN, GAP_REASONS, MAX_TEXT_LENGTH, P
 import type { Binding, RoomKind } from './authority.js';
 import type { Conversation, ConversationStatus, GapReason, KnowledgeGap, Participant, ParticipantKind, Turn, Visibility } from './domain.js';
 import { mayKnow } from './access.js';
+import { DEFAULT_FORMAT, FREQ_PATTERN, MAX_FORMAT_LENGTH } from './drops.js';
+import type { Drop } from './drops.js';
 import { extractMentions } from './mentions.js';
 import type { Row, Sqlite } from './sqlite.js';
 
@@ -156,8 +158,24 @@ CREATE INDEX IF NOT EXISTS ledger_by_ledger ON ledger_entries(ledger_id);
 CREATE INDEX IF NOT EXISTS ledger_by_time ON ledger_entries(at);
 `;
 
+// Drops, RFC 002: packets left on a frequency, with no one they came from. Apart from the turns on purpose: a turn has a speaker, and its
+// `seq` is the order of what is said and the cursor of the stream. A drop holds its frequency, the format of its payload, the payload, when it
+// was left and when it goes (`fades_at`, milliseconds); `id` only keeps the order they came in, so the oldest of a frequency is the smallest.
+const SCHEMA_V9 = `
+CREATE TABLE IF NOT EXISTS drops (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  freq       TEXT NOT NULL,
+  format     TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  fades_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS drops_by_freq ON drops(freq, fades_at);
+CREATE INDEX IF NOT EXISTS drops_by_fade ON drops(fades_at);
+`;
+
 /** One entry per version: a database at version n gets the entries from n on, and keeps what it has. */
-const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8];
+const MIGRATIONS: (string | ((db: Sqlite) => void))[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9];
 const SCHEMA_VERSION = MIGRATIONS.length;
 
 function clamp(value: number | undefined, fallback: number, max: number): number {
@@ -637,6 +655,61 @@ export class RoomStore {
     const gone = this.db.run("DELETE FROM turns WHERE created_at <= ? AND conversation_id IN (SELECT id FROM conversations WHERE kind = 'guest')", cutoff).changes;
     if (gone) this.db.afterForget();
     return gone;
+  }
+
+  // --- drops: left by anyone on a frequency, read by whoever holds it, gone at their fade (RFC 002). Nothing here says who left one ---
+
+  /**
+   * Keeps a drop on its frequency and lets go of what the room cannot hold: first what on that frequency has already faded, then, if the
+   * room has more than `capacity` alive, the oldest, so the new one stays. What was let go is said in `evicted`. The route has already checked
+   * the size, the rates and the fade; this refuses only what is not a drop at all.
+   */
+  addDrop(input: { freq: string; body: string; format?: string; fadeMs: number }, capacity: number): { drop: Drop; evicted: number } {
+    const { freq, body, fadeMs } = input;
+    const format = input.format ?? DEFAULT_FORMAT;
+    if (typeof freq !== 'string' || !FREQ_PATTERN.test(freq)) throw new RoomError('invalid', 'a frequency is one to three digits, a dot and one digit');
+    if (typeof body !== 'string' || !body) throw new RoomError('invalid', 'a drop needs something in it');
+    if (typeof format !== 'string' || !format || format.length > MAX_FORMAT_LENGTH) throw new RoomError('invalid', `a format is 1 to ${MAX_FORMAT_LENGTH} characters`);
+    if (!Number.isSafeInteger(fadeMs) || fadeMs < 1) throw new RoomError('invalid', 'a drop fades after a whole number of milliseconds, at least one');
+    if (!Number.isSafeInteger(capacity) || capacity < 1) throw new RoomError('invalid', 'a room holds at least one drop');
+    const now = this.now().getTime();
+    const done = this.transaction(() => {
+      const faded = this.db.run('DELETE FROM drops WHERE freq = ? AND fades_at <= ?', freq, now).changes;
+      const { lastInsertRowid } = this.db.run('INSERT INTO drops (freq, format, body, created_at, fades_at) VALUES (?, ?, ?, ?, ?)', freq, format, body, now, now + fadeMs);
+      const held = (this.one('SELECT COUNT(*) AS n FROM drops WHERE freq = ?', freq) as { n: number }).n;
+      const evicted = held > capacity ? this.db.run('DELETE FROM drops WHERE id IN (SELECT id FROM drops WHERE freq = ? ORDER BY id ASC LIMIT ?)', freq, held - capacity).changes : 0;
+      return { drop: { id: lastInsertRowid, freq, format, body, createdAt: now, fadesAt: now + fadeMs }, evicted, gone: faded + evicted };
+    });
+    // what was let go leaves the file too, as with everything the portal forgets
+    if (done.gone) this.db.afterForget();
+    return { drop: done.drop, evicted: done.evicted };
+  }
+
+  /** What is alive on a frequency, the newest first. A read lets go of what has faded there first: the second a fade is reached, the drop is gone. */
+  listDrops(freq: string): Drop[] {
+    const now = this.now().getTime();
+    if (this.db.run('DELETE FROM drops WHERE freq = ? AND fades_at <= ?', freq, now).changes) this.db.afterForget();
+    return this.db
+      .all('SELECT id, freq, format, body, created_at, fades_at FROM drops WHERE freq = ? ORDER BY id DESC', freq)
+      .map((row) => ({ id: row.id as number, freq: row.freq as string, format: row.format as string, body: row.body as string, createdAt: row.created_at as number, fadesAt: row.fades_at as number }));
+  }
+
+  /** How many drops a frequency holds as rows, the ones that have faded and not yet been let go among them. */
+  countDrops(freq: string): number {
+    return (this.one('SELECT COUNT(*) AS n FROM drops WHERE freq = ?', freq) as { n: number }).n;
+  }
+
+  /** Lets go of everything that has faded, on every frequency, for the alarm to do when nobody reads. Says how many. */
+  purgeDrops(): number {
+    const gone = this.db.run('DELETE FROM drops WHERE fades_at <= ?', this.now().getTime()).changes;
+    if (gone) this.db.afterForget();
+    return gone;
+  }
+
+  /** When the nearest drop fades, in milliseconds, for the alarm to be set at; `null` when there is none. */
+  nextDropFade(): number | null {
+    const row = this.one('SELECT MIN(fades_at) AS at FROM drops') as { at: number | null };
+    return row.at;
   }
 
   /** Whether a turn is still kept: `seq` is never given again, so a turn that is gone stays gone. */
