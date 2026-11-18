@@ -84,16 +84,18 @@ Sent by a client with a key:
 | `to` | required; `^\d{1,3}\.\d$`; the frequency of the room it lands in |
 | `fade` | optional; `^\d+(m\|h\|d)$`; default `7d`; capped by the portal (default maximum `30d`) |
 | `payload.body` | required; a string, at most 32 KB, like a room message |
-| `payload.kind` | optional; default `"note"` (text or markdown). Reserved for later (a patch, an invite, a JSON object) so the route does not change when something new is carried. A `kind` a client does not know is shown as plain text, and never blocks the room. |
-| `answer` | optional `true`; set only by the view's own Reply (§8) |
+| `payload.format` | optional; default `"note"` (text or markdown). Reserved for later (a patch, an invite, a JSON object) so the route does not change when something new is carried. A `format` a client does not know is ignored: it shows `body` as plain text, and never blocks the room. |
+| `oneway` | optional `true`; the sender wants no answer, so the packet gets no `from` |
 
 The route is the `drop` type, so the body does not repeat it. A packet read back
 carries `type: "drop"`, `from` (when it has one) and `fadesAt`, all set by the
 portal.
 
-`from` is **never taken from the client**. The portal sets it, from the
-frequency the token's owner holds, and only when the packet is an `answer`. A
-person cannot claim a frequency that is not theirs.
+`from` is **never taken from the client**. The portal sets it on every packet,
+from the frequency the token's owner holds, unless the sender asks for `oneway`
+or holds no frequency. A person cannot claim a frequency that is not theirs. A
+new drop and a Reply are the same send: there is no flag for either, and no branch
+in the view or in this spec.
 
 A packet to a frequency nobody holds is accepted and fades. The portal never
 checks that anyone listens.
@@ -171,10 +173,12 @@ payload and no sender: a person who wants to be known signs the text, as in
 
 Reply appears on a packet only when it has a `from`. A click opens the same box a
 person writes in, with the destination already filled; sending posts to
-`/api/drops/ingest` with `to = from` and `answer: true`. The portal then sets the
-new packet's `from` to the frequency the replier holds, so the answer can be
-answered, as long as both want to. Nothing links the two packets after they are
-sent.
+`/api/drops/ingest` with `to = from`, like any other send. The portal sets the new
+packet's `from` to the frequency the replier holds, so the answer can be answered,
+as long as both want to. Nothing links the two packets after they are sent.
+
+A person who wants a single-direction drop (a new one or an answer) chooses
+`oneway`, once, in the box.
 
 A packet with no `from` is read and fades. That is the whole of it.
 
@@ -207,23 +211,24 @@ on.
 * No sender identity beyond what the text says and what `from` allows.
 * No push notification with content.
 * No path from Amigo to a portal: not a browser call, not a Worker proxy, not a token issued to Amigo.
-* No payload kinds beyond `note` yet; `kind` is a place kept for them.
+* No payload formats beyond `note` yet; `format` is a place kept for them.
 
 ---
 
 ## 11. Open questions
 
-1. **`kind` and `type` in code.** The portal's room field is `kind` (`'team' | 'guest'`, `src/authority.ts`), and this RFC puts a `kind` in the payload. Two things with one name in one codebase. Either the room field is renamed `type` and `drop` joins it, or the payload's word changes. Decide before the first line of code.
-2. **Where a frequency is held.** A `freq` on a participant is the least that
-   works. Whether one person holds several, and whether a team may share one, is
-   not decided.
-3. **A `from` on a new drop.** Here `from` is set only for a Reply. A new drop
-   written in the view by someone with a key would have none, so the first
-   packet between two people with keys could not be answered. Whether anything
-   sent from the view should carry `from` is a choice to make, not to find later.
-4. **A token for a CLI.** There is no CLI in the repositories (`amigo-fm` is the
+Decided here, and so not open: the room field keeps its word and gains a value
+(`kind: 'team' | 'guest' | 'drop'`, `src/authority.ts`), the payload's word is
+`format`, and `type: "drop"` is only on what is read back; and `from` is set on
+every send unless it is `oneway`.
+
+1. **Where a frequency is held, and which one is `from`.** A `freq` on a
+   participant is the least that works. Whether one person holds several (then
+   which one a send uses, or whether the box asks), and whether a team may share
+   one, is not decided.
+2. **A token for a CLI.** There is no CLI in the repositories (`amigo-fm` is the
    FM band, not a sender). If one comes it is another client of §5 with a token in
    its config; a token that may write and may not read would make a stolen one
    worth much less. Not designed.
-5. **Rate.** The per-person message limit applies. A frequency that receives from
+3. **Rate.** The per-person message limit applies. A frequency that receives from
    many people may need its own ceiling.
