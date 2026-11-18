@@ -265,6 +265,20 @@ for (const [where, make] of Object.entries(HOMES)) {
     assert.equal(store.purgeDrops(), 1);
   });
 
+  test('what was left lately is told by frequency and time, and nothing of who left it', (home) => {
+    const { store, now } = open(home);
+    store.addDrop({ freq: '99.6', body: 'old', fadeMs: DAY }, 50);
+    now.advance(70_000);
+    store.addDrop({ freq: '99.6', body: 'a', fadeMs: DAY }, 50);
+    store.addDrop({ freq: '36.9', body: 'b', fadeMs: DAY }, 50);
+    const since = now.at() - 60_000;
+    assert.deepEqual(store.droppedSince(since), [
+      { freq: '99.6', createdAt: now.at() },
+      { freq: '36.9', createdAt: now.at() },
+    ]); // the one before the minute is not in it
+    assert.deepEqual(store.droppedSince(now.at()), []); // and the boundary is after, as the limiter's window is
+  });
+
   test('the next fade is the nearest one, for the alarm to be set at', (home) => {
     const { store, now } = open(home);
     assert.equal(store.nextDropFade(), null);

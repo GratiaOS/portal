@@ -96,7 +96,7 @@ below are the only guards, and they are all the portal's own:
 
 | Limit | Value | Over it |
 | --- | --- | --- |
-| body (`payload.body`) | 8 KB | `413` |
+| body (`payload.body`) | 8 KB of UTF-8, and the whole request that and 512 bytes for its envelope | `413` |
 | rate per (address, frequency) | 15 a minute, burst 3 | `429` with `Retry-After` |
 | rate per frequency | 60 a minute | `429` with `Retry-After` |
 | packets alive in a room | 50 | the oldest is let go, the new one is kept |
@@ -112,8 +112,26 @@ the config and not a constant in the code.
   drop for a holder who is away waits for them until it fades.
 * **The rates count before the holder is looked up**, so a `429` does not tell
   held from unheld either.
-* The address limiter is the guest door's (`src/limiter.ts`); the per-frequency
-  one is the same kind of counter, keyed by frequency.
+* **The order**, so that nothing says which frequencies exist: the origin (below);
+  the kind and size of the request (`415`, `413`); whether `to` is a frequency (`400`,
+  and this is the only refusal that counts against no one, since it has no
+  frequency to count against); the limits, counted from here on even if the rest of
+  the packet is wrong, so a flood of bad packets is limited too; what the payload
+  and the fade say (`400`, `413`); and only then the holder.
+* **The limiter for an address** is a token bucket (`TokenBucket` in
+  `src/limiter.ts`): 3 at once, then one every 4 seconds, for each (address,
+  frequency). It is kept in memory and nowhere else, since nothing here keeps an
+  address, so it is forgotten when the portal's object sleeps; a writer who waits
+  for that may get a few more than 15 in a minute. The one for a frequency is a
+  sliding window, and is counted again, when the handler begins, from what the
+  store kept (the time of each drop, nothing of who left it); drops already pushed
+  out of a full room are not in it, so after a restart it may allow a few more than
+  60 in the minute.
+* **The address** is what the home says it is: the socket's, or the header
+  `clientIpHeader` names behind a proxy. Without a proxy that names it, every caller
+  has the proxy's address and shares one bucket.
+* **A fade** longer than the longest the config allows is cut to it, not refused;
+  one that is not a fade (`7w`) is `400`.
 * Other refusals as elsewhere in the API: `400` bad input, `415` not JSON.
 
 ### Cross-origin, for Amigo's page
@@ -129,7 +147,13 @@ packet. For that, and only for that route, the portal answers cross-origin:
   `Access-Control-Allow-Origin: <that origin>`, `Access-Control-Allow-Methods:
   POST, OPTIONS`, `Access-Control-Allow-Headers: content-type`,
   `Access-Control-Max-Age: 600` and `Vary: Origin`; for an origin not in the list,
-  no CORS header and a plain `403`. The `POST` answer carries `Allow-Origin` and `Vary`.
+  or none, no CORS header and a plain `403`.
+* A `POST` that carries an `Origin` not in the list gets the same `403`, and is
+  counted against no one; one with no `Origin` (from `curl`, a script) goes through
+  as any other. With an empty list, a browser is turned away and `curl` is not.
+* Every answer to a `POST` from an allowed origin, a refusal too, carries
+  `Access-Control-Allow-Origin`, `Vary: Origin` and `Access-Control-Expose-Headers:
+  Retry-After`, so that the page can read why and for how long.
 * No credentials, no cookies, no `Authorization`: the request has none to carry.
   CORS is a convenience for a page, not a defence: the door is open to anything
   that is not a browser, and the limits above are what holds.
