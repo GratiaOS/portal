@@ -4,6 +4,7 @@ export * from './access.js';
 export * from './guests.js';
 export * from './locale.js';
 export * from './mentions.js';
+export * from './drops.js';
 export * from './store.js';
 export * from './sqlite.js';
 export * from './sqlite-node.js';
