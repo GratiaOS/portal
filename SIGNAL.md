@@ -2,7 +2,7 @@
 
 Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
-**Verified:** 2026-11-16, against `main@bfd5d52`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that touch this file: a pull request that changes the signal has kept it true). It warns, it never blocks.
+**Verified:** 2026-11-18, against `main@775a0e2`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that touch this file: a pull request that changes the signal has kept it true). It warns, it never blocks.
 
 ## Now
 
@@ -32,6 +32,8 @@ Nothing is lined up in the repository. Three things are worth doing when someone
 3. **Look at the gate and the visitor page where they were not looked at**: the gate's amounts (crown, sky, roots) on a real screen of each size, Spanish and Romanian by eye, Safari and Firefox, and a screen reader on the sheet. A phone and the three looks have been looked at (measured at 375 px, and by hand on a phone and a PC).
 
 Written, not built: [RFC 001](docs/rfc-001-presence-physics.md), a draft of rooms where presence is rhythm and space and leaves no residue (`breath`, `quiet`, `practical`, `open`); it is for discussion, and nothing in it is implemented. Its section 17 says where our two rooms lean, and why no `type` goes into a config until the hub can keep it: the RFC assumes a WebSocket and a signal with no identity, the portal streams over SSE and keeps presence by participant. What is left of section 11 in the present rooms (the named dots, the count in the tab's title, the clock on a message) is weighed one by one, and none of it needs a WebSocket.
+
+Also written, not built: [RFC 002](docs/rfc-002-drop.md), a draft of a one-way box on a frequency (`drop`): Amigo drops a signal with no sender and no key, the portal's view is read-only for the holder of the frequency (no Reply, no thread), and a packet fades. Its door is open, so what keeps it from becoming a flood (a body of a few KB, a rate per address and per frequency, a cap on packets alive in a room) is its first open question, and the numbers are not measured; nothing in it is implemented.
 
 Only talked about, not lined up: other kinds of room than a team's and a visitors' (voice, a canvas), a way for a program outside the process to listen to a room (`docs/how-it-works.md` says where it would touch), and a signal that each portal says of itself rather than one for the repository.
 
