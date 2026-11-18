@@ -33,3 +33,12 @@ export function parseFade(value: unknown): number | undefined {
   const ms = Number(found[1]) * FADE_UNIT_MS[found[2] as keyof typeof FADE_UNIT_MS];
   return Number.isSafeInteger(ms) ? ms : undefined;
 }
+
+/**
+ * When the next alarm goes (milliseconds), for a home whose alarm is one: the nearest of the pace it lets go of other things at (`periodicMs`
+ * from now, when it has one) and the time the nearest drop fades (`nextFade`, when there is one). `null` when there is nothing to wake for.
+ */
+export function nextAlarm(input: { now: number; periodicMs?: number; nextFade: number | null }): number | null {
+  const times = [input.periodicMs === undefined ? undefined : input.now + input.periodicMs, input.nextFade ?? undefined].filter((t): t is number => t !== undefined);
+  return times.length ? Math.min(...times) : null;
+}

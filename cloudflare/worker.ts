@@ -12,6 +12,7 @@ import type { GuestsConfig, NovaConfig, RoomConfig } from '../src/config.ts';
 import { guestFacts, roomFacts } from '../src/facts.ts';
 import { Hub } from '../src/hub.ts';
 import { fixedKnowledge } from '../src/knowledge-files.ts';
+import { nextAlarm } from '../src/drops.ts';
 import { createNova } from '../src/nova.ts';
 import { pageHeaders } from '../src/page-headers.ts';
 import { objectSqlite } from '../src/sqlite-object.ts';
@@ -52,6 +53,7 @@ export class Portal extends DurableObject<Env> {
   private retention?: Retention;
   private guestsForgetAfterMs?: number;
   private guestsTrailMs?: number;
+  private hasDrops = false;
 
   /** Opened once each time the object wakes: who and where from the config, what is past keeping let go, and the handler. */
   private open(): (request: Request) => Promise<Response> {
@@ -64,8 +66,10 @@ export class Portal extends DurableObject<Env> {
     this.retention = config.retention;
     this.guestsForgetAfterMs = config.guests ? config.guests.forgetAfterMinutes * 60_000 : undefined;
     this.guestsTrailMs = config.guests ? config.guests.trailMinutes * 60_000 : undefined;
+    this.hasDrops = config.drops !== undefined;
     this.forget();
-    if (config.retention !== 'forever' || this.guestsForgetAfterMs) void this.ctx.storage.getAlarm().then((at) => (at === null ? this.ctx.storage.setAlarm(Date.now() + this.every()) : undefined));
+    // an alarm is set when there is something to wake for: the pace of letting go, and the time the nearest drop fades
+    void this.ctx.storage.getAlarm().then((at) => (at === null ? this.arrange() : undefined));
 
     const hub = new Hub(store, { trailMinutes: config.guests?.trailMinutes, visitMinutes: config.guests?.minutes });
     if (config.nova) this.wakeNova(config, config.nova, store, hub);
@@ -79,6 +83,7 @@ export class Portal extends DurableObject<Env> {
       callerFromHome: true,
       name: config.name,
       guests: config.guests,
+      drops: config.drops,
       hints: config.nova ? { companion: config.nova.alias, examples: config.nova.examples } : undefined,
       // a guest is told of her companion, with her examples and never the team's, as in Node
       guestHints: config.guests?.nova.enabled && config.guests.nova.nova ? { companion: config.guests.nova.nova.alias, examples: config.guests.nova.nova.examples } : undefined,
@@ -137,11 +142,33 @@ export class Portal extends DurableObject<Env> {
     return Math.min(base, this.guestsTrailMs ?? base, this.guestsForgetAfterMs ?? base);
   }
 
+  /** Whether there is a pace of letting go: a portal that keeps for ever and has no guests has none, and then only a drop's fade wakes it. */
+  private paced(): boolean {
+    return this.retention !== 'forever' || this.guestsForgetAfterMs !== undefined;
+  }
+
+  /** Sets the alarm to the nearest of the pace and the fade of the nearest drop; to nothing when there is neither. */
+  private async arrange(): Promise<void> {
+    const at = nextAlarm({ now: Date.now(), periodicMs: this.paced() ? this.every() : undefined, nextFade: this.hasDrops && this.store ? this.store.nextDropFade() : null });
+    if (at !== null) await this.ctx.storage.setAlarm(at);
+  }
+
+  /** After a drop is taken: the alarm comes forward to its fade if that is before the alarm that is set; it is never put back. */
+  private async pullIn(): Promise<void> {
+    const next = this.store?.nextDropFade() ?? null;
+    if (next === null) return;
+    const set = await this.ctx.storage.getAlarm();
+    if (set === null || next < set) await this.ctx.storage.setAlarm(next);
+  }
+
   // what the portal no longer keeps goes now, and then at every alarm; a number in the log, never a message
   private forget(): void {
     if (!this.store || !this.retention) return;
     const { turns, gaps } = this.store.forget(this.retention);
     if (turns || gaps) console.log(`portal: let go of ${turns} message(s) and ${gaps} question(s) past what it keeps`);
+    // what has faded is gone from the file, read or not
+    const gone = this.store.purgeDrops();
+    if (gone) console.log(`portal: ${gone} drop(s) faded and were let go`);
     // the guest room ends by absence, whatever the retention of the team says
     if (this.guestsForgetAfterMs) {
       const faded = this.store.forgetGuestTrail(this.guestsTrailMs ?? 0);
@@ -153,7 +180,12 @@ export class Portal extends DurableObject<Env> {
 
   async fetch(request: Request): Promise<Response> {
     try {
-      return await this.open()(request);
+      const response = await this.open()(request);
+      // a drop was taken: the alarm must not be later than its fade
+      if (this.hasDrops && request.method === 'POST' && new URL(request.url).pathname === '/api/drops/ingest') {
+        await this.pullIn().catch((err: unknown) => console.error('portal: could not set the alarm for a drop', err));
+      }
+      return response;
     } catch (err) {
       // a config that cannot be read says why in the log, and the caller gets a calm 503
       console.error('portal: cannot open', err instanceof ConfigError ? err.message : err);
@@ -164,7 +196,7 @@ export class Portal extends DurableObject<Env> {
   async alarm(): Promise<void> {
     this.open();
     this.forget();
-    if (this.retention !== 'forever' || this.guestsForgetAfterMs) await this.ctx.storage.setAlarm(Date.now() + this.every());
+    await this.arrange();
   }
 }
 

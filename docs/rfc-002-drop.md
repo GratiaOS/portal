@@ -96,7 +96,7 @@ below are the only guards, and they are all the portal's own:
 
 | Limit | Value | Over it |
 | --- | --- | --- |
-| body (`payload.body`) | 8 KB | `413` |
+| body (`payload.body`) | 8 KB of UTF-8, and the whole request that and 512 bytes for its envelope | `413` |
 | rate per (address, frequency) | 15 a minute, burst 3 | `429` with `Retry-After` |
 | rate per frequency | 60 a minute | `429` with `Retry-After` |
 | packets alive in a room | 50 | the oldest is let go, the new one is kept |
@@ -112,8 +112,28 @@ the config and not a constant in the code.
   drop for a holder who is away waits for them until it fades.
 * **The rates count before the holder is looked up**, so a `429` does not tell
   held from unheld either.
-* The address limiter is the guest door's (`src/limiter.ts`); the per-frequency
-  one is the same kind of counter, keyed by frequency.
+* **The order**, so that nothing says which frequencies exist: the origin (below);
+  the kind and size of the request (`415`, `413`); whether `to` is a frequency (`400`,
+  and this is the only refusal that counts against no one, since it has no
+  frequency to count against); the limits, counted from here on even if the rest of
+  the packet is wrong, so a flood of bad packets is limited too; what the payload
+  and the fade say (`400`, `413`); and only then the holder.
+* **The limiter for an address** is a token bucket (`TokenBucket` in
+  `src/limiter.ts`): 3 at once, then one every 4 seconds, for each (address,
+  frequency). The one for a frequency is a sliding window of 60 a minute. **Both are
+  kept in memory and nowhere else, and both begin again, for every frequency alike,
+  when the handler does** (when the object wakes, or the portal restarts). They are
+  not counted again from the store, on purpose: the store keeps only what was taken
+  for a held frequency, so counting again would make the number of answers before
+  the first `429` say whether a frequency is held, which is what the same `204` is
+  there not to say. The cost is plain: after a restart a writer has a fresh minute,
+  and one who waits for the object to sleep may get a few more than the numbers
+  above.
+* **The address** is what the home says it is: the socket's, or the header
+  `clientIpHeader` names behind a proxy. Without a proxy that names it, every caller
+  has the proxy's address and shares one bucket.
+* **A fade** longer than the longest the config allows is cut to it, not refused;
+  one that is not a fade (`7w`) is `400`.
 * Other refusals as elsewhere in the API: `400` bad input, `415` not JSON.
 
 ### Cross-origin, for Amigo's page
@@ -129,7 +149,13 @@ packet. For that, and only for that route, the portal answers cross-origin:
   `Access-Control-Allow-Origin: <that origin>`, `Access-Control-Allow-Methods:
   POST, OPTIONS`, `Access-Control-Allow-Headers: content-type`,
   `Access-Control-Max-Age: 600` and `Vary: Origin`; for an origin not in the list,
-  no CORS header and a plain `403`. The `POST` answer carries `Allow-Origin` and `Vary`.
+  or none, no CORS header and a plain `403`.
+* A `POST` that carries an `Origin` not in the list gets the same `403`, and is
+  counted against no one; one with no `Origin` (from `curl`, a script) goes through
+  as any other. With an empty list, a browser is turned away and `curl` is not.
+* Every answer to a `POST` from an allowed origin, a refusal too, carries
+  `Access-Control-Allow-Origin`, `Vary: Origin` and `Access-Control-Expose-Headers:
+  Retry-After`, so that the page can read why and for how long.
 * No credentials, no cookies, no `Authorization`: the request has none to carry.
   CORS is a convenience for a page, not a defence: the door is open to anything
   that is not a browser, and the limits above are what holds.
@@ -157,9 +183,13 @@ not rooms, so nothing of `access.ts` or of a room's permissions is touched.
   `fades_at <= now` (the second a fade is reached, the drop is gone), then answers
   with what is left. A packet that has faded is never
   returned, even if nothing has swept it yet.
-* **Passive sweep.** The object's alarm (already used for retention and for
-  forgetting guests) is set to the nearest `fades_at`, and clears what has faded
-  when it fires. When nobody reads, the box still empties. What is let go leaves the
+* **Passive sweep.** When nobody reads, the box still empties. On Node, the timer
+  that lets go of what is past (every ten minutes; every minute at most when there
+  is a `drops` block, since a fade is at least a minute) lets go of what has faded,
+  and so does the start. On Cloudflare, the object's alarm is set to the nearest of
+  its pace and the nearest `fades_at`, brought forward when a drop is taken whose
+  fade is before it, and set again after each; a portal that keeps for ever and has
+  no guests has no pace, and then only a fade wakes it. What is let go leaves the
   file too, as with everything the portal forgets.
 * **A full room lets the oldest go**, in the same step that keeps the new one: first
   what has faded on that frequency, then, past the capacity, the oldest alive.

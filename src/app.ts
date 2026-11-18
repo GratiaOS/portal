@@ -1,12 +1,13 @@
 import { canIn, isLive } from './access.js';
 import { fromAcceptLanguage } from './locale.js';
-import type { GuestsConfig } from './config.js';
+import type { DropsConfig, GuestsConfig } from './config.js';
+import { DEFAULT_FORMAT, FREQ_PATTERN, MAX_FORMAT_LENGTH, parseFade } from './drops.js';
 import { tokenDigest } from './config.js';
 import { GuestRoomFull, admitGuest } from './guests.js';
 import { RoomError } from './domain.js';
 import type { Participant } from './domain.js';
 import type { Hub } from './hub.js';
-import { SlidingWindowLimiter } from './limiter.js';
+import { SlidingWindowLimiter, TokenBucket } from './limiter.js';
 import { SKIN_CONTRACT } from './skins.js';
 import { manifestFor } from './manifest.js';
 import type { RoomStore } from './store.js';
@@ -33,6 +34,8 @@ export type AppOptions = {
   callerFromHome?: boolean;
   /** Where a visitor may come in without a key of their own (`POST /api/guest`). Absent: the door is not there. */
   guests?: GuestsConfig;
+  /** The drops of RFC 002: who holds which frequency, and the limits of the door that leaves them there. Absent: there is no such door. */
+  drops?: DropsConfig;
   /** What the box where a guest writes may say: only when Nova is on for guests, and their examples, never the team's. */
   guestHints?: { companion: string; examples: string[] };
   /** What the portal is called (`name` in the config): in its manifest and in its health. */
@@ -134,6 +137,14 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
   for (const { speakerId, createdAt } of store.spokenSince(since)) limiter.remember(speakerId, Date.parse(createdAt));
   const openStreams = new Map<string, number>();
 
+  // the open door of RFC 002: a few at once from one address to one frequency and then a pace, and a ceiling for the frequency from anyone.
+  // Both are kept in memory and nowhere else, and both begin again when the handler does, for every frequency alike. They are not counted
+  // again from the store: it keeps only what was taken for a frequency that is held, so counting again would make the number of answers
+  // before the first 429 say whether a frequency is held, which is what the same `204` is there not to say.
+  const drops = options.drops;
+  const dropsFromAddress = drops ? new TokenBucket(drops.perAddress.burst, drops.perAddress.perMinute, options.now) : undefined;
+  const dropsToFrequency = drops ? new SlidingWindowLimiter(drops.perFrequency.perMinute, 60_000, options.now) : undefined;
+
   // wrong keys are counted per caller (the home says it in `CALLER_HEADER`); a caller over the limit is turned away
   // before the key is even looked at, the right one included, so guessing gains nothing from going faster
   const authFailureLimit = options.authFailures ?? { attempts: 10, windowMs: 60_000 };
@@ -154,6 +165,60 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
     // a guest whose time is over is known, and let in nowhere: not a wrong key, so it is not counted as one, and it opens no stream
     if (!isLive(store, participant, clock())) throw new HttpError(401, 'unauthorized', { 'WWW-Authenticate': 'Bearer realm="portal"' });
     return participant;
+  }
+
+  /**
+   * `POST /api/drops/ingest`: the one door that is open (RFC 002). In this order, so that nothing says which frequencies exist: the origin,
+   * the kind and size of the request, whether there is a frequency, the limits (counted before anyone looks for a holder), what the packet
+   * says, and only then the holder. The answer is the same `204` for a frequency that is held and one that is not.
+   */
+  async function ingest(request: Request): Promise<Response> {
+    if (!drops || !dropsFromAddress || !dropsToFrequency) throw new HttpError(404, 'not found');
+    only(request, 'POST', 'OPTIONS');
+    // across origins, for exact ones only: a page that is not listed is turned away, and so is a preflight with no origin to answer
+    const origin = request.headers.get('origin');
+    const allowed = origin !== null && drops.allowOrigins.includes(origin);
+    if (request.method === 'OPTIONS') {
+      if (!allowed) throw new HttpError(403, 'forbidden');
+      return new Response(null, {
+        status: 204,
+        headers: { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Max-Age': '600', Vary: 'Origin', 'Cache-Control': 'no-store' },
+      });
+    }
+    if (origin !== null && !allowed) throw new HttpError(403, 'forbidden');
+    // with the origin back on every answer, a refusal too, and Retry-After readable by the page
+    const across: Record<string, string> = allowed ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Expose-Headers': 'Retry-After', Vary: 'Origin' } : {};
+    try {
+      const packet = await readJson(request, drops.maxBytes + 512);
+      if (typeof packet !== 'object' || packet === null || Array.isArray(packet)) throw new HttpError(400, 'a drop is a JSON object');
+      const { to, payload, fade } = packet as Record<string, unknown>;
+      if (typeof to !== 'string' || !FREQ_PATTERN.test(to)) throw new HttpError(400, 'to must be a frequency such as "99.6"');
+
+      const caller = (options.callerFromHome && request.headers.get(CALLER_HEADER)) || 'unknown';
+      const slow = dropsFromAddress.take(`${caller}|${to}`);
+      if (slow > 0) throw new HttpError(429, 'too many drops from here just now, wait a little', { 'Retry-After': String(Math.ceil(slow / 1000)) });
+      const busy = dropsToFrequency.take(to);
+      if (busy > 0) throw new HttpError(429, 'too many drops on this frequency just now, wait a little', { 'Retry-After': String(Math.ceil(busy / 1000)) });
+
+      if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) throw new HttpError(400, 'payload must be an object');
+      const { body, format } = payload as Record<string, unknown>;
+      if (typeof body !== 'string' || !body) throw new HttpError(400, 'payload.body must be text, and not empty');
+      if (format !== undefined && (typeof format !== 'string' || !format || format.length > MAX_FORMAT_LENGTH)) throw new HttpError(400, `payload.format must be 1 to ${MAX_FORMAT_LENGTH} characters`);
+      let fadeMs = drops.fade.defaultMs;
+      if (fade !== undefined) {
+        const asked = parseFade(fade);
+        if (asked === undefined) throw new HttpError(400, 'fade must be a whole number and m, h or d, such as "7d"');
+        fadeMs = Math.min(asked, drops.fade.maxMs); // a longer one is cut to the longest, not refused
+      }
+      if (new TextEncoder().encode(body).byteLength > drops.maxBytes) throw new HttpError(413, 'body is too large', { Connection: 'close' });
+
+      // only now is a holder looked for: for a frequency nobody holds there is nothing to keep, and the answer does not change
+      if (drops.frequencies.some((f) => f.freq === to)) store.addDrop({ freq: to, body, format: (format as string | undefined) ?? DEFAULT_FORMAT, fadeMs }, drops.capacity);
+      return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store', ...across } });
+    } catch (err) {
+      if (err instanceof HttpError) throw new HttpError(err.status, err.message, { ...err.headers, ...across });
+      throw err;
+    }
   }
 
   async function handle(request: Request): Promise<Response> {
@@ -180,6 +245,8 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       if (options.pages) return options.pages(request);
       throw new HttpError(404, 'not found');
     }
+
+    if (path === '/api/drops/ingest') return ingest(request);
 
     // the one door with no key: a visitor comes in, and is given a name, a room and a key for a while
     if (path === '/api/guest' && options.guests && entrances) {
