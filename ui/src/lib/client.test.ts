@@ -183,3 +183,22 @@ test('a box that is not ours to open is a refusal with its status', async () => 
   const fetchImpl = () => Promise.resolve(Response.json({ error: 'forbidden' }, { status: 403 }));
   await assert.rejects(createApi('tok', fetchImpl as typeof fetch).drops('12.3'), (err: unknown) => err instanceof ApiError && err.status === 403);
 });
+
+test('a burn is a DELETE of the packet on the frequency held, with the key, and an answer of nothing is a success', async () => {
+  const seen: { url: string; method?: string; auth: string | null }[] = [];
+  const fetchImpl = (url: string | URL | Request, init?: RequestInit) => {
+    seen.push({ url: String(url), method: init?.method, auth: new Headers(init?.headers).get('authorization') });
+    return Promise.resolve(new Response(null, { status: 204 }));
+  };
+  assert.equal(await createApi('tok', fetchImpl as typeof fetch).burn('99.6', '12'), undefined);
+  assert.deepEqual(seen, [{ url: '/api/drops/12?freq=99.6', method: 'DELETE', auth: 'Bearer tok' }]);
+});
+
+test('a burn that is refused, or does not arrive, is an error and never a success; asking again is a new try', async () => {
+  let answers: (() => Promise<Response>)[] = [() => Promise.resolve(Response.json({ error: 'forbidden' }, { status: 403 })), () => Promise.reject(new TypeError('offline')), () => Promise.resolve(new Response(null, { status: 204 }))];
+  const fetchImpl = () => answers.shift()!();
+  const api = createApi('tok', fetchImpl as typeof fetch);
+  await assert.rejects(api.burn('99.6', '1'), (err: unknown) => err instanceof ApiError && err.status === 403);
+  await assert.rejects(api.burn('99.6', '1'), TypeError);
+  assert.equal(await api.burn('99.6', '1'), undefined);
+});

@@ -205,7 +205,10 @@ For someone who holds a frequency (RFC 002), and only for them: a place after th
 | `drop-wax-grain` | the mottling in the wax | |
 | `drop-wax-glyph` | the sign the packet was sealed with (one emoji), gilded; the page's own when the packet came with none | |
 | `drop-title` | *Incoming transmission*, under the letter | |
-| `drop-seal` | the button that breaks the seal (🔓, *Break seal*) and, once broken, shuts the packet again (🔒) | `aria-expanded` |
+| `drop-seal` | the button that breaks the seal (🔓, *Break seal*) and, once broken, shuts the packet again (🔒) on this page only: the packet is kept | `aria-expanded` |
+| `drop-actions` | the row under an open or sealed packet that holds its buttons: `drop-seal`, and `drop-burn` beside it while the packet is open. A skin centres them, each as wide as its own words need (neither stretches to fill the row), and leaves room between them | |
+| `drop-burn` | 🔥 *Burn*, only while a packet is open, in the row of `drop-seal`. **Not Close**: Close shuts the packet on this page and keeps it; Burn deletes it at once, for everyone who holds the frequency, with no question, no undo and no way back. So a skin makes it the quieter of the two (a ghost: `drop-seal` stays the main button), keeps room between them, and makes both at least 48 px tall on a phone. It is `disabled` while the request is out | `disabled` (with aria-busy) |
+| `drop-burn-failed` | under the packet, when a burn did not go through: a quiet line (`role="status"`) that says the packet is still there and can be burned again | |
 | `drop-retry` | in the box, when it could not be opened, under the line that says so: the button to try again (it is not there otherwise) | |
 | `drop-fade` | a line under it, `aria-hidden`, that a skin draws as long as `--fade` | |
 | `drop-body` | what the packet holds once the seal is broken: noise that settles into the words (about a second, none with reduced motion), then the same words as a message (`content`, `text`, …) | |

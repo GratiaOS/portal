@@ -25,6 +25,7 @@ export function createApi(token: string, fetchImpl: typeof fetch = fetch) {
       const wait = Number(res.headers.get('retry-after'));
       throw new ApiError(res.status, body.error ?? res.statusText, wait > 0 ? wait : undefined);
     }
+    if (res.status === 204) return undefined as T; // an answer of nothing, as a burn gives
     return (await res.json()) as T;
   }
 
@@ -49,6 +50,11 @@ export function createApi(token: string, fetchImpl: typeof fetch = fetch) {
       }).then((r) => r.participant),
     /** What is left on the frequency this person holds. A frequency that is not theirs is a 403, whoever holds it. */
     drops: (freq: string) => call<DropBox>(`/api/drops?freq=${encodeURIComponent(freq)}`),
+    /**
+     * Burns one packet of the frequency this person holds, at once and for good (RFC 002 §8). The answer is the server's: nothing is taken to be
+     * gone until it says so, and one that is already gone is a success too, so asking again is safe.
+     */
+    burn: (freq: string, id: string) => call<void>(`/api/drops/${encodeURIComponent(id)}?freq=${encodeURIComponent(freq)}`, { method: 'DELETE' }),
     /** A visitor leaves: their time ends now, at the portal too, not only on this page. */
     leave: () => call<{ left: boolean }>('/api/guest/leave', { method: 'POST' }),
     say: (channel: string, text: string) =>

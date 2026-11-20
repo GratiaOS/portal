@@ -28,6 +28,7 @@ A turn is never changed, which the database itself enforces. A portal forgets by
 - `activity` says a companion is working on an answer in a conversation (`thinking`, then `idle`); `hello` carries who is thinking right now. Never stored.
 - `presence` says someone is online or offline, **and never when**: the portal does not know when anyone came or went, so nothing on the wire could be made into a timecard. A human who is gone for less than the grace period (5 s) is not announced as gone, so a refresh does not blink; several tabs count as one person; a companion is always online.
 - `drop` says that something was left on the frequency this person holds: `{ freq }` and nothing else, no text and no count, to that person's connections and to no one else. It has no `id`, so it is not part of what a connection that comes later is given; nothing is kept of it. The page asks again for the box when it comes.
+- `drop-gone` says that a packet of the frequency this person holds was burned: `{ freq, id }`, to that person's connections and to no one else. Like `drop` it has no `event id` and is kept nowhere, and it lights nothing: a page with the box open lets the packet go from its list.
 - `hub.on('turn', …)` is where a companion listens.
 - A comment line is sent every 25 s, and a client that falls 1 MB behind is cut off and resumes from its last id.
 

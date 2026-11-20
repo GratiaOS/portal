@@ -33,6 +33,10 @@ A change that needs one of these will not be merged, however good it is otherwis
 - Agents are contributors too, whoever helps write the code (companions, mirrors, tools), and follow the same rules: they ask before a large change, a person reads every diff before
   it lands, and nothing is pushed straight to `main`.
 
+## Words
+
+Commits, pull request descriptions and docs are written in the words of the [GLOSSARY.md](GLOSSARY.md) (mirror, whisper, door, companion, breaths, actor, mark), for people and for the companions and mirrors that help. The code keeps the names it has.
+
 ## Commits
 
 Every commit says what it does, why, and carries two lines the `commit-msg` hook checks (it is set up by `pnpm install`):
