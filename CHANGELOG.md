@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-Nothing yet.
+- **The mushroom of Amigo FM** ([#92](https://github.com/GratiaOS/portal/pull/92), [#93](https://github.com/GratiaOS/portal/pull/93)). In the head of every room (the top bar on a phone) there is a mushroom and the tuner of the same radio. A press plays the band's one public tape (`https://amigo-fm.gratia.workers.dev/tape`) on the clock, so two listeners hear the same second; a second press stops it; nothing starts by itself, and it keeps playing when the room changes. With no tape on the band it is silent and calm (words for a screen reader only). Nothing is sent to anyone and nothing is counted. The page's policy names the band in `media-src`, and nowhere else. Eleven new skin parts (`radio-*`), in the three looks; the contract stays `1`. Where it sits is one line, `RADIO_PLACE` in `ui/src/lib/radioPlace.ts`.
+- **The gate says *key*, not *token*** (*cheie*, *llave*): the field, the hint under it and the refusal. The label above your name in the side still reads *Token*. Words only.
 
 ## 0.5.0 (2026-11-18)
 
