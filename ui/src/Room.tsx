@@ -198,11 +198,11 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
       : undefined;
   const install = useInstall();
 
-  // the radio of the guest room: one tape, one element, held here so that it keeps playing when the page changes shape (head on a wide page, top bar on a phone)
+  // the radio, for everyone and in every room: one tape, one element, held here so that it keeps playing when the room changes and when the page changes shape (head on a wide page, top bar on a phone)
   const radio = useRadio();
   const narrow = useNarrow();
-  const radioHere = guest ? radioSits(RADIO_PLACE, narrow) : undefined;
-  const mushroom = guest ? <RadioMushroom state={radio.state} onToggle={radio.toggle} t={t} /> : undefined;
+  const radioHere = radioSits(RADIO_PLACE, narrow);
+  const mushroom = <RadioMushroom state={radio.state} onToggle={radio.toggle} t={t} />;
 
   const [note, setNote] = useState('');
   const send = useCallback(

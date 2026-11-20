@@ -5,7 +5,7 @@
  * Same idea:  one mushroom is the only control; its cap turns when the radio is on and the moon on it does not. The tape is one, public, and plays
  *             on the clock (the second is `Date.now()` modulo its length, so two visitors hear the same second), natively and looping, put back on
  *             the clock when it comes round, with a new address on every load, Media Session for the lock screen, and a silent band said calmly.
- * Different:  a button in the guest room's head (the top bar on a phone), not a radio drawn on a log; no breath, no loudness, no tuner, no garden
+ * Different:  a button in the head of every room (the top bar on a phone), not a radio drawn on a log; no breath, no loudness, no tuner, no garden
  *             table. The drawing is flat shapes the skins colour (`data-part`), not gradients named in the page. Nothing is sent to anyone: the
  *             portal never says who listens, and the sound starts only from the press.
  * Not copied: written new for Room (MPL-2.0); the shapes and the numbers are those of the same family's drawing, kept by hand.

@@ -34,7 +34,7 @@ export default function ChannelView(props: {
   welcome?: ReactNode;
   /** In the guest room: the path of the snail of the visit, right under the channel's head, so that where you are in time is read before what was said. */
   snails?: ReactNode;
-  /** In the guest room, on a wide page: the mushroom of the radio, in the head beside the title. On a narrow page the head is not shown and Room puts it in the top bar. */
+  /** On a wide page: the mushroom of the radio, in the head beside the title. On a narrow page the head is not shown and Room puts it in the top bar. */
   radio?: ReactNode;
   /** The other place tried for it: right above the box where people write, where the eyes are. */
   radioFoot?: ReactNode;
