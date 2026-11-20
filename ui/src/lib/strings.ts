@@ -34,6 +34,9 @@ export type Strings = {
   guestWelcome: string;
   /** Under the whisper, three things said to someone who has just come in and knows nothing: nothing follows you (and, when the portal says how long, that everything fades), and nothing is asked of you. */
   guestFade: (minutes?: number) => string;
+  /** The radio in the guest room: the name of the mushroom that switches it, and the quiet line when the band has no tape. */
+  radioName: string;
+  radioSilent: string;
   /** The top bar of a narrow page and the sheet behind it: where the rooms, the people and the settings are. */
   menu: string;
   /** Installing the portal as an app: the button, how to do it by hand on iOS, and what staying signed in means once it is. */
@@ -134,6 +137,8 @@ const ro: Strings = {
   guestLeave: 'Pleacă',
   guestNotPrivate: 'Ce scrii aici poate fi citit de oricine e în cameră și de cine rulează portalul.',
   guestWelcome: 'Multe aripi, același zbor.',
+  radioName: 'Amigo FM, pornește sau oprește',
+  radioSilent: 'Acum nu e nicio casetă pe frecvență.',
   guestFade: (minutes) => (minutes === undefined ? 'Nicio istorie nu te urmează aici.' : `Nicio istorie nu te urmează aici. Totul se estompează în ${minutes === 1 ? 'un minut' : `${minutes} ${minutes % 100 >= 1 && minutes % 100 <= 19 ? '' : 'de '}minute`}.`),
   guestRest: 'Vorbește cu camera, sau doar odihnește-te.',
   menu: 'Camere și setări',
@@ -220,6 +225,8 @@ const en: Strings = {
   guestLeave: 'Leave',
   guestNotPrivate: 'What you write here can be read by everyone in the room, and by whoever runs the portal.',
   guestWelcome: 'Many wings, same flight.',
+  radioName: 'Amigo FM, on or off',
+  radioSilent: 'No tape on the band right now.',
   guestFade: (minutes) => (minutes === undefined ? 'No history follows you here.' : `No history follows you here. Everything fades in ${minutes === 1 ? '1 minute' : `${minutes} minutes`}.`),
   guestRest: 'Speak to the room, or just rest.',
   menu: 'Rooms and settings',
@@ -306,6 +313,8 @@ const es: Strings = {
   guestLeave: 'Salir',
   guestNotPrivate: 'Lo que escribes aquí puede leerlo cualquiera que esté en la sala, y quien administra el portal.',
   guestWelcome: 'Muchas alas, un mismo vuelo.',
+  radioName: 'Amigo FM, encender o apagar',
+  radioSilent: 'Ahora no hay ninguna cinta en la banda.',
   guestFade: (minutes) => (minutes === undefined ? 'Aquí no te sigue ningún historial.' : `Aquí no te sigue ningún historial. Todo se desvanece en ${minutes === 1 ? '1 minuto' : `${minutes} minutos`}.`),
   guestRest: 'Habla con la sala, o simplemente descansa.',
   menu: 'Salas y ajustes',

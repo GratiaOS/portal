@@ -16,6 +16,10 @@ import { peopleOf, thinkingIn } from './lib/people.ts';
 import { useArrived } from './lib/arrivals.ts';
 import { useSpoke } from './lib/spoke.ts';
 import { leavingEndsAVisit } from './lib/guest.ts';
+import { RADIO_PLACE, radioSits } from './lib/radioPlace.ts';
+import { useNarrow } from './lib/useNarrow.ts';
+import { useRadio } from './lib/useRadio.ts';
+import RadioMushroom from './components/RadioMushroom.tsx';
 import { useLang } from './lib/lang.ts';
 import { readGuest, readGuestUntil } from './lib/session.ts';
 import { snailAt } from './lib/snails.ts';
@@ -182,6 +186,12 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
       : undefined;
   const install = useInstall();
 
+  // the radio of the guest room: one tape, one element, held here so that it keeps playing when the page changes shape (head on a wide page, top bar on a phone)
+  const radio = useRadio();
+  const narrow = useNarrow();
+  const radioHere = guest ? radioSits(RADIO_PLACE, narrow) : undefined;
+  const mushroom = guest ? <RadioMushroom state={radio.state} onToggle={radio.toggle} t={t} /> : undefined;
+
   const [note, setNote] = useState('');
   const send = useCallback(
     async (text: string) => {
@@ -215,6 +225,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             ▾
           </span>
         </button>
+        {radioHere === 'topbar' && mushroom}
         {guest && left !== undefined && left <= SAY_FROM && <span data-part="topbar-time">⏱ {left} min</span>}
         <SignalQuality connection={state.connection} t={t} />
         <button type="button" data-part="topbar-settings" aria-label={t.settings} onClick={() => setSheet(true)}>
@@ -309,6 +320,8 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             notice={guest ? t.guestNotPrivate : undefined}
             welcome={guest ? <GuestWelcome trailMinutes={state.trailMinutes} t={t} /> : undefined}
             snails={snail ? <Snails snail={snail} t={t} /> : undefined}
+            radio={radioHere === 'head' ? mushroom : undefined}
+            radioFoot={radioHere === 'foot' ? mushroom : undefined}
             note={note}
             whispers={whispers}
             thinking={thinking}
