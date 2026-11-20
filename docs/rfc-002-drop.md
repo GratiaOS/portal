@@ -261,6 +261,10 @@ notice anything: a page with the box open simply lets the packet go from its
 list, and one without it does nothing. It is sent only when a packet was really
 deleted, and not for a burn that was refused or for a packet that was already
 gone.
+Because it is not given again, a page with the box open **asks for its list again when its stream comes back** after being
+lost: a burn told while it was away would otherwise leave a packet on the page that is no longer there. That is a read, not a
+pulse: nothing lights. And the `id` in a burn's path is only the way a read writes it (`12`, never `012`), so that what is told
+is what a page compares.
 
 ---
 

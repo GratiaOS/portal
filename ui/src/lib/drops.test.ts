@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DEFAULT_SIGIL, DROPS_HASH, FLOOR, TUNING_CHARS, fadeLevel, sigilOf, stillThere, tuned, wantsDrops } from './drops.ts';
+import { DEFAULT_SIGIL, DROPS_HASH, FLOOR, TUNING_CHARS, cameBack, fadeLevel, sigilOf, stillThere, tuned, wantsDrops } from './drops.ts';
 import type { Drop } from './types.ts';
 
 const MINUTE = 60_000;
@@ -76,4 +76,11 @@ test('tuning keeps the shape of the words: spaces and line breaks stay where the
   }
   assert.equal(tuned('', 0.5), '');
   assert.equal(noise(tuned('🦁🦁', 0, () => 0.9)), true); // an emoji is one thing to hide, not two halves
+});
+
+test('an open box asks for its list again when the stream comes back after being lost, and at no other change of it', () => {
+  // a burn told while the stream was away is not told again: coming back is the moment to look at what is left
+  assert.equal(cameBack('reconnecting', 'live'), true);
+  for (const before of [undefined, 'connecting', 'live', 'refused'] as const) assert.equal(cameBack(before, 'live'), false, `${before} → live is not a coming back`);
+  for (const now of ['connecting', 'reconnecting', 'refused'] as const) assert.equal(cameBack('reconnecting', now), false);
 });

@@ -98,7 +98,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
     if (onDrops && looking) setSeenPulse(state.dropPulse);
   }, [onDrops, looking, state.dropPulse]);
   const fresh = !onDrops && state.dropPulse > seenPulse;
-  const box = useDrops(api, state.held, state.dropPulse, onDrops, state.dropsGone);
+  const box = useDrops(api, state.held, state.dropPulse, onDrops, state.dropsGone, state.connection);
   useNotify(state, looking, start, t, !guest, TITLE); // a visitor's messages are never shown as notifications of the computer
 
   // the first page of a channel's history, once, when it is first looked at

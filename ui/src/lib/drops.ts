@@ -1,6 +1,7 @@
 // The box of drops, as the page sees it (RFC 002): what is left on the frequency a person holds. The page keeps none of it anywhere
 // (no storage, no cache): it asks when the box is opened and when a pulse says something came, and lets go of it when the box is left.
 
+import type { Connection } from './client.ts';
 import type { Drop } from './types.ts';
 
 /** The hash that opens the box. A room's id starts with a letter or a digit, so no room can be called this. */
@@ -26,6 +27,13 @@ export function fadeLevel(fadesAt: number, now: number): number {
   if (left <= MINUTE) return FLOOR;
   return FLOOR + (1 - FLOOR) * (Math.log(left / MINUTE) / Math.log(WEEK / MINUTE));
 }
+
+/**
+ * Whether the stream has just come back after being lost. A burn told while it was away (`drop-gone`) is not told again on a connection that
+ * comes later, so an open box must ask for its list again at that moment, or it would keep showing a packet that is gone. This is not a pulse:
+ * it lights nothing and counts as nothing new.
+ */
+export const cameBack = (before: Connection | undefined, now: Connection): boolean => before === 'reconnecting' && now === 'live';
 
 /** What has not faded yet, in the order it came: the page does not wait to be told again once a fade is reached. */
 export function stillThere(drops: Drop[], now: number): Drop[] {
