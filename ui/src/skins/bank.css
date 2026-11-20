@@ -459,6 +459,177 @@
     background: var(--quiet);
   }
 
+  /* --- the radio in the guest room: the mushroom of Amigo FM, the one switch; its cap turns when it is on and the moon on it does not --- */
+
+  [data-part='radio-wrap'] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* the mushroom right above the box where people write (the place `foot` of `lib/radioPlace.ts`) */
+  [data-part='channel-view'] > [data-part='radio-wrap'] {
+    align-self: flex-end;
+    margin: 0 var(--pad, 1rem) 0 0;
+  }
+
+  [data-part='radio'] {
+    --cap: oklch(0.36 0.09 255);
+    --cap-dot: oklch(0.96 0.01 250);
+    --cap-moon: oklch(0.9 0.02 250);
+    display: block;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    padding: 6px;
+    border: 0;
+    background: none;
+    border-radius: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    &:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 1px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+  }
+
+  /* the tuner of the same radio: a window that is dark while the radio is off and lit while the tape plays, and a needle that looks for the band */
+  [data-part='radio-tuner'] {
+    display: block;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    overflow: visible;
+  }
+
+  [data-part='radio-glass'] {
+    fill: oklch(0.25 0.03 255);
+  }
+
+  [data-part='radio-lit'] {
+    fill: oklch(0.9 0.1 85);
+    opacity: 0;
+  }
+
+  [data-part='radio-wrap'][data-state='tuning'] [data-part='radio-lit'],
+  [data-part='radio-wrap'][data-state='on'] [data-part='radio-lit'] {
+    opacity: 0.9;
+  }
+
+  [data-part='radio-tick'] {
+    fill: none;
+    stroke: oklch(0.6 0.03 255);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+  }
+
+  [data-part='radio-wrap'][data-state='tuning'] [data-part='radio-tick'],
+  [data-part='radio-wrap'][data-state='on'] [data-part='radio-tick'] {
+    stroke: oklch(0.25 0.03 255);
+  }
+
+  /* the needle rests on the left, looks for the band, settles right of the middle on a tape and in the middle on a silent band */
+  [data-part='radio-needle'] {
+    transform-origin: 0 0; /* the pivot: the tuner's drawing is moved so that it sits at 0 0 */
+    transform: rotate(-58deg);
+
+    path {
+      fill: none;
+      stroke: oklch(0.6 0.03 255);
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    circle {
+      fill: oklch(0.6 0.03 255);
+    }
+  }
+
+  [data-part='radio-wrap'][data-state='tuning'] [data-part='radio-needle'] path,
+  [data-part='radio-wrap'][data-state='on'] [data-part='radio-needle'] path {
+    stroke: oklch(0.25 0.03 255);
+  }
+
+  [data-part='radio-wrap'][data-state='tuning'] [data-part='radio-needle'] circle,
+  [data-part='radio-wrap'][data-state='on'] [data-part='radio-needle'] circle {
+    fill: oklch(0.25 0.03 255);
+  }
+
+  [data-part='radio-wrap'][data-state='tuning'] [data-part='radio-needle'] {
+    transform: rotate(-24deg);
+  }
+
+  [data-part='radio-wrap'][data-state='on'] [data-part='radio-needle'] {
+    transform: rotate(26deg);
+  }
+
+  [data-part='radio-wrap'][data-state='silent'] [data-part='radio-needle'] {
+    transform: rotate(-6deg);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-part='radio-lit'] {
+      transition: opacity 0.6s ease;
+    }
+
+    [data-part='radio-needle'] {
+      transition: transform 0.9s cubic-bezier(0.3, 1.3, 0.5, 1);
+    }
+  }
+
+  [data-part='radio-spin'] {
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: rotate(-100deg);
+  }
+
+  [data-part='radio'][aria-checked='true'] [data-part='radio-spin'] {
+    transform: rotate(0deg);
+  }
+
+  [data-part='radio-cap'] {
+    fill: var(--cap);
+  }
+
+  [data-part='radio-dot'] {
+    fill: var(--cap-dot);
+  }
+
+  [data-part='radio-moon'] {
+    stroke: var(--cap-moon);
+    stroke-width: 3;
+    stroke-linecap: round;
+    opacity: 0.75;
+  }
+
+  [data-part='radio'][data-state='off'] [data-part='radio-cap'],
+  [data-part='radio'][data-state='silent'] [data-part='radio-cap'] {
+    opacity: 0.8;
+  }
+
+  /* no tape on the band: the mushroom is still, a little paler, and says so in a small voice */
+  [data-part='radio'][data-state='silent'] {
+    opacity: 0.6;
+  }
+
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-part='radio-spin'] {
+      transition: transform 0.5s cubic-bezier(0.3, 1.2, 0.5, 1);
+    }
+  }
+
+
   /* --- what was said: a row to a message --- */
 
   [data-part='log'] {

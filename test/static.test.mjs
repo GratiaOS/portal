@@ -67,6 +67,10 @@ test('the page: served with a policy that lets it load only from the room, and n
   assert.equal(res.headers.get('content-security-policy'), CONTENT_SECURITY_POLICY);
   assert.match(CONTENT_SECURITY_POLICY, /default-src 'self'/);
   assert.match(CONTENT_SECURITY_POLICY, /frame-ancestors 'none'/);
+  // sound may come from the band of Amigo FM and from nowhere else; nothing may be fetched or sent there (`connect-src` stays the room's own)
+  assert.match(CONTENT_SECURITY_POLICY, /media-src 'self' https:\/\/amigo-fm\.gratia\.workers\.dev(;|$)/);
+  assert.match(CONTENT_SECURITY_POLICY, /connect-src 'self'(;|$)/);
+  assert.ok(!/amigo-fm/.test(CONTENT_SECURITY_POLICY.replace(/media-src[^;]*/, '')), 'the band is named in media-src only');
   assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(await res.text(), PAGE);
 });

@@ -140,6 +140,17 @@ parts keeps working everywhere else; those rules simply find nothing now.
 | `channel-title` | the title | |
 | `signal` | the connection, told quietly | `data-connection="live \| connecting \| reconnecting \| refused"` |
 | `signal-dot` | its dot | |
+| `radio-wrap` | for a visitor only, in the head of the channel (on a phone, in the top bar, where the head is not shown): the radio of Amigo FM, its tuner and its switch. The page decides where it sits (`lib/radioPlace.ts`); the skin decides how it looks. Nothing in it says who listens: the portal never does | `data-state="off \| tuning \| on \| silent"`, the radio's, for the tuner |
+| `radio` | the switch of the radio: one mushroom, a button (`role="switch"`) named for Amigo FM, 48 px to touch. It plays a tape only from the press, never by itself | `aria-checked="true"` while the tape plays or waits for its first sound; `data-state="off \| tuning \| on \| silent"` (`silent`: no tape on the band, told calmly, never red; pressing again listens once more) |
+| `radio-spin` | the part of the mushroom that turns (cap and dots); a skin rotates it, about -100° while off and 0° while on, behind `prefers-reduced-motion: no-preference` | |
+| `radio-cap` | the cap, a circle, filled by the skin | |
+| `radio-dot` | one of the eight dots on the cap, a circle | |
+| `radio-moon` | the silver arc on the cap, a path that does not turn: stroked by the skin | |
+| `radio-tuner` | the tuner of the same radio, beside the mushroom: a window with a needle, drawn only to be looked at (`aria-hidden`); it takes its state from `radio-wrap` | |
+| `radio-glass` | the window's glass, dark | |
+| `radio-lit` | the warm light over the glass: none while the radio is off, on while the tape plays or is waited for | |
+| `radio-tick` | one of seven marks on the dial | |
+| `radio-needle` | the needle (a `g` holding a line and its pivot), which a skin turns about the pivot: left at rest (-58°), looking for the band (-24°), right of the middle on a tape (26°), in the middle on a silent band (-6°). Its pivot is the origin of its own drawing (0 0, the foot of the window); it is light on the dark glass while off, dark on the light while on | |
 | `log` | what scrolls | `data-welcome` when it holds the welcome of a visitor's room: then it should keep its content at its foot (a column that puts the free space above the welcome) |
 | `older` | holds the button for older messages | |
 | `older-button` | the button | `disabled` while loading |

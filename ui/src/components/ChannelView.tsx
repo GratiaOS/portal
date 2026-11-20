@@ -34,6 +34,10 @@ export default function ChannelView(props: {
   welcome?: ReactNode;
   /** In the guest room: the path of the snail of the visit, right under the channel's head, so that where you are in time is read before what was said. */
   snails?: ReactNode;
+  /** In the guest room, on a wide page: the mushroom of the radio, in the head beside the title. On a narrow page the head is not shown and Room puts it in the top bar. */
+  radio?: ReactNode;
+  /** The other place tried for it: right above the box where people write, where the eyes are. */
+  radioFoot?: ReactNode;
   /** What the box says while it is empty. */
   whispers: string[];
   /** Names of those working on an answer in this channel. */
@@ -41,7 +45,7 @@ export default function ChannelView(props: {
   connection: Connection;
   t: Strings;
 }) {
-  const { channelId, channelIds, title, rows, meId, hasMore, loading, onOlder, onSend, note, notice, welcome, snails, whispers, thinking, connection, t } = props;
+  const { channelId, channelIds, title, rows, meId, hasMore, loading, onOlder, onSend, note, notice, welcome, snails, radio, radioFoot, whispers, thinking, connection, t } = props;
   return (
     <section aria-label={title} data-part="channel-view">
       <header data-part="channel-head">
@@ -53,10 +57,12 @@ export default function ChannelView(props: {
           )}
           {title}
         </h2>
+        {radio}
         <SignalQuality connection={connection} t={t} />
       </header>
       {snails}
       <MemoryStream rows={rows} meId={meId} channelIds={channelIds} hasMore={hasMore} loading={loading} onOlder={onOlder} thinking={thinking} welcome={welcome} t={t} />
+      {radioFoot}
       <SeedPortal key={channelId} channel={channelId} onSend={onSend} note={note} notice={notice} whispers={whispers} t={t} />
     </section>
   );
