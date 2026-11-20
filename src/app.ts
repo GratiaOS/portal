@@ -290,7 +290,8 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
 
     // burn one packet of the frequency one holds, at once and for good (RFC 002 §8). The holder is checked before anything else, the way the read
     // does it, so that a person who does not hold the frequency learns nothing, and a packet that is already gone is a success, not an error
-    const burning = /^\/api\/drops\/(\d{1,15})$/.exec(path);
+    // the id as the read gives it, and no other way of writing it (`00012` is not `12`): what is told on the stream is what the page compares
+    const burning = /^\/api\/drops\/(0|[1-9]\d{0,14})$/.exec(path);
     if (burning) {
       only(request, 'DELETE');
       if (!drops) throw new HttpError(404, 'not found');

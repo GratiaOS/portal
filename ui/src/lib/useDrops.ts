@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { createApi } from './client.ts';
-import { stillThere } from './drops.ts';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { Connection, createApi } from './client.ts';
+import { cameBack, stillThere } from './drops.ts';
 import type { DropBox } from './types.ts';
 
 /**
  * What is left on the frequency held, while the box is open: asked when it is opened and each time the room says something came, and
  * let go of when the box is left (the page keeps no copy of it). A packet whose fade is reached goes from the list at once, without asking.
  */
-export function useDrops(api: ReturnType<typeof createApi>, held: { freq: string } | null | undefined, pulse: number, open: boolean, gone: string[] = []) {
+export function useDrops(api: ReturnType<typeof createApi>, held: { freq: string } | null | undefined, pulse: number, open: boolean, gone: string[] = [], connection: Connection = 'live') {
   const [box, setBox] = useState<DropBox | undefined>(undefined);
   const [failed, setFailed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -15,6 +15,13 @@ export function useDrops(api: ReturnType<typeof createApi>, held: { freq: string
   // what the server has said is burned, by this page or by another of the holder's: the list lets it go before it asks again, and the box not asked for is not kept
   const [burned, setBurned] = useState<string[]>([]);
   const freq = held?.freq;
+
+  // the stream came back after being lost: what was burned meanwhile is not told again, so the list is asked for again (not a pulse: nothing lights)
+  const lastConnection = useRef<Connection | undefined>(undefined);
+  useEffect(() => {
+    if (cameBack(lastConnection.current, connection)) setAgain((n) => n + 1);
+    lastConnection.current = connection;
+  }, [connection]);
 
   useEffect(() => {
     if (!open || freq === undefined) {

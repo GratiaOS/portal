@@ -172,3 +172,11 @@ test('nothing is told for a burn that was refused, or of a packet that was alrea
     await burn(room, id); // already gone
     assert.equal(zeus.frames().filter((f) => f.event === 'drop-gone').length, 1);
   }));
+
+test('an id is only the way the read writes it: one with leading zeros is not a packet, and cannot be told on the stream as another string', () =>
+  within(async (room) => {
+    await room.drop('99.6', 'x');
+    const [id] = await idsOf(await room.zeus('/api/drops?freq=99.6'));
+    for (const written of [`0${id}`, `00${id}`, `${id}.0`, `+${id}`]) assert.equal((await burn(room, written)).status, 404, written);
+    assert.deepEqual(await idsOf(await room.zeus('/api/drops?freq=99.6')), [id]);
+  }));
