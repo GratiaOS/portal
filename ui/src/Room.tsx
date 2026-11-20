@@ -98,7 +98,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
     if (onDrops && looking) setSeenPulse(state.dropPulse);
   }, [onDrops, looking, state.dropPulse]);
   const fresh = !onDrops && state.dropPulse > seenPulse;
-  const box = useDrops(api, state.held, state.dropPulse, onDrops);
+  const box = useDrops(api, state.held, state.dropPulse, onDrops, state.dropsGone);
   useNotify(state, looking, start, t, !guest, TITLE); // a visitor's messages are never shown as notifications of the computer
 
   // the first page of a channel's history, once, when it is first looked at
@@ -324,7 +324,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
       </aside>
 
       <main data-part="main">
-        {onDrops && state.held && <DropBox title={state.held.title} drops={box.drops} now={box.now} loaded={box.loaded} failed={box.failed} retry={box.retry} connection={state.connection} t={t} />}
+        {onDrops && state.held && <DropBox title={state.held.title} drops={box.drops} now={box.now} loaded={box.loaded} failed={box.failed} retry={box.retry} burn={box.burn} connection={state.connection} t={t} />}
         {selected && (
           <ChannelView
             channelId={selected.id}

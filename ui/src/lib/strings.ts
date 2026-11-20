@@ -66,6 +66,8 @@ export type Strings = {
   dropSealed: string;
   dropOpened: string;
   dropShut: string;
+  dropBurn: string;
+  dropBurnFailed: string;
   dropEmpty: string;
   dropFailed: string;
   dropTuning: string;
@@ -175,6 +177,8 @@ const ro: Strings = {
   dropSealed: 'SIGILAT',
   dropOpened: 'DESCHIS',
   dropShut: 'Închide',
+  dropBurn: 'Arde',
+  dropBurnFailed: 'Nu s-a ars. Pachetul e încă aici; poți încerca din nou.',
   dropEmpty: 'Nu a rămas nimic aici.',
   dropFailed: 'Nu am putut deschide cutia. Încearcă din nou puțin mai târziu.',
   dropTuning: 'ACORDEZ…',
@@ -274,6 +278,8 @@ const en: Strings = {
   dropSealed: 'SEALED',
   dropOpened: 'OPEN',
   dropShut: 'Close',
+  dropBurn: 'Burn',
+  dropBurnFailed: 'It did not burn. The packet is still here; you can try again.',
   dropEmpty: 'Nothing left here.',
   dropFailed: 'Could not open the box. Try again in a little while.',
   dropTuning: 'TUNING…',
@@ -373,6 +379,8 @@ const es: Strings = {
   dropSealed: 'SELLADO',
   dropOpened: 'ABIERTO',
   dropShut: 'Cerrar',
+  dropBurn: 'Quemar',
+  dropBurnFailed: 'No se quemó. El paquete sigue aquí; puedes intentarlo de nuevo.',
   dropEmpty: 'No queda nada aquí.',
   dropFailed: 'No se pudo abrir la caja. Prueba de nuevo en un rato.',
   dropTuning: 'SINTONIZANDO…',

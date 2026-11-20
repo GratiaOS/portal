@@ -22,6 +22,8 @@ export type RoomState = {
   held?: { freq: string; title: string } | null;
   /** How many times the room has said that something came on the frequency held: only a reason to ask again, never what came. */
   dropPulse: number;
+  /** The packets of the frequency held that the room has said were burned: only their ids, so that an open box lets them go. Never a dot. */
+  dropsGone: string[];
 };
 
 export type RoomAction =
@@ -33,6 +35,7 @@ export type RoomAction =
   | { type: 'participant'; participant: Participant }
   | { type: 'activity'; activity: Activity }
   | { type: 'drop'; freq: string }
+  | { type: 'drop-gone'; freq: string; id: string }
   | { type: 'forget'; before: number };
 
 export const initialState: RoomState = {
@@ -44,6 +47,7 @@ export const initialState: RoomState = {
   more: {},
   connection: 'connecting',
   dropPulse: 0,
+  dropsGone: [],
 };
 
 /** Turns in order of `seq`, each once. The same turn arrives from the stream and from the call that sent it. */
@@ -111,6 +115,10 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
     case 'drop':
       // a pulse is for the frequency this person holds and for no other; it is not a turn, and moves nothing of what is said
       return state.held && state.held.freq === action.freq ? { ...state, dropPulse: state.dropPulse + 1 } : state;
+
+    case 'drop-gone':
+      // a burn is for the frequency this person holds and for no other, and it is not a pulse: it lights nothing and is not counted as something new
+      return state.held && state.held.freq === action.freq && !state.dropsGone.includes(action.id) ? { ...state, dropsGone: [...state.dropsGone, action.id] } : state;
 
     case 'forget': {
       // what has outlived the trail goes from memory: nothing of it is kept anywhere else (no storage), so this is the end of it on this machine

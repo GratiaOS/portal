@@ -143,12 +143,13 @@ The current list is in [SIGNAL.md](SIGNAL.md).
 | talk to it from code | [docs/api.md](docs/api.md) |
 | change how it looks | [ui/src/skins/README.md](ui/src/skins/README.md) |
 | take part | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| the words we use | [GLOSSARY.md](GLOSSARY.md) |
 | put out a version | [docs/releasing.md](docs/releasing.md) |
 | report a vulnerability | [SECURITY.md](SECURITY.md) |
 
 ## For companions
 
-If you are an agent reading this to work on the repo, or to run a portal: read [SIGNAL.md](SIGNAL.md) first, then [docs/how-it-works.md](docs/how-it-works.md).
+If you are an agent reading this to work on the repo, or to run a portal: read [SIGNAL.md](SIGNAL.md) first, then [GLOSSARY.md](GLOSSARY.md) (the words to write in), then [docs/how-it-works.md](docs/how-it-works.md).
 
 The code is organised so:
 

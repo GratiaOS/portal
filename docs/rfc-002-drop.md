@@ -10,7 +10,8 @@
 
 A bottle thrown into the sea. A `drop` room holds short-lived packets that
 anyone can put on a **frequency** (`99.6`) without saying who they are, and that
-only the frequency's holder can open. Opened or not, a packet fades.
+only the frequency's holder can open. Opened or not, a packet fades; and the holder, who alone can open it, can also
+burn it at once (§8).
 
 The shape is small on purpose:
 
@@ -18,8 +19,9 @@ The shape is small on purpose:
   link (`@garden`, as today) or drops it on a frequency. A drop has no sender, no
   `from`, no token.
 * **Reading is the portal's, and needs a key.** The holder opens the box in the
-  Firegate view: a list, one packet at a time, read-only. No Reply button, no
-  thread.
+  Firegate view: a list, one packet at a time. They can read it, shut it again
+  on their page, or **burn** it (delete it at once, for good). No Reply button,
+  no thread, no copy.
 * **An answer is a new drop.** Whoever wants one writes their own frequency in
   the text, as one signs with `- rdm`. The reader opens Amigo and drops a new
   packet there. The system keeps no link between the two.
@@ -31,7 +33,7 @@ The shape is small on purpose:
                        open, no key                    │
                                                         ▼
                            Firegate view, with the key: the list, opened one
-                           by one, read-only, until it fades
+                           by one; closed, or burned, or left until it fades
 ```
 
 ---
@@ -57,7 +59,8 @@ The room says *where*, the type says *how*. The route is named for the type
 | --- | --- |
 | No registry | Nothing remembers who wrote to whom. There is no sender to remember. |
 | Fade by default | Every packet has a TTL; after it, nothing is left to recover. |
-| One direction | Amigo writes, Firegate reads. No Reply, no thread, no "seen", no typing. |
+| One direction | Amigo writes, Firegate reads (and burns). No Reply, no thread, no "seen", no typing. |
+| Burn is the holder's | Only the holder can delete a packet before its fade, and it is gone for good: no question, no undo, no trace of who burned it or when. |
 | The key is for reading | Anyone may leave a packet; only the holder opens the box. |
 | The ping is mute | The live stream says only *something arrived on this frequency*. Never the text. |
 
@@ -171,6 +174,28 @@ someone else and one held by no one are told alike, so the answer does not say
 which exist. `400` for a `freq` that is not one; `404` when the portal has no
 `drops` block; `405` for anything but `GET`.
 
+### Burning: `DELETE /api/drops/<id>?freq=99.6`
+
+The holder's way to delete one packet at once. The same key and the same check
+as reading: only the participant that holds `freq` may burn, and anyone else (a
+visitor, another person, a frequency held by no one) gets the same `403`, told
+alike, so the answer says nothing about what is on a frequency. `400` for a
+`freq` that is not one, `404` when the portal has no `drops` block, `405` for
+anything but `DELETE`. The `id` is the one the read gives; it is only looked for
+on the `freq` named, so another frequency's packet cannot be burned from one's
+own.
+
+* **Immediate and irreversible.** The row is deleted in that request (and leaves
+  the file, as everything the portal forgets). There is no confirmation step on
+  the server and no undo: a burned packet cannot be brought back, by anyone.
+* **Idempotent.** The answer is `204` and empty whether the packet was there or
+  had already gone (burned from another page, faded, never was). Deleting what is
+  already gone counts as success, so asking twice is safe.
+* **Nothing is written about it.** Not who burned it, not when: the portal keeps
+  no log of a burn, as it keeps none of who is present and when.
+* **It is told** to the holder's connections (§7), so a page that has the box
+  open lets the packet go.
+
 ---
 
 ## 6. Storage
@@ -220,13 +245,31 @@ told for a frequency nobody holds, nor for a packet that was refused. The client
 lights a small mark beside the view. Opening the view and reading is what makes it
 go out; nothing is recorded about it having been seen.
 
+A burn (§5) is told on the same stream, to the same people, in an event of its
+own:
+
+```
+event: drop-gone
+data: { "freq": "99.6", "id": "12" }
+```
+
+Only the frequency and the id of the packet, never its words. Like the ping it
+has no `id` of its own (it is not part of the cursor), is not given again to a
+connection that comes later (the list already has no such packet) and is not
+kept. Unlike the ping it is **not** a reason to light the mark, count, sound or
+notice anything: a page with the box open simply lets the packet go from its
+list, and one without it does nothing. It is sent only when a packet was really
+deleted, and not for a burn that was refused or for a packet that was already
+gone.
+
 ---
 
 ## 8. The view
 
 A frequency is **held** by a participant: the config's `drops.frequencies` names
-it, with its holder (a human) and, if it wants one, a title (`🎁 CTT`). The view is read-only: a list of the packets still alive, each
-opened on its own. There is nothing to write in it and no Reply.
+it, with its holder (a human) and, if it wants one, a title (`🎁 CTT`). The view is a list of the packets still alive, each opened
+on its own. There is nothing to write in it and no Reply; what can be done with an
+open packet is to close it or to burn it.
 
 The view is `GET /api/drops?freq=…` (§5), and it answers:
 
@@ -255,8 +298,14 @@ writing, the same whatever it says) with the wax seal over its lower edge and th
 none), the title *Incoming transmission* and a button, 🔓 *Break seal*. The wax is drawn the same in every look, so that it is the same object in Amigo and in
 the portal; the looks dress what is around it. Broken, the letter goes, the packet says OPEN, and its words settle out of noise in about a second (at once for
 someone who asks for less motion; a screen reader is given the words once they have settled, not the noise), and the button becomes 🔒 *Close*, which seals it
-again on this page only, as it keeps nothing. There is no reply, no copy and no burn: a block of code in a packet has no button to copy it either (the text can still be
-selected, as in any page). The words are put in a polite live region when they have settled, so that a screen reader says them without being moved.
+again on this page only, as it keeps nothing: **the packet is still kept**. Beside it, only while the packet is open, there is 🔥 *Burn*. **Close and Burn are
+not the same thing**: Close is a look on this page, and the data stays; Burn sends `DELETE` (§5) at once and the packet is gone for everyone who holds that
+frequency, **irreversibly**. So: no dialog, no second step, no undo window ("Burn is burn", as in Amigo's own Burn, which deletes what is already gone
+without complaint); Burn is only there for an open packet, in the same row as Close and quieter than it (Close stays the main button), with room between them
+so that one is not pressed for the other, and 48 px tall on a phone. The server is the authority: the page never shows a burn as done before the answer, and
+when the answer is a refusal or does not come, the packet is still there and the page says so quietly (the packet is not lost, and burning again is safe); when
+it is done, the packet leaves the list, never goes back to sealed and has no Close. A page that has the same box open elsewhere lets it go too (§7). There is no
+reply and no copy: a block of code in a packet has no button to copy it either (the text can still be selected, as in any page). The words are put in a polite live region when they have settled, so that a screen reader says them without being moved.
 While the first answer is awaited the page says it is tuning, as Amigo's Room does; an empty box is not told as empty (it is only quiet, since an absent thing is
 not a fact to show); and a box that could not be opened says so, with a button to try again. Its words are shown as a message's are (prose, an address, `#tag`,
 code), and a `format` the page does not know is shown as the words it holds. A packet whose fade is reached leaves the list the next time the page counts,
@@ -297,6 +346,7 @@ it, link to link) is for links and does not change. A drop has none.
 * No push notification with content.
 * No token on Amigo, and none issued to it.
 * No writing from the view.
+* No undo of a burn, no bin, no log of who burned or when.
 * No payload formats beyond `note` yet; `format` is a place kept for them.
 
 ---

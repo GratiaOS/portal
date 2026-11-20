@@ -855,6 +855,54 @@
     font-weight: 600;
   }
 
+  /* Close and Burn side by side: Close is the main button, as wide as its words need, and the two sit together in the middle; Burn is quieter (no fill, no border until looked at) and keeps room from it, so a finger meant for one does not land on the other. Burn is irreversible and has no question: the room between them is the only care */
+  [data-part='drop-actions'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  [data-part='drop-actions'] [data-part='drop-seal'] {
+    flex: 0 0 auto;
+    width: auto;
+    margin-inline: 0;
+  }
+
+  [data-part='drop-burn'] {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid transparent;
+    border-radius: inherit;
+  }
+
+  [data-part='drop-burn']:hover:not(:disabled),
+  [data-part='drop-burn']:focus-visible {
+    color: var(--ink);
+    border-color: var(--rule);
+  }
+
+  [data-part='drop-burn']:disabled {
+    opacity: 0.5;
+  }
+
+  [data-part='drop-burn-failed'] {
+    margin: 0.5rem 0 0;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
   [data-part='drop-body'] {
     margin-top: 0.5rem;
     line-height: 1.5;
@@ -1683,6 +1731,16 @@
       justify-content: center;
       min-width: 44px;
       min-height: 44px;
+    }
+
+    /* on a phone the two buttons of an open packet are 48 px tall, Burn as wide as that too */
+    [data-part='drop-actions'] [data-part='drop-seal'],
+    [data-part='drop-burn'] {
+      min-height: 48px;
+    }
+
+    [data-part='drop-burn'] {
+      min-width: 48px;
     }
 
     /* the button that breaks a seal stays a full row: only its height is made for a finger */

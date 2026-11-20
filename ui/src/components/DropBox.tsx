@@ -11,11 +11,28 @@ import { useTuning } from '../lib/useTuning.ts';
 /**
  * One packet, seen as Amigo shows a signal when its seal is still to be broken: SEALED, a closed letter (faint writing, the same whatever it
  * says) with the wax and the sigil it was sealed with over its lower edge, the title of an incoming transmission, and the button that breaks
- * the seal. Broken, the words settle out of noise and the packet says OPEN. There is nothing else to do with it: no reply, no copy, no
- * burn; it goes at its fade, and the line under it shows how much of it is left.
+ * the seal. Broken, the words settle out of noise and the packet says OPEN, with two things to do and no others (no reply, no copy):
+ * 🔒 Close, which shuts it on this page and keeps it, and 🔥 Burn, which is not the same: it deletes the packet at once, for everyone who
+ * holds the frequency, and there is no way back (no question, no undo; Burn is burn). Burn is there only while the packet is open. The page
+ * never takes a burn to be done before the server says so: a burn that fails leaves the packet as it was, says so quietly, and asking
+ * again is safe. When it is done the packet is gone from the list, never sealed again. Left alone it goes at its fade, and the line under
+ * it shows how much of it is left.
  */
-function Packet({ drop, open, now, onToggle, t }: { drop: Drop; open: boolean; now: number; onToggle: () => void; t: Strings }) {
+function Packet({ drop, open, now, onToggle, onBurn, t }: { drop: Drop; open: boolean; now: number; onToggle: () => void; onBurn: () => Promise<boolean>; t: Strings }) {
   const tuning = useTuning(drop.payload.body, open);
+  const [burning, setBurning] = useState(false);
+  const [burnFailed, setBurnFailed] = useState(false);
+  const burn = async () => {
+    if (burning) return;
+    setBurning(true);
+    setBurnFailed(false);
+    const done = await onBurn();
+    // gone: the packet leaves the list and this goes with it; not gone: it is still here, and the page says so without raising its voice
+    if (!done) {
+      setBurning(false);
+      setBurnFailed(true);
+    }
+  };
   return (
     <li data-part="drop" data-open={open ? '' : undefined} style={{ '--fade': fadeLevel(drop.fadesAt, now) } as CSSProperties}>
       <p data-part="drop-state">{open ? t.dropOpened : t.dropSealed}</p>
@@ -45,9 +62,21 @@ function Packet({ drop, open, now, onToggle, t }: { drop: Drop; open: boolean; n
         </div>
       )}
       <span aria-hidden data-part="drop-fade" />
-      <button type="button" data-part="drop-seal" aria-expanded={open} onClick={onToggle}>
-        <span aria-hidden>{open ? '🔒' : '🔓'}</span> {open ? t.dropShut : t.dropBreak}
-      </button>
+      {open && burnFailed && (
+        <p data-part="drop-burn-failed" role="status">
+          {t.dropBurnFailed}
+        </p>
+      )}
+      <div data-part="drop-actions">
+        <button type="button" data-part="drop-seal" aria-expanded={open} onClick={onToggle}>
+          <span aria-hidden>{open ? '🔒' : '🔓'}</span> {open ? t.dropShut : t.dropBreak}
+        </button>
+        {open && (
+          <button type="button" data-part="drop-burn" aria-busy={burning ? true : undefined} disabled={burning} onClick={burn}>
+            <span aria-hidden>🔥</span> {t.dropBurn}
+          </button>
+        )}
+      </div>
     </li>
   );
 }
@@ -57,7 +86,7 @@ function Packet({ drop, open, now, onToggle, t }: { drop: Drop; open: boolean; n
  * own, one packet open at a time; it has no sender and no hour. There is nothing to write here and nothing to answer: whoever wants an answer wrote their
  * own frequency in the words. A packet whose fade is reached is not in the list the next time the page counts, whether or not it was open.
  */
-export default function DropBox({ title, drops, now, loaded, failed, retry, connection, t }: { title: string; drops: Drop[]; now: number; loaded: boolean; failed: boolean; retry: () => void; connection: Connection; t: Strings }) {
+export default function DropBox({ title, drops, now, loaded, failed, retry, burn, connection, t }: { title: string; drops: Drop[]; now: number; loaded: boolean; failed: boolean; retry: () => void; burn: (id: string) => Promise<boolean>; connection: Connection; t: Strings }) {
   const [openId, setOpenId] = useState<string | undefined>(undefined);
   return (
     <section aria-label={title} data-part="channel-view">
@@ -89,7 +118,7 @@ export default function DropBox({ title, drops, now, loaded, failed, retry, conn
         )}
         <ol data-part="drops" aria-label={t.dropList}>
           {drops.map((drop) => (
-            <Packet key={drop.id} drop={drop} open={drop.id === openId} now={now} onToggle={() => setOpenId(drop.id === openId ? undefined : drop.id)} t={t} />
+            <Packet key={drop.id} drop={drop} open={drop.id === openId} now={now} onToggle={() => setOpenId(drop.id === openId ? undefined : drop.id)} onBurn={() => burn(drop.id)} t={t} />
           ))}
         </ol>
       </div>

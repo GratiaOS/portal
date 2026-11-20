@@ -142,3 +142,14 @@ test('a pulse is not a turn: it moves no cursor and adds nothing to what is said
   assert.equal(after.cursor, held.cursor);
   assert.deepEqual(after.turns, held.turns);
 });
+
+test('a burn is told for the frequency held, once for each packet, and it is not a pulse: nothing lights and nothing is counted as new', () => {
+  const held = run([{ type: 'hello', hello: { ...hello(1), heldFrequency: { freq: '99.6', title: '99.6' } } }]);
+  const once = run([{ type: 'drop-gone', freq: '99.6', id: '12' }], held);
+  assert.deepEqual(once.dropsGone, ['12']);
+  assert.equal(once.dropPulse, 0);
+  assert.equal(run([{ type: 'drop-gone', freq: '99.6', id: '12' }], once), once, 'the same burn heard twice is the same state');
+  assert.deepEqual(run([{ type: 'drop-gone', freq: '99.6', id: '13' }], once).dropsGone, ['12', '13']);
+  assert.equal(run([{ type: 'drop-gone', freq: '36.9', id: '12' }], held), held); // not the frequency this person holds
+  assert.equal(run([{ type: 'drop-gone', freq: '99.6', id: '12' }]).dropsGone.length, 0); // nothing held yet
+});

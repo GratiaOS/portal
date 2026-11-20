@@ -701,6 +701,16 @@ export class RoomStore {
       .map((row) => ({ id: row.id as number, freq: row.freq as string, format: row.format as string, body: row.body as string, ...(row.sigil ? { sigil: row.sigil as string } : {}), createdAt: row.created_at as number, fadesAt: row.fades_at as number }));
   }
 
+  /**
+   * Burns one packet of a frequency at once: gone for everyone who holds it, and for good. Burning one that is already gone is not an error (it
+   * says 0), so asking twice is safe. Nothing is kept of it: not who burned it, not when.
+   */
+  burnDrop(freq: string, id: number): number {
+    const gone = this.db.run('DELETE FROM drops WHERE freq = ? AND id = ?', freq, id).changes;
+    if (gone) this.db.afterForget();
+    return gone;
+  }
+
   /** How many drops a frequency holds as rows, the ones that have faded and not yet been let go among them. */
   countDrops(freq: string): number {
     return (this.one('SELECT COUNT(*) AS n FROM drops WHERE freq = ?', freq) as { n: number }).n;

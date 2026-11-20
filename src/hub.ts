@@ -178,6 +178,14 @@ export class Hub {
     this.broadcast(frame('drop', { freq }), (to) => to.id === participantId);
   }
 
+  /**
+   * Tells one participant, on every connection they have, that a packet of their frequency was burned: the frequency and the id, to drop it
+   * from an open box. Not a pulse (no dot, no sound), no `id` of its own, and nothing is kept of it.
+   */
+  notifyDropGone(participantId: string, freq: string, id: string): void {
+    this.broadcast(frame('drop-gone', { freq, id }), (to) => to.id === participantId);
+  }
+
   /** Tells everyone how someone shows now (their sign), as they show in `hello`. Not kept: the store has only the current one. */
   participantChanged(participant: Participant): void {
     this.broadcast(frame('participant', participant), (to) => mayKnow(to, participant));

@@ -288,6 +288,21 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       return send(200, { freq, title: held.title, drops: store.listDrops(freq).map((d) => ({ id: String(d.id), type: 'drop', payload: { body: d.body, format: d.format, ...(d.sigil ? { sigil: d.sigil } : {}) }, fadesAt: d.fadesAt })) });
     }
 
+    // burn one packet of the frequency one holds, at once and for good (RFC 002 §8). The holder is checked before anything else, the way the read
+    // does it, so that a person who does not hold the frequency learns nothing, and a packet that is already gone is a success, not an error
+    const burning = /^\/api\/drops\/(\d{1,15})$/.exec(path);
+    if (burning) {
+      only(request, 'DELETE');
+      if (!drops) throw new HttpError(404, 'not found');
+      const freq = url.searchParams.get('freq');
+      if (freq === null || !FREQ_PATTERN.test(freq)) throw new HttpError(400, 'freq must be a frequency such as "99.6"');
+      const held = drops.frequencies.find((f) => f.freq === freq && participantId('human', f.holder) === me.id);
+      if (!held) throw new HttpError(403, 'forbidden');
+      const id = burning[1]!;
+      if (store.burnDrop(freq, Number(id))) hub.notifyDropGone(me.id, freq, id);
+      return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
+    }
+
     // a guest who leaves ends their own time: the key stops opening anything, the stream closes, and the room has one guest fewer
     if (path === '/api/guest/leave') {
       only(request, 'POST');
