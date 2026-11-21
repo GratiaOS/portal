@@ -25,7 +25,7 @@ git tag -a vX.Y.Z <merge-commit> -m "El portal X.Y.Z"
 git push origin vX.Y.Z
 ```
 
-Pushing the tag is what publishes the image: the `Container` workflow builds it, opens the portal in it and asks for its health, **checks that the tag is the version in `package.json`** (`EXPECT_VERSION`), and publishes `ghcr.io/gratiaos/portal` (`linux/amd64`). Push once: a second push of the same tag does nothing. The package stays private until the organisation makes it public in its settings.
+Pushing the tag is what publishes the image: the `Container` workflow builds it, opens the portal in it and asks for its health, **checks that the tag is the version in `package.json`** (`EXPECT_VERSION`), and publishes `ghcr.io/gratiaos/portal` (`linux/amd64`). Push once: a second push of the same tag does nothing. The package is public (set once, in the organisation's package settings), so the image pulls with no login; check it from a clean shell after a first publish of a new package.
 
 ## 3. The Worker, from the tag
 
