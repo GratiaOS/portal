@@ -140,7 +140,12 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
     return trailMs ? made.map((row, i) => ({ ...row, opacity: opacityOf(fadeOf(row.turn.createdAt, trailMs, now, made.length - 1 - i)) })) : made;
   }, [turns, state.participants, trailMs, now]);
 
-  const people = useMemo(() => peopleOf(state.participants, state.presence), [state.participants, state.presence]);
+  // in the guest room the team is as a visitor: it is shown who a visitor is shown (the guests and the companions), and no one of the team
+  const inGuestRoom = selected?.kind === 'guest';
+  const people = useMemo(
+    () => peopleOf(inGuestRoom && !guest ? state.participants.filter((p) => p.kind === 'guest' || p.kind === 'companion') : state.participants, state.presence),
+    [inGuestRoom, guest, state.participants, state.presence],
+  );
   // whether another visitor is here now: not how many, and never who (the portal tells a guest of no one else)
   const othersHere = useMemo(
     () => people.some((p) => p.participant.kind === 'guest' && p.participant.id !== state.you?.id && p.here),
@@ -331,7 +336,7 @@ export function Room({ token, onSignOut }: { token: string; onSignOut: (refused?
             channelIds={state.conversations.map((c) => c.id)}
             title={selected.title}
             rows={rows}
-            meId={state.you?.id}
+            meId={inGuestRoom && state.guestName ? `guest:${state.guestName}` : state.you?.id}
             hasMore={state.more[selected.id] === true}
             loading={loadingFor === selected.id}
             onOlder={older}

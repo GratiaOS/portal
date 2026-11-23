@@ -15,6 +15,8 @@ export type RoomState = {
   /** The last turn the live stream gave us: where it picks up again. Turns from history do not move it. */
   cursor?: number;
   connection: Connection;
+  /** Only for the team: the name of the day it speaks under in the guest room. */
+  guestName?: string;
   /** Only for a visitor: how long what is said lasts (minutes). The page lets turns fade by it and drops them from memory past it. */
   trailMinutes?: number;
   visitMinutes?: number;
@@ -69,6 +71,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
       return {
         ...state,
         you: hello.you,
+        guestName: hello.guestName,
         trailMinutes: hello.trailMinutes,
         visitMinutes: hello.visitMinutes,
         held: hello.heldFrequency,

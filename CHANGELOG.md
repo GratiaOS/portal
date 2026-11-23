@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **In the guest room the team is as a visitor, to itself too.** A person with a key who opens the guest room reads it as a guest does: their own words and everyone else's of the team come under a name of the day (`owl-47`, with no name and no sign), and the list of people shows the guests and the companions, no one of the team. They know their own words there by the name the room tells them in `hello` (`guestName`). Other rooms are as they were.
 - **A person of the team speaks to guests as an animal** ([#102](https://github.com/GratiaOS/portal/pull/102)). In the guest room, what someone with a key says reaches the guests under a name of the day (`owl-47`), never their own, and the companion for guests uses it too, in what she is told and in what she says. It is worked out from who they are and the day, so nothing is stored. The team reads everything whole.
 - **The tree on the gate is the picture's tree.** The crown is a black dome of limbs that fork and fork again, with leaves at the ends of the twigs and sky between them. The roots are its kin, not its mirror: a heavy pivot and four unlike laterals that fork into finer ones and some that stop, as wide as the crown, shallow, with room above the doorway, in the soft gold of its bulbs. Both are grown by one generator from a seed (`ui/src/lib/roots.ts`), the same on every load; the breath, the three rules of the guard and the place of the trunk are as they were.
 
