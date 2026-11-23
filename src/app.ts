@@ -380,7 +380,7 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       }
       // the speaker is whoever the token says, never what the body says
       const turn = hub.publish({ conversationId: id, speakerId: me.id, text: (body as { text: string }).text });
-      return send(201, { turn });
+      return send(201, { turn: hub.seenBy(me, turn) });
     }
 
     if (path === '/api/stream') {

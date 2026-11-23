@@ -15,6 +15,8 @@ export type Participant = {
 
 export type Conversation = {
   id: string;
+  /** `guest` for the room visitors come to; `team` (or nothing) for the others. */
+  kind?: 'team' | 'guest';
   title: string;
   visibility: 'private' | 'public' | 'sealed';
   status: 'open' | 'closed';
@@ -51,6 +53,8 @@ export type Hello = {
   activity: Activity[];
   conversations: Conversation[];
   lastSeq: number;
+  /** Said only to the team: the name of the day it speaks under in the guest room. */
+  guestName?: string;
   /** Said only to a visitor: how long what is said in their room lasts. */
   trailMinutes?: number;
   visitMinutes?: number;

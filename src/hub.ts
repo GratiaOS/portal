@@ -1,5 +1,5 @@
 import { canIn, endOfGuest, mayKnow } from './access.js';
-import { forGuests } from './guests.js';
+import { forGuests, pseudonymOf } from './guests.js';
 import type { DropsConfig } from './config.js';
 import { participantId } from './domain.js';
 import type { Conversation, Participant, Presence, Turn } from './domain.js';
@@ -30,6 +30,8 @@ export type Hello = {
   lastSeq: number;
   /** Only to a guest: how long what is said in their room lasts, so that the page can let it fade before it is gone. */
   trailMinutes?: number;
+  /** Only to the team: the name of the day it speaks under in the guest room. */
+  guestName?: string;
   /** Only to a guest: how long a visit lasts (`guests.minutes`), so that the page can say which of the snails of the visit it is on. */
   visitMinutes?: number;
   /** Only to a person of the team, and only for a portal that has drops: which frequency they hold (`null` when none), never what is on it. */
@@ -99,16 +101,18 @@ export class Hub {
   /** The one way a turn enters the room: written, then told to everyone, then to the listeners. */
   publish(input: { conversationId: string; speakerId: string; text: string }): Turn {
     const turn = this.store.appendTurn(input);
+    // in the guest room everyone is as a guest: the team too, whoever reads it, speaks under a name of the day
+    const guestRoom = this.store.getConversation(turn.conversationId)?.kind === 'guest';
     const hidden = forGuests(this.store, turn, this.now());
-    this.broadcast(frame('message', turn, turn.seq), (to) => to.kind !== 'guest' && this.mayRead(to, turn.conversationId));
-    this.broadcast(frame('message', hidden, turn.seq), (to) => to.kind === 'guest' && this.mayRead(to, turn.conversationId));
+    this.broadcast(frame('message', turn, turn.seq), (to) => !guestRoom && to.kind !== 'guest' && this.mayRead(to, turn.conversationId));
+    this.broadcast(frame('message', hidden, turn.seq), (to) => (guestRoom || to.kind === 'guest') && this.mayRead(to, turn.conversationId));
     this.emit('turn', turn);
     return turn;
   }
 
-  /** A turn as this reader is given it: the team's own words come to a guest under a pseudonym, never a name. */
+  /** A turn as this reader is given it: in the guest room, and for any guest, the team's words come under a name of the day, never their own. */
   seenBy(viewer: Participant, turn: Turn): Turn {
-    return viewer.kind === 'guest' ? forGuests(this.store, turn, this.now()) : turn;
+    return viewer.kind === 'guest' || this.store.getConversation(turn.conversationId)?.kind === 'guest' ? forGuests(this.store, turn, this.now()) : turn;
   }
 
   /**
@@ -142,6 +146,8 @@ export class Hub {
       activity: [...this.thinking.values()].filter((a) => this.mayRead(participant, a.conversationId)),
       conversations: this.store.listConversations().filter((c) => this.mayRead(participant, c.id)),
       lastSeq: this.store.lastSeq(),
+      // to the team: the name of the day it goes by in the guest room, so that the page knows its own words there
+      ...(participant.kind !== 'guest' && participant.kind !== 'companion' ? { guestName: pseudonymOf(participant.id, this.now()) } : {}),
       ...(participant.kind === 'guest' && this.trailMinutes !== undefined ? { trailMinutes: this.trailMinutes } : {}),
       ...(participant.kind === 'guest' && this.visitMinutes !== undefined ? { visitMinutes: this.visitMinutes } : {}),
       // the identity of the box, for the page to ask for what is in it: said to the team alone, and only where the portal has drops
