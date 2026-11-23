@@ -365,7 +365,7 @@ export function createApp(store: RoomStore, hub: Hub, options: AppOptions): (req
       if (!canIn(store, me, id, 'read', clock())) throw new RoomError('not_found', `no conversation "${id}"`);
 
       if (request.method === 'GET') {
-        const all = store.listTurns(id, { before: wholeParam(url, 'before'), limit: wholeParam(url, 'limit') });
+        const all = store.listTurns(id, { before: wholeParam(url, 'before'), limit: wholeParam(url, 'limit') }).map((turn) => hub.seenBy(me, turn));
         // a guest is not told of what has outlived the trail, even in the minutes before the portal lets it go
         const since = me.kind === 'guest' && options.guests?.trailMinutes ? new Date(clock() - options.guests.trailMinutes * 60_000).toISOString() : undefined;
         return send(200, { turns: since ? all.filter((turn) => turn.createdAt >= since) : all });

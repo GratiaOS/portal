@@ -1,5 +1,6 @@
 import type { ChatMessage, LlmProvider } from '@gratiaos/llm-provider';
 import { canIn } from './access.js';
+import { pseudonymOf } from './guests.js';
 import { MAX_TEXT_LENGTH, participantId } from './domain.js';
 import { pickLocale, type Locale } from './locale.js';
 import type { GapReason, Participant, Turn } from './domain.js';
@@ -252,7 +253,14 @@ export function createNova(
   let stopped = false;
   let whenIdle: (() => void)[] = [];
 
-  const aliasOf = (participant: string) => store.getParticipant(participant)?.alias ?? participant;
+  // to a guest's companion the team is as unnamed as to the guests: whatever she is told of a person, and whatever she says to them, is the name they have there
+  const aliasOf = (participant: string) => {
+    const who = store.getParticipant(participant);
+    if (scope === 'guest' && who?.kind !== 'guest' && who?.kind !== 'companion') return pseudonymOf(participant, clock());
+    return who?.alias ?? participant;
+  };
+  const shown = (who: Participant) => aliasOf(who.id);
+
 
   /** "thinking…" for as long as at least one question of the conversation is waiting or running. */
   function mark(conversationId: string, delta: number): void {
@@ -297,7 +305,7 @@ export function createNova(
     // vouch for the figure and not for the claim it sits in: the check is of figures, never of wording (a 12 in the facts would not
     // stop "12 years"); the prompt tells her to say the facts as they are, and her sources show what she leaned on
     const conversation = [...lines.map((l) => l.text), roomFacts].join('\n');
-    const asked: ChatMessage[] = [{ role: 'user', content: buildUser(`#${turn.conversationId}`, lines, asker.alias) }];
+    const asked: ChatMessage[] = [{ role: 'user', content: buildUser(`#${turn.conversationId}`, lines, shown(asker)) }];
     const system = buildSystem(knowledge.text, roomFacts);
 
     async function speak(messages: ChatMessage[]) {
@@ -356,7 +364,7 @@ export function createNova(
       text = wordsFor(job.asker.locale).failed;
     }
     if (gone()) return;
-    say(job.turn.conversationId, addressed(job.asker.alias, text));
+    say(job.turn.conversationId, addressed(shown(job.asker), text));
   }
 
   function pump(): void {
@@ -374,7 +382,7 @@ export function createNova(
 
   function enqueue(turn: Turn, asker: Participant): void {
     if (waiting.length >= options.maxQueue) {
-      say(turn.conversationId, `@${asker.alias} ${wordsFor(asker.locale).busy}`);
+      say(turn.conversationId, `@${shown(asker)} ${wordsFor(asker.locale).busy}`);
       return;
     }
     mark(turn.conversationId, +1);
@@ -394,7 +402,7 @@ export function createNova(
     if (!binding) return false;
     const verdict = store.spendQuestion({ ledgerId: binding.ledgerId, budget: binding.budget, now, perHour: options.guestsPerHour ?? 60 });
     if (verdict === 'ok') return true;
-    say(turn.conversationId, addressed(asker.alias, wordsFor(asker.locale)[verdict === 'spent' ? 'limit' : 'hour']));
+    say(turn.conversationId, addressed(shown(asker), wordsFor(asker.locale)[verdict === 'spent' ? 'limit' : 'hour']));
     return false;
   }
 

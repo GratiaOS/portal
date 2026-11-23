@@ -1,4 +1,5 @@
 import { canIn, endOfGuest, mayKnow } from './access.js';
+import { forGuests } from './guests.js';
 import type { DropsConfig } from './config.js';
 import { participantId } from './domain.js';
 import type { Conversation, Participant, Presence, Turn } from './domain.js';
@@ -98,9 +99,16 @@ export class Hub {
   /** The one way a turn enters the room: written, then told to everyone, then to the listeners. */
   publish(input: { conversationId: string; speakerId: string; text: string }): Turn {
     const turn = this.store.appendTurn(input);
-    this.broadcast(frame('message', turn, turn.seq), (to) => this.mayRead(to, turn.conversationId));
+    const hidden = forGuests(this.store, turn, this.now());
+    this.broadcast(frame('message', turn, turn.seq), (to) => to.kind !== 'guest' && this.mayRead(to, turn.conversationId));
+    this.broadcast(frame('message', hidden, turn.seq), (to) => to.kind === 'guest' && this.mayRead(to, turn.conversationId));
     this.emit('turn', turn);
     return turn;
+  }
+
+  /** A turn as this reader is given it: the team's own words come to a guest under a pseudonym, never a name. */
+  seenBy(viewer: Participant, turn: Turn): Turn {
+    return viewer.kind === 'guest' ? forGuests(this.store, turn, this.now()) : turn;
   }
 
   /**
@@ -273,7 +281,7 @@ export class Hub {
       for (const turn of page) {
         if (!this.mayRead(connection.participant, turn.conversationId)) continue;
         if (since && turn.createdAt < since) continue;
-        if (!this.deliver(connection, frame('message', turn, turn.seq))) return;
+        if (!this.deliver(connection, frame('message', this.seenBy(connection.participant, turn), turn.seq))) return;
       }
       if (page.length < REPLAY_PAGE) return;
       cursor = page[page.length - 1].seq;
