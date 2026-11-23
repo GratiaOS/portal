@@ -227,3 +227,29 @@ test('what a guest said past the trail is not given to the model, even before th
   assert.equal(s.guestLlm.calls.length, 1);
   assert.ok(!JSON.stringify(s.guestLlm.calls[0].messages).includes('my old confession'));
 });
+
+test('a person of the team who asks her in the guest room is never named to the guests: not to the model, not on the stream, not in the history', async () => {
+  const s = setup();
+  const { guest } = s.admit();
+  const wire = [];
+  s.hub.subscribe(guest, { write: (chunk) => wire.push(chunk), close() {} }, 0); // a guest who is listening, and is given what is said from the start
+  s.ask(s.zeus, 'guests');
+  await s.guests.idle();
+  assert.equal(s.guestLlm.calls.length, 1, 'she answers the person of the team in the guest room');
+
+  const seen = (text) => /zeus/i.test(text);
+  assert.ok(!seen(JSON.stringify(s.guestLlm.calls[0])), 'the model for guests was told the alias');
+  assert.ok(!seen(wire.join('')), 'the stream named the person');
+  const history = s.store.listTurns('guests').map((t) => s.hub.seenBy(guest, t));
+  assert.ok(!seen(JSON.stringify(history)), 'the history named the person');
+  assert.match(history.at(-1).text, /^@[a-z]+-\d\d /, 'she addressed them by their name of the day');
+
+  // the refusal path too: with no room in her queue she says it to the same name
+  const full = setup();
+  const g = full.admit().guest;
+  const lines = [];
+  full.hub.subscribe(g, { write: (chunk) => lines.push(chunk), close() {} }, 0);
+  for (let i = 0; i < 8; i += 1) full.ask(full.zeus, 'guests');
+  await full.guests.idle();
+  assert.ok(!seen(lines.join('')), 'a refusal named the person');
+});
