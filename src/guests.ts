@@ -3,16 +3,32 @@
  * visitor is, and nothing keeps where they came from: the door counts guests and callers, not people.
  */
 
-import { randomBytes, randomInt } from 'node:crypto';
+import { createHash, randomBytes, randomInt } from 'node:crypto';
 import type { GuestsConfig } from './config.js';
 import { pickLocale } from './locale.js';
 import { tokenDigest } from './config.js';
-import type { Conversation, Participant } from './domain.js';
+import type { Conversation, Participant, Turn } from './domain.js';
 import { RoomError } from './domain.js';
 import type { RoomStore } from './store.js';
 
 /** The names of the hour: small, calm animals. When they are all taken the next ones carry a number (`owl-2`). */
 export const GUEST_NAMES: readonly string[] = ['owl', 'fox', 'heron', 'otter', 'hare', 'wren', 'lynx', 'finch', 'newt', 'swift', 'vole', 'crane', 'badger', 'robin', 'stoat', 'plover'];
+
+/**
+ * The name a person of the team goes by in the guest room, for the guests who read it: an animal and two digits (`owl-47`), worked out from who
+ * they are and the day, so nothing is stored and nothing has to be remembered: the same person is the same animal all day, and another one tomorrow.
+ */
+export function pseudonymOf(speakerId: string, now: number): string {
+  const h = createHash('sha256').update(`${speakerId}|${Math.floor(now / 86_400_000)}`).digest();
+  return `${GUEST_NAMES[h[0] % GUEST_NAMES.length]}-${10 + (h.readUInt16BE(1) % 90)}`;
+}
+
+/** A turn as a guest is given it: anyone who is not a guest or a companion (the team, or someone the store no longer knows) speaks under a pseudonym, and names no one. */
+export function forGuests(store: Pick<RoomStore, 'getParticipant'>, turn: Turn, now: number): Turn {
+  const kind = store.getParticipant(turn.speakerId)?.kind;
+  if (kind === 'guest' || kind === 'companion') return turn;
+  return { ...turn, speakerId: `guest:${pseudonymOf(turn.speakerId, now)}`, mentions: [] };
+}
 
 /** The room is full: the portal hosts as many guests as it is told to. */
 export class GuestRoomFull extends Error {

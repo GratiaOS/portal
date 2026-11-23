@@ -1,5 +1,6 @@
 import type { ChatMessage, LlmProvider } from '@gratiaos/llm-provider';
 import { canIn } from './access.js';
+import { pseudonymOf } from './guests.js';
 import { MAX_TEXT_LENGTH, participantId } from './domain.js';
 import { pickLocale, type Locale } from './locale.js';
 import type { GapReason, Participant, Turn } from './domain.js';
@@ -252,7 +253,12 @@ export function createNova(
   let stopped = false;
   let whenIdle: (() => void)[] = [];
 
-  const aliasOf = (participant: string) => store.getParticipant(participant)?.alias ?? participant;
+  const aliasOf = (participant: string) => {
+    const who = store.getParticipant(participant);
+    // to a guest's companion the team is as unnamed as to the guests: she says only what they could read
+    if (scope === 'guest' && who?.kind !== 'guest' && who?.kind !== 'companion') return pseudonymOf(participant, clock());
+    return who?.alias ?? participant;
+  };
 
   /** "thinking…" for as long as at least one question of the conversation is waiting or running. */
   function mark(conversationId: string, delta: number): void {
