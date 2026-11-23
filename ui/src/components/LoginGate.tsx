@@ -10,7 +10,7 @@
  * Not copied: written new for Room (MPL-2.0); Firegate is AGPL-3.0.
  */
 import { stepThroughMeans } from '../lib/guest.ts';
-import { growRoots } from '../lib/roots.ts';
+import { growCrown, growRoots } from '../lib/roots.ts';
 import type { Point } from '../lib/roots.ts';
 import { useBreath } from '../lib/useBreath.ts';
 import type { Refused } from '../lib/guest.ts';
@@ -40,6 +40,9 @@ const CLOUDS: { id: string; depth: 'far' | 'near'; puffs: [number, number, numbe
   { id: 'h', depth: 'far', puffs: [[1015, 321, 55, 3.2, 0.42], [1100, 317, 70, 4, 0.62], [1175, 320, 50, 3, 0.4]] },
 ];
 
+/** The crown, grown once: its limbs leave the top of the trunk, in the sky's own units; about 72 to each side and 72 tall. */
+const CROWN = growCrown({ x: 560, y: 362 }, 72, 72);
+
 /**
  * The sky of the photograph: dark clouds drawn across the dusk, the edge of the land, and one tree alone on it. Its colours are in
  * gate.css; held to the bottom, so that the tree stands on the horizon at any width.
@@ -63,12 +66,12 @@ function Sky() {
           ))}
         </g>
       ))}
-      {/* an olive tree: a crown uneven at its edge, wider than tall, on a short trunk, and a shrub beside it; it breathes with the page (gate.css) */}
+      {/* the tree: a short trunk, and above it a crown of limbs that fork and fork again, with leaves at the ends of the twigs and sky between them (lib/roots.ts);
+          it breathes with the page (gate.css), and a shrub stands beside it */}
       <g data-gate="crown">
-        <path
-          d="M552 392 L554 368 Q530 372 512 364 Q494 366 490 354 Q478 348 488 338 Q480 326 494 320 Q492 306 508 304 Q512 290 528 292 Q534 278 550 282 Q560 270 574 278 Q590 272 598 284 Q614 282 618 296 Q634 298 632 312 Q646 318 638 330 Q650 340 638 350 Q640 362 624 364 Q610 374 590 368 Q578 372 566 368 L568 392 Z"
-          data-gate="tree"
-        />
+        <path d="M551 392 Q555 382 556 372 Q557 366 558 362 L562 362 Q563 366 564 372 Q565 382 567 388 L569 392 Z" data-gate="tree" />
+        <path d={CROWN.branches} data-gate="tree" />
+        <path d={CROWN.leaves} data-gate="tree" />
         <path d="M452 392 Q448 380 458 376 Q462 366 474 370 Q484 364 490 374 Q500 376 496 388 L496 392 Z" data-gate="tree" />
       </g>
       <path d="M-40 392 Q400 384 760 388 T1260 380 L1260 400 L-40 400 Z" data-gate="hill" />
@@ -81,7 +84,7 @@ const TRUNK_X = 560;
 const TRUNK_BASE_Y = 392;
 
 /** The half width of the crown in the sky's own units (x 488 to 650 at its widest, drawn a fifth larger), a little over, so that the roots spread about as wide as the crown, as they do in a real tree. */
-const CROWN_REACH = 130;
+const CROWN_REACH = 88;
 
 /**
  * The roots of the tree: under the land, as they are in a real tree. They spread about as wide as the crown, close to the surface, and fork, and do

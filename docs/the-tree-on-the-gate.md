@@ -10,13 +10,13 @@ The olive tree on the gate (what a visitor sees at `firegate.space` before they 
 
 | Part | What it does with `--breath` | Amount (the place to tune) |
 | --- | --- | --- |
-| the crown (`data-gate='crown'`) | opens and rises, about the foot of the trunk; a fifth larger than it was drawn | `scale` ±3 % wide, ±5 % tall |
+| the crown (`data-gate='crown'`: trunk, branches, leaves) | opens and rises, about the foot of the trunk; a fifth larger than it was drawn | `scale` ±3 % wide, ±5 % tall |
 | the sky (`data-gate='glow'`) | the afterglow of the photograph, low on the horizon and centred on the tree, added to the dusk with `screen`: whole when the crown is open | `opacity` up to 0.85 |
 | the roots (`data-gate='roots'`) | draw in as the crown opens and spread as it closes (the other way about the foot), and are lit as the light comes down into them | `scale` ±3 % / ±5 %, `opacity` 0.05 to 1 |
 
 ## The roots
 
-[`ui/src/lib/roots.ts`](../ui/src/lib/roots.ts) draws **thirteen shapes and no more**, in three directions: a short thick pivot straight down, two strong roots to each side (one almost along the surface, one going down and out), and each of those four forking twice and stopping. Each is a filled shape that tapers from the trunk to a fine tip, none thinner than a clear line where it starts, and each branch leaves its parent in the parent's own direction so nothing turns sharply. They spread about as wide as the crown (`CROWN_REACH` in `LoginGate.tsx`, in the sky's own units) and reach for nothing, not even the doorway. A seed makes them the same on every load; they are drawn again, from where the foot is on the page, when it changes size. `THICKNESS` in the same file is where to make them heavier or finer. The empty space between them is part of the rhythm: more lines made the picture busier, not the breath clearer.
+[`ui/src/lib/roots.ts`](../ui/src/lib/roots.ts) grows **the crown and the roots with one hand**, the roots as the mirror of the crown (the way the tree is in the picture it was drawn from). A limb leaves the foot, forks, and each fork forks again, a little shorter and a little finer, to twigs and to hairlines; nothing grows outside the ellipse it is given, so the crown is a dome and the roots a wide, shallow bowl, as wide as the crown (`CROWN_REACH` in `LoginGate.tsx`, in the sky's own units) and not so deep as it is wide. Each branch is a filled shape that tapers and starts where the one it comes from ends, so nothing turns sharply. The crown has leaves at the ends of its twigs, small round masses with sky between them, so that the branches show at its edge against the light; its trunk is the one hand-drawn path in `LoginGate.tsx` (the guard looks for it there). A seed makes the tree the same on every load; the roots are drawn again, from where the foot is on the page, when it changes size. `THICKNESS` and `FORKS` in the same file are where to make it heavier, finer, denser. The roots are many (a hundred and some) and the crown is lacy; a first version had thirteen roots, and the picture asked for more.
 
 ## The guard
 
