@@ -24,10 +24,10 @@ test('the same gate has the same tree: a seed gives the same numbers, another gi
   assert.deepEqual(growCrown(foot, REACH, 100, 3), growCrown(foot, REACH, 100, 3));
 });
 
-test('the roots are many and fine, and not a crowd: they fork, and fork again, and stop', () => {
+test('the roots are a few strong limbs and the fine ones that come of them, not a network: they fork, and fork again, and some stop', () => {
   for (const seed of [1, 7, 42, 2024]) {
     const count = growRoots(foot, REACH, seed).length;
-    assert.ok(count >= 60 && count <= 600, `${count} shapes`);
+    assert.ok(count >= 25 && count <= 250, `${count} shapes`);
   }
   assert.ok(FORKS.roots >= FORKS.crown, 'the roots go on to hairlines at least as far as the crown');
 });
@@ -47,8 +47,9 @@ test('they are thickest at the trunk and taper: the first limb starts as wide as
   const corners = points(first!);
   // the corners go along one side to the tip and back along the other: the first and the last are the two sides of the base
   const base = gap(corners[0]!, corners.at(-1)!);
-  assert.ok(Math.abs(base - REACH * THICKNESS.limb) < 0.8, `base ${base}`);
-  assert.ok(base <= REACH * 0.04, 'fine, as the lights of the doorway are');
+  // the first limb is the pivot, the heaviest: a third as wide again as the others
+  assert.ok(Math.abs(base - REACH * THICKNESS.limb * 1.3) < 0.8, `base ${base}`);
+  assert.ok(base <= REACH * 0.05, 'fine, as the lights of the doorway are');
   const half = corners.length / 2;
   assert.ok(gap(corners[half - 1]!, corners[half]!) < base * 0.8);
   for (const d of growRoots(foot, REACH)) {
@@ -74,7 +75,7 @@ test('they spread to both sides and go down, as wide as the crown and shallower 
   const left = Math.min(...all.map((p) => p.x));
   const right = Math.max(...all.map((p) => p.x));
   const deep = Math.max(...all.map((p) => p.y)) - foot.y;
-  assert.ok(foot.x - left > REACH * 0.7 && right - foot.x > REACH * 0.7, `${left}..${right}`);
+  assert.ok(foot.x - left > REACH * 0.4 && right - foot.x > REACH * 0.7, `${left}..${right}: both sides, one longer than the other`);
   assert.ok(deep > REACH * 0.25 && deep < REACH * 0.5, `depth ${deep}: the doorway is under them, with room between`);
 });
 

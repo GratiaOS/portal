@@ -22,24 +22,18 @@ export function seeded(seed: number): () => number {
  * How thick a limb starts, as a share of the reach, how much of it is left where it forks (`taper`), and how fine the last twig is (`tip`, never
  * less than a hairline that can be seen).
  */
-export const THICKNESS = { crown: 0.06, limb: 0.028, taper: 0.62, tip: 0.006 } as const;
+export const THICKNESS = { crown: 0.06, limb: 0.034, taper: 0.62, tip: 0.006 } as const;
 
 /** How many times a limb forks: the crown stops a little sooner (its leaves do the rest), the roots go on to hairlines. */
 export const FORKS = { crown: 4, roots: 5 } as const;
 
 /** The limbs of the roots: angles from straight down, to the right (positive) and the left (negative), as the limbs of the crown are from straight up. */
-const ROOT_LIMBS: { angle: number; length: number }[] = [
-  { angle: 0, length: 0.5 },
-  { angle: 0.28, length: 0.5 },
-  { angle: -0.28, length: 0.5 },
-  { angle: 0.62, length: 0.56 },
-  { angle: -0.62, length: 0.56 },
-  { angle: 0.98, length: 0.62 },
-  { angle: -0.98, length: 0.62 },
-  { angle: 1.25, length: 0.6 },
-  { angle: -1.25, length: 0.6 },
-  { angle: 1.42, length: 0.58 },
-  { angle: -1.42, length: 0.58 },
+const ROOT_LIMBS: { angle: number; length: number; width?: number }[] = [
+  { angle: 0.04, length: 0.5, width: 1.3 }, // the pivot: central, the heaviest
+  { angle: 0.72, length: 0.6, width: 1 },
+  { angle: -0.5, length: 0.46, width: 0.85 },
+  { angle: 1.3, length: 0.74, width: 0.9 }, // one runs long and shallow, to one side
+  { angle: -1.38, length: 0.5, width: 0.7 },
 ];
 
 const CROWN_LIMBS: { angle: number; length: number }[] = [
@@ -51,7 +45,7 @@ const CROWN_LIMBS: { angle: number; length: number }[] = [
   { angle: 1.25, length: 0.32 },
 ];
 
-type Limb = { angle: number; length: number };
+type Limb = { angle: number; length: number; width?: number };
 type Garden = {
   /** Where the limbs leave, and which way is away from the ground: -1 up the page (the crown), 1 down it (the roots). */
   foot: Point;
@@ -124,15 +118,17 @@ function grow(g: Garden): { shapes: string[]; tips: Point[] } {
       tips.push(end);
       return;
     }
-    const count = level === 0 || random() < 0.3 ? 3 : 2;
+    const count = level === 0 ? 3 : random() < (g.away === 1 ? 0.12 : 0.3) ? 3 : 2;
     for (let i = 0; i < count; i += 1) {
+      // the roots are not a network: some of the finer ones simply stop, and the ones that go on are uneven
+      if (g.away === 1 && level >= 2 && random() < 0.3) continue;
       const spread = 0.3 + random() * 0.4;
       const offset = count === 3 ? (i - 1) * (spread + 0.1) + (random() - 0.5) * 0.2 : (i === 0 ? -1 : 1) * spread;
-      limb(end, angle + offset, reachable * (0.62 + random() * 0.18), narrow, level + 1);
+      limb(end, angle + offset, reachable * (g.away === 1 ? 0.55 + random() * 0.25 : 0.62 + random() * 0.18), narrow, level + 1);
     }
   }
 
-  for (const { angle, length } of g.limbs) limb(g.foot, angle + (random() - 0.5) * 0.12, g.reach * length, g.reach * g.thick, 0);
+  for (const { angle, length, width = 1 } of g.limbs) limb(g.foot, angle + (random() - 0.5) * 0.12, g.reach * length * (g.away === 1 ? 0.88 + random() * 0.24 : 1), g.reach * g.thick * width, 0);
   return { shapes, tips };
 }
 
