@@ -118,16 +118,17 @@
 [data-gate='root-halo'] path {
   fill: var(--bulb-warm);
   stroke: var(--bulb-warm);
-  stroke-width: 5;
-  opacity: 0.5;
+  stroke-width: 0;
+  opacity: 0.45;
 }
 
 [data-gate='root-halo'] {
-  filter: blur(3px);
+  filter: blur(4px);
 }
 
 [data-gate='root-core'] path {
-  fill: var(--bulb);
+  fill: var(--bulb-warm);
+  opacity: 0.95;
 }
 
 /* the doorway: the fence and its lights, with the key given inside it */

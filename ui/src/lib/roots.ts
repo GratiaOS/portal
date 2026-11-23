@@ -1,12 +1,12 @@
-// 🍄 The roots under the tree on the gate: a counterweight to the breath, not a botany lesson. Thirteen shapes and no more, in three directions: a short thick
-// pivot straight down, two strong roots to each side (one almost along the surface, one going down and out), and each of those four forking twice and
-// stopping there. Each is a filled shape that tapers from thick at the trunk to a point, so that it reads as mass and not as a scratch of light, and its
-// curve leaves its parent's own direction, so that nothing turns sharply. Drawn once from the foot and a reach (about the crown's half width), with a
-// seed, so the same gate has the same roots on every load and every size. The page lights them with the breath; nothing here reads the page or the clock.
+// 🍄 The tree on the gate, drawn by one hand: the crown above the ground and the roots below it are the same kind of growing, one the mirror of the other
+// (the way a tree is in the picture it was drawn from). A limb leaves the foot, forks, and each fork forks again, a little shorter and a little finer, until
+// the twigs, and nothing grows outside the ellipse it is given, so the crown is a dome and the roots a wide shallow bowl. Each branch is a filled shape that
+// tapers, joined to the end of the one it comes from, so nothing turns sharply. Drawn from a seed, so the same gate has the same tree on every load and every
+// size. The page lights and moves it with the breath; nothing here reads the page or the clock.
 
 export type Point = { x: number; y: number };
 
-/** A small, fixed generator (mulberry32): the same seed gives the same roots on every load and every size. */
+/** A small, fixed generator (mulberry32): the same seed gives the same tree on every load and every size. */
 export function seeded(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -19,102 +19,149 @@ export function seeded(seed: number): () => number {
 }
 
 /**
- * How thick the roots start, and how fine they end, as a share of the reach: the pivot and the strong roots at the trunk, a branch where it leaves (a share of
- * its parent's width there, and never less than `least`, so that none is a scratch), and every tip.
+ * How thick a limb starts, as a share of the reach, how much of it is left where it forks (`taper`), and how fine the last twig is (`tip`, never
+ * less than a hairline that can be seen).
  */
-export const THICKNESS = { pivot: 0.11, strong: 0.085, down: 0.07, branch: 0.7, least: 0.032, tip: 0.016 } as const;
+export const THICKNESS = { crown: 0.06, limb: 0.034, taper: 0.62, tip: 0.006 } as const;
 
-/** How many shapes there are: the pivot, four roots, and two branches on each of the four. */
-export const ROOT_COUNT = 1 + 4 + 4 * 2;
+/** How many times a limb forks: the crown stops a little sooner (its leaves do the rest), the roots go on to hairlines. */
+export const FORKS = { crown: 4, roots: 5 } as const;
 
-const SAMPLES = 16;
-const DOWN = Math.PI / 2;
+/** The limbs of the roots: angles from straight down, to the right (positive) and the left (negative), as the limbs of the crown are from straight up. */
+const ROOT_LIMBS: { angle: number; length: number; width?: number }[] = [
+  { angle: 0.04, length: 0.5, width: 1.3 }, // the pivot: central, the heaviest
+  { angle: 0.72, length: 0.6, width: 1 },
+  { angle: -0.5, length: 0.46, width: 0.85 },
+  { angle: 1.3, length: 0.74, width: 0.9 }, // one runs long and shallow, to one side
+  { angle: -1.38, length: 0.5, width: 0.7 },
+];
+
+const CROWN_LIMBS: { angle: number; length: number }[] = [
+  { angle: -1.15, length: 0.34 },
+  { angle: -0.62, length: 0.4 },
+  { angle: -0.12, length: 0.44 },
+  { angle: 0.32, length: 0.42 },
+  { angle: 0.8, length: 0.38 },
+  { angle: 1.25, length: 0.32 },
+];
+
+type Limb = { angle: number; length: number; width?: number };
+type Garden = {
+  /** Where the limbs leave, and which way is away from the ground: -1 up the page (the crown), 1 down it (the roots). */
+  foot: Point;
+  away: 1 | -1;
+  /** The ellipse nothing leaves: its half width, its half depth, and how far from the foot, along `away`, its centre is. */
+  rx: number;
+  ry: number;
+  centre: number;
+  limbs: Limb[];
+  /** For the roots: the surface, which nothing of them comes above. */
+  ground?: number;
+  /** The size thickness is measured on, and the share of it a limb starts with. */
+  reach: number;
+  thick: number;
+  forks: number;
+  seed: number;
+};
+
 const n = (value: number): string => (Math.round(value * 10) / 10).toString();
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
-type Curve = [Point, Point, Point, Point];
-const at = ([a, b, c, d]: Curve, t: number): Point => {
-  const u = 1 - t;
-  return {
-    x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
-    y: u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y,
-  };
-};
-const heading = (curve: Curve, t: number): number => {
-  const a = at(curve, Math.max(0, t - 0.02));
-  const b = at(curve, Math.min(1, t + 0.02));
-  return Math.atan2(b.y - a.y, b.x - a.x);
-};
-
-/** A root's own curve: out from `from` along `going`, bending a little and never more than that, `length` long, never above `ground`. */
-function curve(from: Point, going: number, length: number, bend: number, ground: number): Curve {
-  const tip = (angle: number, share: number): Point => ({ x: from.x + Math.cos(angle) * length * share, y: Math.max(ground, from.y + Math.sin(angle) * length * share) });
-  return [from, tip(going, 0.36), tip(going + bend * 0.6, 0.72), tip(going + bend, 1)];
+/** The outline of one branch, from `a` to `b` with a slight bow at its middle, as wide as `wa` at one end and `wb` at the other: a closed shape to fill. */
+function branch(a: Point, b: Point, bow: number, wa: number, wb: number, ground?: number): string {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const m = { x: (a.x + b.x) / 2 + nx * bow, y: (a.y + b.y) / 2 + ny * bow };
+  const wm = (wa + wb) / 2;
+  const left = [
+    { x: a.x + (nx * wa) / 2, y: a.y + (ny * wa) / 2 },
+    { x: m.x + (nx * wm) / 2, y: m.y + (ny * wm) / 2 },
+    { x: b.x + (nx * wb) / 2, y: b.y + (ny * wb) / 2 },
+  ];
+  const right = [
+    { x: b.x - (nx * wb) / 2, y: b.y - (ny * wb) / 2 },
+    { x: m.x - (nx * wm) / 2, y: m.y - (ny * wm) / 2 },
+    { x: a.x - (nx * wa) / 2, y: a.y - (ny * wa) / 2 },
+  ];
+  // roots never come above the ground, even by the thickness of a limb that lies along it
+  const low = (y: number) => (ground === undefined ? y : Math.max(ground, y));
+  return `M${[...left, ...right].map((p) => `${n(p.x)} ${n(low(p.y))}`).join(' L')} Z`;
 }
 
-/**
- * The outline of a root along its curve, thick at one end and fine at the other: a closed shape to be filled, with the point where it starts as its
- * first corner and the other side of the base as its last, so the width at the base is the distance between them. Nothing goes above `ground`.
- */
-function shape(c: Curve, wide: number, fine: number, ground: number): string {
-  const left: Point[] = [];
-  const right: Point[] = [];
-  for (let i = 0; i <= SAMPLES; i += 1) {
-    const t = i / SAMPLES;
-    const p = at(c, t);
-    const a = heading(c, t);
-    const half = lerp(wide, fine, t ** 0.8) / 2;
-    left.push({ x: p.x - Math.sin(a) * half, y: Math.max(ground, p.y + Math.cos(a) * half) });
-    right.push({ x: p.x + Math.sin(a) * half, y: Math.max(ground, p.y - Math.cos(a) * half) });
+/** The branches of one growing, as shapes to fill, and the ends of its twigs. */
+function grow(g: Garden): { shapes: string[]; tips: Point[] } {
+  const random = seeded(g.seed);
+  const shapes: string[] = [];
+  const tips: Point[] = [];
+  const cy = g.foot.y + g.away * g.centre;
+  const inside = (p: Point): boolean => ((p.x - g.foot.x) / g.rx) ** 2 + ((p.y - cy) / g.ry) ** 2 <= 1;
+  const towards = (from: Point, angle: number, length: number): Point => ({ x: from.x + Math.sin(angle) * length, y: from.y + g.away * Math.cos(angle) * length });
+  const fine = Math.max(g.reach * THICKNESS.tip, 0.7);
+
+  function limb(from: Point, angle: number, length: number, width: number, level: number): void {
+    // a branch that would leave the ellipse is shortened until it does not, and if even a stub does, it is not grown
+    let reachable = length;
+    let end = towards(from, angle, reachable);
+    for (let tries = 0; tries < 4 && !inside(end); tries += 1) {
+      reachable *= 0.7;
+      end = towards(from, angle, reachable);
+    }
+    if (!inside(end)) return;
+    // never below the ground, whichever way it goes
+    if ((end.y - g.foot.y) * g.away < 0) return;
+    const narrow = Math.max(fine, width * THICKNESS.taper);
+    shapes.push(branch(from, end, (random() - 0.5) * reachable * 0.22, width, narrow, g.ground));
+    if (level >= g.forks) {
+      tips.push(end);
+      return;
+    }
+    const count = level === 0 ? 3 : random() < (g.away === 1 ? 0.12 : 0.3) ? 3 : 2;
+    for (let i = 0; i < count; i += 1) {
+      // the roots are not a network: some of the finer ones simply stop, and the ones that go on are uneven
+      if (g.away === 1 && level >= 2 && random() < 0.3) continue;
+      const spread = 0.3 + random() * 0.4;
+      const offset = count === 3 ? (i - 1) * (spread + 0.1) + (random() - 0.5) * 0.2 : (i === 0 ? -1 : 1) * spread;
+      limb(end, angle + offset, reachable * (g.away === 1 ? 0.55 + random() * 0.25 : 0.62 + random() * 0.18), narrow, level + 1);
+    }
   }
-  const out = [...left, ...right.reverse()];
-  return `M${out.map((p) => `${n(p.x)} ${n(p.y)}`).join(' L')} Z`;
+
+  for (const { angle, length, width = 1 } of g.limbs) limb(g.foot, angle + (random() - 0.5) * 0.12, g.reach * length * (g.away === 1 ? 0.88 + random() * 0.24 : 1), g.reach * g.thick * width, 0);
+  return { shapes, tips };
 }
 
 /**
- * Thirteen roots for a tree whose crown is about `reach` wide on each side of its foot: the pivot first, then, for each side, the root along the
- * surface and the one going down and out, each followed by its two branches. `d` strings for an SVG path, each a closed shape to fill. Nothing goes
+ * The roots of a tree whose crown is about `reach` wide on each side of its foot: limbs that leave the foot to both sides and down, fork and fork again to
+ * hairlines, in a bowl as wide as the crown and not half as deep. `d` strings for an SVG path, each a closed shape to fill. Nothing goes
  * above the foot, wider than a little past `reach`, or deeper than `reach`.
  */
 export function growRoots(foot: Point, reach: number, seed = 7): string[] {
   if (!(reach > 0)) return [];
-  const random = seeded(seed);
-  const ground = foot.y;
-  const out: string[] = [];
-  const jitter = (spread: number) => (random() - 0.5) * spread;
+  // they leave just under the surface, so that a limb lying along it keeps its whole thickness
+  const start = { x: foot.x, y: foot.y + reach * THICKNESS.limb * 0.5 };
+  return grow({ ground: foot.y, foot: start, away: 1, rx: reach * 1.05, ry: reach * 0.4, centre: reach * 0.08, limbs: ROOT_LIMBS, reach, thick: THICKNESS.limb, forks: FORKS.roots, seed }).shapes;
+}
 
-  // the pivot: short, thick, and nearly straight down
-  out.push(shape(curve(foot, DOWN + jitter(0.12), reach * (0.5 + random() * 0.08), jitter(0.2), ground), reach * THICKNESS.pivot, reach * THICKNESS.tip, ground));
-
-  const mains: { side: 1 | -1; lie: number; length: number; wide: number }[] = [];
-  for (const side of [1, -1] as const) {
-    mains.push({ side, lie: 0.12 + random() * 0.08, length: 0.92 + random() * 0.08, wide: THICKNESS.strong });
-    mains.push({ side, lie: 0.55 + random() * 0.12, length: 0.62 + random() * 0.08, wide: THICKNESS.down });
+/**
+ * The crown, in the units of the picture it is drawn in: limbs leaving the top of the trunk, in a dome. `shapes` are the branches and `leaves` is one
+ * outline of small round leaf masses at the ends of the twigs, with sky between them, so that the branches show through at its edge as they do in a real
+ * tree against the light.
+ */
+export function growCrown(foot: Point, reach: number, height: number, seed = 11): { branches: string; leaves: string } {
+  if (!(reach > 0) || !(height > 0)) return { branches: '', leaves: '' };
+  const grown = grow({ foot, away: -1, rx: reach, ry: height * 0.56, centre: height * 0.5, limbs: CROWN_LIMBS, reach: height * 0.72, thick: THICKNESS.crown, forks: FORKS.crown, seed });
+  const random = seeded(seed + 1);
+  const puffs: string[] = [];
+  for (const tip of grown.tips) {
+    // two masses at each twig: one at its end, one a little back and to the side, of slightly different sizes
+    for (const [share, side] of [[1, 0], [0.55, 1], [0.3, 1]] as const) {
+      const r = reach * (0.032 + random() * 0.03) * lerp(1, 0.75, side);
+      const cx = tip.x + side * (random() - 0.5) * r * 1.6;
+      const cyy = tip.y + side * r * 0.9 * share;
+      puffs.push(`M${n(cx - r)} ${n(cyy)}a${n(r)} ${n(r)} 0 1 0 ${n(2 * r)} 0a${n(r)} ${n(r)} 0 1 0 ${n(-2 * r)} 0Z`);
+    }
   }
-  for (const { side, lie, length, wide } of mains) {
-    // a root to the right leaves at `lie` below the surface; to the left, at the same angle mirrored
-    const going = side === 1 ? lie : Math.PI - lie;
-    // it leaves just under the surface, by half its own thickness, so that a root lying along it keeps its whole width and is not cut by the ground
-    const base = reach * wide;
-    const rootCurve = curve({ x: foot.x + side * reach * 0.03, y: foot.y + base * 0.5 }, going, reach * length, side * (0.12 + random() * 0.18) * (random() < 0.5 ? -1 : 1), ground);
-    out.push(shape(rootCurve, base, reach * THICKNESS.tip, ground));
-
-    // two branches, at two fifths and at seven tenths of the way: the first turns toward the vertical, the second toward the horizontal
-    // (or, for a root that already lies along the surface, a little less toward the vertical again), and they stop there
-    const nearHorizontal = lie < 0.3;
-    [
-      { t: 0.4, toward: 'vertical' as const, turn: 0.5 + random() * 0.15, share: 0.46 },
-      { t: 0.7, toward: nearHorizontal ? ('vertical' as const) : ('horizontal' as const), turn: 0.3 + random() * 0.12, share: 0.38 },
-    ].forEach(({ t, toward, turn, share }) => {
-      const from = at(rootCurve, t);
-      const parent = heading(rootCurve, t);
-      const sx = Math.cos(parent) >= 0 ? 1 : -1;
-      const h = toward === 'vertical' ? parent + sx * turn : parent - sx * turn;
-      // a branch leaves in its parent's own direction and bends away from it, so that nothing turns sharply
-      const branchCurve = curve(from, h, reach * length * share, sx * 0.1, ground);
-      const here = lerp(base, reach * THICKNESS.tip, t ** 0.8);
-      out.push(shape(branchCurve, Math.max(reach * THICKNESS.least, here * THICKNESS.branch), reach * THICKNESS.tip, ground));
-    });
-  }
-  return out;
+  return { branches: grown.shapes.join(' '), leaves: puffs.join(' ') };
 }
