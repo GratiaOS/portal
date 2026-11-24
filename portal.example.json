@@ -5,13 +5,16 @@
   "dbPath": "data/portal.db",
   "tokensFile": "portal.tokens.local.json",
   "participants": [
-    { "kind": "human", "alias": "Zeus", "locale": "ro", "sign": "🦁" },
-    { "kind": "human", "alias": "Hera", "locale": "es" },
+    { "kind": "human", "alias": "quartz", "sign": "💠" },
+    { "kind": "human", "alias": "forge", "sign": "🔩" },
+    { "kind": "human", "alias": "relay", "sign": "📡" },
+    { "kind": "human", "alias": "pulse", "sign": "⚡" },
+    { "kind": "human", "alias": "local", "sign": "🔋" },
     { "kind": "companion", "alias": "Nova", "capabilities": ["answer"] }
   ],
   "rooms": [
     { "id": "general", "title": "General" },
-    { "id": "olympus", "title": "Olympus", "tags": ["myths"] }
+    { "id": "ops", "title": "Ops", "tags": ["infra"] }
   ],
   "rateLimit": { "messages": 10, "perSeconds": 10 },
   "maxStreamsPerParticipant": 10,
@@ -28,7 +31,7 @@
     "contextTurns": 12,
     "maxQueue": 5,
     "exclude": ["private/interfaces"],
-    "facts": ["The portal is run by the Olympus infrastructure team."],
-    "examples": ["who guards the gates of Olympus?", "what happens to a god who breaks the oath on the Styx?"]
+    "facts": ["The portal is run by the infrastructure team."],
+    "examples": ["who is on call this week?", "where do we keep the runbooks?"]
   }
 }
