@@ -182,7 +182,7 @@ test('Nova: what is wrong is named, and a pasted key is never repeated', () => {
   // a sign given by the config is one emoji, and only a person has one
   refuses({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24) }, { kind: 'companion', alias: 'Nova', sign: '✨' }] }, /companion:Nova must not have a sign: a sign is for the people in the room/);
   refuses({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24), sign: 'leu' }, { kind: 'companion', alias: 'Nova' }] }, /sign must be one emoji/);
-  assert.equal(parseConfig({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24), sign: '🦁' }, { kind: 'companion', alias: 'Nova' }] }, '/base').participants[0].sign, '🦁');
+  assert.equal(parseConfig({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24), sign: '💠' }, { kind: 'companion', alias: 'Nova' }] }, '/base').participants[0].sign, '💠');
   refuses(withNova({ ...NOVA, maxQueue: 500 }), /nova\.maxQueue/);
 
   // the file holds the NAME of the variable that has the key; pasting the key itself is caught, and not echoed

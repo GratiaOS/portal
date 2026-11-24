@@ -120,7 +120,7 @@ test('a frequency must be written as one, held by a person, once each way', () =
   for (const freq of ['99', '99.66', '1000.0', '', 99.6, undefined]) refuses(valid({ frequencies: [{ freq, holder: 'Quartz' }] }), /drops\.frequencies\[0\]\.freq/);
   refuses(valid({ frequencies: [{ freq: '99.6' }] }), /drops\.frequencies\[0\]\.holder/);
   refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Nova' }] }), /drops\.frequencies\[0\]: "Nova" must be a human/); // a companion holds nothing
-  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Ares' }] }), /drops\.frequencies\[0\]: "Ares" is not a participant/);
+  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Probe' }] }), /drops\.frequencies\[0\]: "Probe" is not a participant/);
   refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Quartz' }, { freq: '99.6', holder: 'Forge' }] }), /the frequency "99\.6" is used twice/);
   refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Quartz' }, { freq: '36.9', holder: 'quartz' }] }), /"Quartz" holds two frequencies/); // one each way, in v1
   refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Quartz', title: '' }] }), /drops\.frequencies\[0\]\.title/);

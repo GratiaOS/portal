@@ -10,7 +10,7 @@ const config = parseConfig(
     participants: [
       { kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) },
       { kind: 'human', alias: 'Forge', token: 'h'.repeat(24) },
-      { kind: 'human', alias: 'Ares', token: 'a'.repeat(24) },
+      { kind: 'human', alias: 'Probe', token: 'a'.repeat(24) },
       { kind: 'companion', alias: 'Nova' },
     ],
     rooms: [
@@ -51,9 +51,9 @@ test('hello says which frequency a person holds, with its title: the title is th
 
 test('a person who holds none is told so (null), and a portal with no drops says nothing of them at all', () => {
   const withDrops = open({ drops: config.drops });
-  const ares = withDrops.hello('human:ares');
-  assert.equal('heldFrequency' in ares, true);
-  assert.equal(ares.heldFrequency, null);
+  const probe = withDrops.hello('human:probe');
+  assert.equal('heldFrequency' in probe, true);
+  assert.equal(probe.heldFrequency, null);
   withDrops.hub.close();
 
   const without = open();
@@ -63,7 +63,7 @@ test('a person who holds none is told so (null), and a portal with no drops says
 
 test('hello tells no one of another person\'s frequency, in any part of it', () => {
   const { hub, hello } = open({ drops: config.drops });
-  const text = JSON.stringify(hello('human:ares'));
+  const text = JSON.stringify(hello('human:probe'));
   assert.equal(text.includes('99.6') || text.includes('36.9') || text.includes('CTT'), false);
   const quartz = JSON.stringify(hello('human:quartz'));
   assert.equal(quartz.includes('36.9'), false);

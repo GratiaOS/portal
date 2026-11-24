@@ -321,8 +321,8 @@ test('a sign changed many times in a minute is slowed down, for that person only
 test('a mention written with the sign after the name still finds the person', () =>
   within({
     async run({ quartz, forge }) {
-      await quartz('/api/me/sign', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sign: '🦁' }) });
-      const posted = await say(forge, 'general', { text: 'salut @Quartz🦁, ai un minut?' });
+      await quartz('/api/me/sign', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sign: '💠' }) });
+      const posted = await say(forge, 'general', { text: 'salut @Quartz💠, ai un minut?' });
       assert.deepEqual((await posted.json()).turn.mentions, ['human:quartz']);
     },
   }));

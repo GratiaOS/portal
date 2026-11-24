@@ -155,14 +155,14 @@ test('turns come back oldest first, with a global order across conversations', (
 
 test('a sign: the given one shows until a person chooses theirs; only the current one is kept, and a start does not undo it', (home) => {
   const store = room(home);
-  store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: '🦁' }]);
-  assert.equal(store.getParticipant('human:quartz').sign, '🦁'); // given
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: '💠' }]);
+  assert.equal(store.getParticipant('human:quartz').sign, '💠'); // given
   assert.equal(store.getParticipant('human:forge').sign, undefined); // none given, none shown
 
   assert.equal(store.setSign('human:quartz', '🫁').sign, '🫁'); // chosen
-  store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: '🦉' }]); // a restart with another given sign
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: '🔩' }]); // a restart with another given sign
   assert.equal(store.getParticipant('human:quartz').sign, '🫁'); // what he chose stays
-  assert.equal(store.setSign('human:quartz', null).sign, '🦉'); // let go: the given one shows again
+  assert.equal(store.setSign('human:quartz', null).sign, '🔩'); // let go: the given one shows again
   assert.equal(store.setSign('human:forge', '🇷🇴').sign, '🇷🇴'); // a flag is one sign
   store.close();
 
@@ -176,7 +176,7 @@ test('a sign: the given one shows until a person chooses theirs; only the curren
 test('a sign that is not one emoji is refused, given or chosen', (home) => {
   const store = room(home);
   for (const bad of ['lion', '🦁🦁', '🦁 ', '1️⃣', '', 'a🦁']) refuses('invalid', () => store.setSign('human:quartz', bad));
-  refuses('invalid', () => store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: 'zeu' }]));
+  refuses('invalid', () => store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: 'qua' }]));
   refuses('not_found', () => store.setSign('human:nimeni', '🦁'));
   // a sign is for the people in the room: not given to a companion, and not set on one
   refuses('invalid', () => store.syncParticipants([{ kind: 'companion', alias: 'Nova', sign: '✨' }]));
