@@ -45,13 +45,13 @@ const HOMES = {
 };
 
 const PEOPLE = [
-  { kind: 'human', alias: 'Zeus', locale: 'ro' },
-  { kind: 'human', alias: 'Hera' },
+  { kind: 'human', alias: 'Quartz', locale: 'ro' },
+  { kind: 'human', alias: 'Forge' },
   { kind: 'companion', alias: 'Nova', capabilities: ['answer'] },
 ];
 const CHANNELS = [
   { id: 'general', title: 'General' },
-  { id: 'olympus', title: 'Olympus', tags: ['myths'] },
+  { id: 'infra', title: 'Infra', tags: ['infra'] },
 ];
 
 // A clock that moves one second per reading, so order and timestamps are predictable.
@@ -100,23 +100,23 @@ test('participants and conversations are synced from the config, and syncing aga
 
   assert.deepEqual(
     store.listParticipants().map((p) => p.id),
-    ['human:hera', 'companion:nova', 'human:zeus'],
+    ['human:forge', 'companion:nova', 'human:quartz'],
   );
-  assert.deepEqual(store.getParticipant('human:zeus'), { id: 'human:zeus', kind: 'human', alias: 'Zeus', locale: 'ro', capabilities: [] });
+  assert.deepEqual(store.getParticipant('human:quartz'), { id: 'human:quartz', kind: 'human', alias: 'Quartz', locale: 'ro', capabilities: [] });
   assert.deepEqual(store.getParticipant('companion:nova').capabilities, ['answer']);
 
-  const [general, olympus] = store.listConversations();
+  const [general, infra] = store.listConversations();
   assert.equal(general.id, 'general');
   assert.equal(general.visibility, 'private'); // private unless said otherwise
   assert.equal(general.status, 'open');
-  assert.deepEqual(olympus.tags, ['myths']);
+  assert.deepEqual(infra.tags, ['infra']);
 });
 
 test('syncing updates the title, not the status, and removes nobody', (home) => {
   const store = room(home);
   store.setConversationStatus('general', 'closed');
   store.syncConversations([{ id: 'general', title: 'Cafeneaua', visibility: 'public' }]);
-  store.syncParticipants([{ kind: 'human', alias: 'Zeus' }]);
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz' }]);
 
   const general = store.getConversation('general');
   assert.equal(general.title, 'Cafeneaua');
@@ -130,7 +130,7 @@ test('bad config is refused', (home) => {
   refuses('invalid', () => store.syncParticipants([{ kind: 'robot', alias: 'x1' }]));
   refuses('invalid', () => store.syncParticipants([{ kind: 'human', alias: 'bad name' }]));
   refuses('invalid', () => store.syncParticipants([{ kind: 'human', alias: '-x' }]));
-  refuses('invalid', () => store.syncParticipants([{ kind: 'companion', alias: 'zeus' }])); // an alias belongs to one participant
+  refuses('invalid', () => store.syncParticipants([{ kind: 'companion', alias: 'quartz' }])); // an alias belongs to one participant
   refuses('invalid', () => store.syncConversations([{ id: 'Bad Id', title: 'x' }]));
   refuses('invalid', () => store.syncConversations([{ id: 'ok', title: 'x', visibility: 'secret' }]));
   // a refused batch leaves nothing behind
@@ -140,9 +140,9 @@ test('bad config is refused', (home) => {
 
 test('turns come back oldest first, with a global order across conversations', (home) => {
   const store = room(home);
-  const a = say(store, 'general', 'human:zeus', 'Neața tuturor 🌱☀️');
-  const b = say(store, 'olympus', 'human:hera', '@nova putem sari pasul cu Styx din Olympus?');
-  const c = say(store, 'general', 'human:hera', 'Salut');
+  const a = say(store, 'general', 'human:quartz', 'Neața tuturor 🌱☀️');
+  const b = say(store, 'infra', 'human:forge', '@nova putem sari pasul de review din infra?');
+  const c = say(store, 'general', 'human:forge', 'Salut');
 
   assert.deepEqual([a.seq, b.seq, c.seq], [1, 2, 3]);
   assert.deepEqual(
@@ -155,19 +155,19 @@ test('turns come back oldest first, with a global order across conversations', (
 
 test('a sign: the given one shows until a person chooses theirs; only the current one is kept, and a start does not undo it', (home) => {
   const store = room(home);
-  store.syncParticipants([{ kind: 'human', alias: 'Zeus', sign: '🦁' }]);
-  assert.equal(store.getParticipant('human:zeus').sign, '🦁'); // given
-  assert.equal(store.getParticipant('human:hera').sign, undefined); // none given, none shown
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: '💠' }]);
+  assert.equal(store.getParticipant('human:quartz').sign, '💠'); // given
+  assert.equal(store.getParticipant('human:forge').sign, undefined); // none given, none shown
 
-  assert.equal(store.setSign('human:zeus', '🫁').sign, '🫁'); // chosen
-  store.syncParticipants([{ kind: 'human', alias: 'Zeus', sign: '🦉' }]); // a restart with another given sign
-  assert.equal(store.getParticipant('human:zeus').sign, '🫁'); // what he chose stays
-  assert.equal(store.setSign('human:zeus', null).sign, '🦉'); // let go: the given one shows again
-  assert.equal(store.setSign('human:hera', '🇷🇴').sign, '🇷🇴'); // a flag is one sign
+  assert.equal(store.setSign('human:quartz', '🫁').sign, '🫁'); // chosen
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: '🔩' }]); // a restart with another given sign
+  assert.equal(store.getParticipant('human:quartz').sign, '🫁'); // what he chose stays
+  assert.equal(store.setSign('human:quartz', null).sign, '🔩'); // let go: the given one shows again
+  assert.equal(store.setSign('human:forge', '🇷🇴').sign, '🇷🇴'); // a flag is one sign
   store.close();
 
   const again = new RoomStore(home.open());
-  assert.equal(again.getParticipant('human:hera').sign, '🇷🇴');
+  assert.equal(again.getParticipant('human:forge').sign, '🇷🇴');
   // nothing but the current sign is kept: no column of when, no column of what it was
   home.raw((db) => assert.deepEqual(db.prepare('PRAGMA table_info(participants)').all().map((c) => c.name).filter((n) => /sign/.test(n)), ['given_sign', 'sign']));
   again.close();
@@ -175,50 +175,50 @@ test('a sign: the given one shows until a person chooses theirs; only the curren
 
 test('a sign that is not one emoji is refused, given or chosen', (home) => {
   const store = room(home);
-  for (const bad of ['lion', '🦁🦁', '🦁 ', '1️⃣', '', 'a🦁']) refuses('invalid', () => store.setSign('human:zeus', bad));
-  refuses('invalid', () => store.syncParticipants([{ kind: 'human', alias: 'Zeus', sign: 'zeu' }]));
+  for (const bad of ['lion', '🦁🦁', '🦁 ', '1️⃣', '', 'a🦁']) refuses('invalid', () => store.setSign('human:quartz', bad));
+  refuses('invalid', () => store.syncParticipants([{ kind: 'human', alias: 'Quartz', sign: 'qua' }]));
   refuses('not_found', () => store.setSign('human:nimeni', '🦁'));
   // a sign is for the people in the room: not given to a companion, and not set on one
   refuses('invalid', () => store.syncParticipants([{ kind: 'companion', alias: 'Nova', sign: '✨' }]));
   refuses('not_found', () => store.setSign('companion:nova', '✨'));
   assert.equal(store.getParticipant('companion:nova').sign, undefined);
-  for (const good of ['🦁', '🫁', '👩🏽‍💻', '❤️', '🏳️‍🌈']) assert.equal(store.setSign('human:zeus', good).sign, good);
+  for (const good of ['🦁', '🫁', '👩🏽‍💻', '❤️', '🏳️‍🌈']) assert.equal(store.setSign('human:quartz', good).sign, good);
 });
 
 test('a turn keeps who was mentioned', (home) => {
   const store = room(home);
-  const turn = say(store, 'olympus', 'human:hera', '@nova putem sari pasul cu Styx? cc @Zeus, @nimeni');
-  assert.deepEqual(turn.mentions, ['companion:nova', 'human:zeus']);
-  assert.deepEqual(store.listTurns('olympus')[0].mentions, ['companion:nova', 'human:zeus']);
+  const turn = say(store, 'infra', 'human:forge', '@nova putem sari pasul de review? cc @Quartz, @nimeni');
+  assert.deepEqual(turn.mentions, ['companion:nova', 'human:quartz']);
+  assert.deepEqual(store.listTurns('infra')[0].mentions, ['companion:nova', 'human:quartz']);
 });
 
 test('text is trimmed and normalized, and must be there and not too long', (home) => {
   const store = room(home);
-  assert.equal(say(store, 'general', 'human:zeus', '  \n salut \n').text, 'salut');
-  assert.equal(say(store, 'general', 'human:zeus', 'ș'.normalize('NFD')).text, 'ș'.normalize('NFC'));
-  refuses('invalid', () => say(store, 'general', 'human:zeus', '   \n '));
-  refuses('invalid', () => say(store, 'general', 'human:zeus', 'a'.repeat(MAX_TEXT_LENGTH + 1)));
-  assert.equal(say(store, 'general', 'human:zeus', 'a'.repeat(MAX_TEXT_LENGTH)).text.length, MAX_TEXT_LENGTH);
+  assert.equal(say(store, 'general', 'human:quartz', '  \n salut \n').text, 'salut');
+  assert.equal(say(store, 'general', 'human:quartz', 'ș'.normalize('NFD')).text, 'ș'.normalize('NFC'));
+  refuses('invalid', () => say(store, 'general', 'human:quartz', '   \n '));
+  refuses('invalid', () => say(store, 'general', 'human:quartz', 'a'.repeat(MAX_TEXT_LENGTH + 1)));
+  assert.equal(say(store, 'general', 'human:quartz', 'a'.repeat(MAX_TEXT_LENGTH)).text.length, MAX_TEXT_LENGTH);
 });
 
 test('unknown conversation, unknown speaker, closed conversation', (home) => {
   const store = room(home);
-  refuses('not_found', () => say(store, 'nowhere', 'human:zeus', 'salut'));
+  refuses('not_found', () => say(store, 'nowhere', 'human:quartz', 'salut'));
   refuses('not_found', () => say(store, 'general', 'human:nimeni', 'salut'));
   refuses('not_found', () => store.listTurns('nowhere'));
   refuses('not_found', () => store.setConversationStatus('nowhere', 'closed'));
 
   store.setConversationStatus('general', 'closed');
-  refuses('closed', () => say(store, 'general', 'human:zeus', 'salut'));
+  refuses('closed', () => say(store, 'general', 'human:quartz', 'salut'));
   assert.equal(store.listTurns('general').length, 0);
   store.setConversationStatus('general', 'open');
-  assert.equal(say(store, 'general', 'human:zeus', 'salut').seq, 1);
+  assert.equal(say(store, 'general', 'human:quartz', 'salut').seq, 1);
 });
 
 test('history is read a page at a time, newest page first', (home) => {
   const store = room(home);
-  for (let i = 1; i <= 7; i += 1) say(store, 'general', 'human:zeus', `m${i}`);
-  say(store, 'olympus', 'human:zeus', 'elsewhere');
+  for (let i = 1; i <= 7; i += 1) say(store, 'general', 'human:quartz', `m${i}`);
+  say(store, 'infra', 'human:quartz', 'elsewhere');
 
   const last = store.listTurns('general', { limit: 3 });
   assert.deepEqual(last.map((t) => t.text), ['m5', 'm6', 'm7']);
@@ -236,10 +236,10 @@ test('history is read a page at a time, newest page first', (home) => {
 
 test('a client that was away asks for everything after the last turn it saw', (home) => {
   const store = room(home);
-  say(store, 'general', 'human:zeus', 'one');
-  const seen = say(store, 'olympus', 'human:hera', 'two');
-  say(store, 'general', 'human:zeus', 'three');
-  say(store, 'olympus', 'human:hera', 'four');
+  say(store, 'general', 'human:quartz', 'one');
+  const seen = say(store, 'infra', 'human:forge', 'two');
+  say(store, 'general', 'human:quartz', 'three');
+  say(store, 'infra', 'human:forge', 'four');
 
   assert.deepEqual(store.turnsAfter(seen.seq).map((t) => t.text), ['three', 'four']);
   assert.deepEqual(store.turnsAfter(seen.seq, 1).map((t) => t.text), ['three']);
@@ -249,7 +249,7 @@ test('a client that was away asks for everything after the last turn it saw', (h
 
 test('a turn is never changed, not even by hand', (home) => {
   const store = room(home);
-  say(store, 'general', 'human:zeus', 'salut');
+  say(store, 'general', 'human:quartz', 'salut');
   home.raw((db) => assert.throws(() => db.exec("UPDATE turns SET text = 'altceva'"), /append-only/));
   assert.equal(store.listTurns('general')[0].text, 'salut');
   store.close();
@@ -257,12 +257,12 @@ test('a turn is never changed, not even by hand', (home) => {
 
 test('history and order survive a restart', (home) => {
   const first = room(home);
-  say(first, 'general', 'human:zeus', 'înainte');
+  say(first, 'general', 'human:quartz', 'înainte');
   first.close();
 
   const second = room(home);
   assert.deepEqual(second.listTurns('general').map((t) => t.text), ['înainte']);
-  assert.equal(say(second, 'general', 'human:zeus', 'după').seq, 2);
+  assert.equal(say(second, 'general', 'human:quartz', 'după').seq, 2);
   second.close();
 });
 
@@ -281,27 +281,27 @@ test('a question the knowledge could not answer is kept with how often it was as
   store.syncParticipants(PEOPLE);
   store.syncConversations(CHANNELS);
 
-  store.recordGap({ conversationId: 'olympus', question: 'Putem sări pasul cu Styx?', why: 'model_found_nothing' });
+  store.recordGap({ conversationId: 'infra', question: 'Putem sări pasul de review?', why: 'model_found_nothing' });
   store.recordGap({ conversationId: 'general', question: 'Care e zeciuiala pentru Pegas?', why: 'model_found_nothing' });
-  store.recordGap({ conversationId: 'general', question: '  putem   SĂRI pasul cu styx  ', why: 'no_real_source' }); // the same question, asked again: other case, spaces, no question mark
-  store.recordGap({ conversationId: 'general', question: 'Cat dureaza Titanomahia', why: 'figures_unverified', sources: ['olympus/titanomachy.md'] }); // and this one without accents
-  store.recordGap({ conversationId: 'olympus', question: 'Cât durează Titanomahia?', why: 'figures_unverified', sources: ['olympus/titanomachy.md'] });
+  store.recordGap({ conversationId: 'general', question: '  putem   SĂRI pasul de review  ', why: 'no_real_source' }); // the same question, asked again: other case, spaces, no question mark
+  store.recordGap({ conversationId: 'general', question: 'Cat dureaza Migrarea', why: 'figures_unverified', sources: ['infra/migration.md'] }); // and this one without accents
+  store.recordGap({ conversationId: 'infra', question: 'Cât durează Migrarea?', why: 'figures_unverified', sources: ['infra/migration.md'] });
 
   const gaps = store.listGaps();
   assert.deepEqual(gaps.map((g) => [g.question, g.asked]), [
-    ['Cât durează Titanomahia?', 2], // asked twice, with and without accents; the latest wording is shown
-    ['putem SĂRI pasul cu styx', 2], // the latest wording, counted with the first
+    ['Cât durează Migrarea?', 2], // asked twice, with and without accents; the latest wording is shown
+    ['putem SĂRI pasul de review', 2], // the latest wording, counted with the first
     ['Care e zeciuiala pentru Pegas?', 1],
   ]);
-  assert.deepEqual(gaps[1], { question: 'putem SĂRI pasul cu styx', why: 'no_real_source', sources: [], asked: 2, firstDay: '2026-10-29', lastDay: '2026-10-31', conversationId: 'general' });
-  assert.deepEqual(gaps[0].sources, ['olympus/titanomachy.md']);
+  assert.deepEqual(gaps[1], { question: 'putem SĂRI pasul de review', why: 'no_real_source', sources: [], asked: 2, firstDay: '2026-10-29', lastDay: '2026-10-31', conversationId: 'general' });
+  assert.deepEqual(gaps[0].sources, ['infra/migration.md']);
   assert.equal(gaps[0].lastDay, '2026-11-01');
   assert.equal(store.listGaps(1).length, 1);
 });
 
 test('a gap is a hole in the knowledge, not a record of a person: nobody is kept, and no time of day', (home) => {
   const store = room(home);
-  store.recordGap({ conversationId: 'general', question: 'Ce e ambrozia?', why: 'model_found_nothing' });
+  store.recordGap({ conversationId: 'general', question: 'Ce e cafeaua?', why: 'model_found_nothing' });
   store.close();
 
   home.raw((db) => {
@@ -323,7 +323,7 @@ test('a gap that makes no sense is refused', (home) => {
 
 test('a database made before the gap log gets it, and keeps everything it had', (home) => {
   const before = room(home);
-  say(before, 'general', 'human:zeus', 'de dinainte');
+  say(before, 'general', 'human:quartz', 'de dinainte');
   before.close();
 
   home.raw((db) => {
@@ -342,7 +342,7 @@ test('a database made before the gap log gets it, and keeps everything it had', 
 
 test('a database made before rooms had a kind, and guests had bindings, keys and a ledger, gets them, and every room it had is a team room', (home) => {
   const before = room(home);
-  say(before, 'general', 'human:zeus', 'de dinainte');
+  say(before, 'general', 'human:quartz', 'de dinainte');
   before.close();
 
   home.raw((db) => {
@@ -355,7 +355,7 @@ test('a database made before rooms had a kind, and guests had bindings, keys and
 
   const after = new RoomStore(home.open());
   assert.deepEqual(after.listTurns('general').map((t) => t.text), ['de dinainte']);
-  assert.deepEqual(after.listConversations().map((c) => [c.id, c.kind]), [['general', 'team'], ['olympus', 'team']]);
+  assert.deepEqual(after.listConversations().map((c) => [c.id, c.kind]), [['general', 'team'], ['infra', 'team']]);
   after.syncConversations([{ id: 'guests', title: 'Guests', kind: 'guest' }]);
   const owl = after.addGuest('owl');
   after.addBinding({ id: 'b1', roomId: 'guests', participantId: owl.id, roleId: 'guest', activeFrom: 1, expiresAt: 2, budget: 3, ledgerId: 'l' });
@@ -371,7 +371,7 @@ test('a database made before rooms had a kind, and guests had bindings, keys and
 
 test('a database made before drops gets their table, and keeps what it had', (home) => {
   const before = room(home);
-  say(before, 'general', 'human:zeus', 'de dinainte');
+  say(before, 'general', 'human:quartz', 'de dinainte');
   before.close();
 
   home.raw((db) => {
@@ -412,10 +412,10 @@ test('a database made before packets had a sigil gets the column, and keeps its 
 test('a portal lets go of what is older than it keeps, and of the questions asked before then', (home) => {
   const now = clock();
   const store = room(home, { now });
-  say(store, 'general', 'human:zeus', 'old');
+  say(store, 'general', 'human:quartz', 'old');
   store.recordGap({ conversationId: 'general', question: 'an old question', why: 'model_found_nothing' });
   now.days(10);
-  say(store, 'general', 'human:zeus', 'ten days later');
+  say(store, 'general', 'human:quartz', 'ten days later');
   now.days(5); // the first message and the question are 15 days old now, the second 5
 
   assert.deepEqual(store.forget({ days: 14, messages: 999 }), { turns: 1, gaps: 1 });
@@ -426,19 +426,19 @@ test('a portal lets go of what is older than it keeps, and of the questions aske
 
 test('each room keeps at most its last messages, whichever ends first; the other rooms are not touched', (home) => {
   const store = room(home);
-  for (let i = 1; i <= 5; i += 1) say(store, 'general', 'human:zeus', `g${i}`);
-  say(store, 'olympus', 'human:hera', 'o1');
-  say(store, 'olympus', 'human:hera', 'o2');
+  for (let i = 1; i <= 5; i += 1) say(store, 'general', 'human:quartz', `g${i}`);
+  say(store, 'infra', 'human:forge', 'o1');
+  say(store, 'infra', 'human:forge', 'o2');
 
   assert.equal(store.forget({ days: 14, messages: 3 }).turns, 2);
   assert.deepEqual(store.listTurns('general').map((t) => t.text), ['g3', 'g4', 'g5']);
-  assert.deepEqual(store.listTurns('olympus').map((t) => t.text), ['o1', 'o2']);
+  assert.deepEqual(store.listTurns('infra').map((t) => t.text), ['o1', 'o2']);
 });
 
 test('a portal that keeps everything says so, and forgets nothing', (home) => {
   const now = clock();
   const store = room(home, { now });
-  say(store, 'general', 'human:zeus', 'old');
+  say(store, 'general', 'human:quartz', 'old');
   now.days(400);
   assert.deepEqual(store.forget('forever'), { turns: 0, gaps: 0 });
   assert.equal(store.listTurns('general').length, 1);
@@ -447,19 +447,19 @@ test('a portal that keeps everything says so, and forgets nothing', (home) => {
 test('the order goes on after everything was forgotten: no number is given twice', (home) => {
   const now = clock();
   const store = room(home, { now });
-  say(store, 'general', 'human:zeus', 'one');
-  const two = say(store, 'general', 'human:zeus', 'two');
+  say(store, 'general', 'human:quartz', 'one');
+  const two = say(store, 'general', 'human:quartz', 'two');
   now.days(20);
   store.forget({ days: 14, messages: 999 });
   assert.equal(store.lastSeq(), two.seq); // where the portal is, even with nothing left to read
-  assert.equal(say(store, 'general', 'human:zeus', 'three').seq, two.seq + 1);
+  assert.equal(say(store, 'general', 'human:quartz', 'three').seq, two.seq + 1);
   assert.deepEqual(store.turnsAfter(two.seq).map((t) => t.text), ['three']);
 });
 
 
 test('a database made before forgetting lets go of its old turns once it is opened by this version', (home) => {
   const before = room(home);
-  say(before, 'general', 'human:zeus', 'from before');
+  say(before, 'general', 'human:quartz', 'from before');
   before.close();
   home.raw((db) => {
     home.setVersion(db, 2);
@@ -484,7 +484,7 @@ nodeTest('what is forgotten is gone from the file too, not only from the answers
     const { path } = home;
     const now = clock();
     const store = room(home, { now });
-    say(store, 'general', 'human:zeus', 'a sentence that must leave no trace 7f3a');
+    say(store, 'general', 'human:quartz', 'a sentence that must leave no trace 7f3a');
     store.syncConversations([{ id: 'general', title: 'General' }]); // more writes after it, so its frame sits in the log
     now.days(20);
     store.forget({ days: 14, messages: 999 });

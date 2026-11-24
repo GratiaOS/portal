@@ -48,7 +48,7 @@ No companion yet: she needs a model, at checkpoint 3. To see the whole thing pla
 ```bash
 cp portal.example.json portal.local.json                      # your config; gitignored
 pnpm build
-pnpm --filter portal tokens portal.local.json new Zeus        # a token for each person, in portal.tokens.local.json
+pnpm --filter portal tokens portal.local.json new quartz        # a token for each person (repeat for forge, relay, pulse, local, rdm), in portal.tokens.local.json
 pnpm start
 ```
 

@@ -14,8 +14,8 @@ function setup(t) {
   const dir = mkdtempSync(join(tmpdir(), 'room-gaps-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const raw = {
-    participants: [{ kind: 'human', alias: 'Zeus', token: 'r'.repeat(24) }, { kind: 'companion', alias: 'Nova' }],
-    rooms: [{ id: 'olympus', title: 'Olympus' }],
+    participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24) }, { kind: 'companion', alias: 'Nova' }],
+    rooms: [{ id: 'infra', title: 'Infra' }],
   };
   const config = join(dir, 'portal.local.json');
   writeFileSync(config, JSON.stringify(raw));
@@ -28,20 +28,20 @@ test('the list for whoever keeps the knowledge: what was asked, how often, why, 
 
   mkdirSync(dirname(db), { recursive: true }); // the room makes this folder when it starts
   const store = new RoomStore(nodeSqlite(db));
-  store.syncParticipants([{ kind: 'human', alias: 'Zeus' }, { kind: 'companion', alias: 'Nova' }]);
-  store.syncConversations([{ id: 'olympus', title: 'Olympus' }]);
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz' }, { kind: 'companion', alias: 'Nova' }]);
+  store.syncConversations([{ id: 'infra', title: 'Infra' }]);
   assert.match((await run(process.execPath, [script, config])).stdout, /Every question Nova was asked was answered/);
 
-  store.recordGap({ conversationId: 'olympus', question: 'Putem sări pasul cu Styx?', why: 'model_found_nothing' });
-  store.recordGap({ conversationId: 'olympus', question: 'putem sări pasul cu styx?', why: 'model_found_nothing' });
-  store.recordGap({ conversationId: 'olympus', question: 'Cât durează Titanomahia?', why: 'figures_unverified', sources: ['olympus/titanomachy.md'] });
+  store.recordGap({ conversationId: 'infra', question: 'Putem sări pasul de review?', why: 'model_found_nothing' });
+  store.recordGap({ conversationId: 'infra', question: 'putem sări pasul de review?', why: 'model_found_nothing' });
+  store.recordGap({ conversationId: 'infra', question: 'Cât durează Migrarea?', why: 'figures_unverified', sources: ['infra/migration.md'] });
   store.close();
 
   const { stdout } = await run(process.execPath, [script, config]);
   assert.match(stdout, /^# What the knowledge did not answer\n/);
-  assert.match(stdout, /- 2× putem sări pasul cu styx\?\n  not in the knowledge; #olympus, \d{4}-\d{2}-\d{2}\n/);
-  assert.match(stdout, /- Cât durează Titanomahia\?\n  figures that are in none of the sources \(cited: olympus\/titanomachy\.md\); #olympus/);
-  assert.equal(/Zeus/.test(stdout), false);
+  assert.match(stdout, /- 2× putem sări pasul de review\?\n  not in the knowledge; #infra, \d{4}-\d{2}-\d{2}\n/);
+  assert.match(stdout, /- Cât durează Migrarea\?\n  figures that are in none of the sources \(cited: infra\/migration\.md\); #infra/);
+  assert.equal(/Quartz/.test(stdout), false);
 });
 
 test('a missing config is said, not guessed at', async (t) => {

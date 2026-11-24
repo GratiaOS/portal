@@ -8,9 +8,9 @@ import { fakeSink } from './helpers.mjs';
 const config = parseConfig(
   {
     participants: [
-      { kind: 'human', alias: 'Zeus', token: 'z'.repeat(24) },
-      { kind: 'human', alias: 'Hera', token: 'h'.repeat(24) },
-      { kind: 'human', alias: 'Ares', token: 'a'.repeat(24) },
+      { kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) },
+      { kind: 'human', alias: 'Forge', token: 'h'.repeat(24) },
+      { kind: 'human', alias: 'Probe', token: 'a'.repeat(24) },
       { kind: 'companion', alias: 'Nova' },
     ],
     rooms: [
@@ -21,8 +21,8 @@ const config = parseConfig(
     dbPath: ':memory:',
     drops: {
       frequencies: [
-        { freq: '99.6', title: '🎁 CTT', holder: 'Zeus' },
-        { freq: '36.9', holder: 'Hera' },
+        { freq: '99.6', title: '🎁 CTT', holder: 'Quartz' },
+        { freq: '36.9', holder: 'Forge' },
       ],
     },
   },
@@ -44,29 +44,29 @@ function open(options = {}) {
 
 test('hello says which frequency a person holds, with its title: the title is the frequency unless the config says', () => {
   const { hub, hello } = open({ drops: config.drops });
-  assert.deepEqual(hello('human:zeus').heldFrequency, { freq: '99.6', title: '🎁 CTT' });
-  assert.deepEqual(hello('human:hera').heldFrequency, { freq: '36.9', title: '36.9' });
+  assert.deepEqual(hello('human:quartz').heldFrequency, { freq: '99.6', title: '🎁 CTT' });
+  assert.deepEqual(hello('human:forge').heldFrequency, { freq: '36.9', title: '36.9' });
   hub.close();
 });
 
 test('a person who holds none is told so (null), and a portal with no drops says nothing of them at all', () => {
   const withDrops = open({ drops: config.drops });
-  const ares = withDrops.hello('human:ares');
-  assert.equal('heldFrequency' in ares, true);
-  assert.equal(ares.heldFrequency, null);
+  const probe = withDrops.hello('human:probe');
+  assert.equal('heldFrequency' in probe, true);
+  assert.equal(probe.heldFrequency, null);
   withDrops.hub.close();
 
   const without = open();
-  assert.equal('heldFrequency' in without.hello('human:zeus'), false);
+  assert.equal('heldFrequency' in without.hello('human:quartz'), false);
   without.hub.close();
 });
 
 test('hello tells no one of another person\'s frequency, in any part of it', () => {
   const { hub, hello } = open({ drops: config.drops });
-  const text = JSON.stringify(hello('human:ares'));
+  const text = JSON.stringify(hello('human:probe'));
   assert.equal(text.includes('99.6') || text.includes('36.9') || text.includes('CTT'), false);
-  const zeus = JSON.stringify(hello('human:zeus'));
-  assert.equal(zeus.includes('36.9'), false);
+  const quartz = JSON.stringify(hello('human:quartz'));
+  assert.equal(quartz.includes('36.9'), false);
   hub.close();
 });
 

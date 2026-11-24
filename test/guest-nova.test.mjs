@@ -7,7 +7,7 @@ const test = (name, fn) => nodeTest(name, { timeout: 8000 }, fn);
 const T0 = Date.parse('2026-11-06T12:00:00Z');
 const GUESTS = { room: 'guests', maxActive: 50, minutes: 30, perCaller: { count: 100, perMinutes: 10 } };
 const PUBLIC = { 'about.md': 'El portal is a small team chat with a companion who answers from a folder. Anyone can run one: see INSTALL.md.' };
-const SECRET = { 'team/salaries.md': 'The salary of Zeus is 9000 drachmas and the team keeps a secret garden.' };
+const SECRET = { 'team/salaries.md': 'The salary of Quartz is 9000 drachmas and the team keeps a secret garden.' };
 
 function fakeLlm(answer = 'SAY: Hello, visitor.') {
   const calls = [];
@@ -25,11 +25,11 @@ function fakeLlm(answer = 'SAY: Hello, visitor.') {
   };
 }
 
-/** A portal with a team (Zeus, Hera, Nova), a team room and a guest room, and a Nova of each kind, each with her own engine and her own folder. */
+/** A portal with a team (Quartz, Forge, Nova), a team room and a guest room, and a Nova of each kind, each with her own engine and her own folder. */
 function setup({ questions = 3, perHour = 100, minutes = 30, guestAnswer, teamAnswer } = {}) {
   let now = T0;
   const store = new RoomStore(nodeSqlite(':memory:'), { now: () => new Date(now) });
-  store.syncParticipants([{ kind: 'human', alias: 'Zeus' }, { kind: 'human', alias: 'Hera' }, { kind: 'companion', alias: 'Nova' }]);
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz' }, { kind: 'human', alias: 'Forge' }, { kind: 'companion', alias: 'Nova' }]);
   store.syncConversations([{ id: 'general', title: 'General' }, { id: 'guests', title: 'Guests', kind: 'guest' }]);
   const hub = new Hub(store, { graceMs: 20, now: () => now });
   const teamLlm = fakeLlm(teamAnswer);
@@ -46,7 +46,7 @@ function setup({ questions = 3, perHour = 100, minutes = 30, guestAnswer, teamAn
   const admit = (locale) => admitGuest(store, config, now, locale);
   const said = (room) => store.listTurns(room).map((t) => `${store.getParticipant(t.speakerId).alias}: ${t.text}`);
   const ask = (who, room, text = '@Nova what is this?') => hub.publish({ conversationId: room, speakerId: who.id, text });
-  return { store, hub, teamLlm, guestLlm, team, guests, admit, said, ask, advance: (ms) => (now += ms), zeus: store.getParticipant('human:zeus'), config };
+  return { store, hub, teamLlm, guestLlm, team, guests, admit, said, ask, advance: (ms) => (now += ms), quartz: store.getParticipant('human:quartz'), config };
 }
 
 test('a guest asks her in the guest room and the guests\' Nova answers from the public folder, which holds nothing of the team', async () => {
@@ -61,18 +61,18 @@ test('a guest asks her in the guest room and the guests\' Nova answers from the 
   // what went to the model: the public document, and no one and nothing of the team
   const system = s.guestLlm.calls[0].system;
   assert.match(system, /El portal is a small team chat/);
-  for (const secret of ['salary', 'drachmas', 'secret garden', 'Zeus', 'Hera']) assert.ok(!system.includes(secret), `the model for guests was told "${secret}"`);
-  assert.ok(!JSON.stringify(s.guestLlm.calls[0].messages).includes('Zeus'));
+  for (const secret of ['salary', 'drachmas', 'secret garden', 'Quartz', 'Forge']) assert.ok(!system.includes(secret), `the model for guests was told "${secret}"`);
+  assert.ok(!JSON.stringify(s.guestLlm.calls[0].messages).includes('Quartz'));
 });
 
 test('each of her answers only in the rooms of her own kind', async () => {
   const s = setup();
-  s.ask(s.zeus, 'general'); // a person of the team, in the team room
+  s.ask(s.quartz, 'general'); // a person of the team, in the team room
   await Promise.all([s.team.idle(), s.guests.idle()]);
   assert.equal(s.teamLlm.calls.length, 1);
   assert.equal(s.guestLlm.calls.length, 0);
 
-  s.ask(s.zeus, 'guests'); // the same person, in the guest room: the guests' Nova, with her folder
+  s.ask(s.quartz, 'guests'); // the same person, in the guest room: the guests' Nova, with her folder
   await Promise.all([s.team.idle(), s.guests.idle()]);
   assert.equal(s.teamLlm.calls.length, 1, 'the team\'s Nova stays out of the guest room');
   assert.equal(s.guestLlm.calls.length, 1);
@@ -130,7 +130,7 @@ test('what a visitor asks does not go to the list of what the knowledge lacked',
   await s.guests.idle();
   assert.deepEqual(s.store.listGaps(), []); // nothing from a guest
 
-  s.ask(s.zeus, 'general', '@Nova what about holidays?');
+  s.ask(s.quartz, 'general', '@Nova what about holidays?');
   await s.team.idle();
   assert.equal(s.store.listGaps().length, 1); // the team's own, as before
 });
@@ -147,17 +147,17 @@ test('a guest whose binding has no questions in it cannot ask her, which is ever
 
 test('what she may say about the portal, to guests, names no one of the team and no server', () => {
   const facts = guestFacts({ questions: 5, nova: { alias: 'Nova', contextTurns: 6, llm: { model: 'm' }, facts: ['Anyone can run a portal of their own.'] } }, 2);
-  for (const word of ['Zeus', 'Hera', 'http', 'localhost', 'database', 'retention']) assert.ok(!facts.includes(word), `the facts for guests say "${word}"`);
+  for (const word of ['Quartz', 'Forge', 'http', 'localhost', 'database', 'retention']) assert.ok(!facts.includes(word), `the facts for guests say "${word}"`);
   assert.match(facts, /5 questions/);
   assert.match(facts, /every visitor who is in it/);
   assert.match(facts, /Anyone can run a portal of their own\./);
   // and the team's facts do name the team, so the difference is the point
-  const team = roomFacts({ participants: [{ kind: 'human', alias: 'Zeus' }], rooms: [{ id: 'general' }], dbPath: ':memory:', retention: { days: 14, messages: 999 }, nova: { alias: 'Nova', contextTurns: 12, llm: { model: 'm', baseUrl: 'http://x.local/v1' }, exclude: [], facts: [] } }, 1);
-  assert.match(team, /Zeus/);
+  const team = roomFacts({ participants: [{ kind: 'human', alias: 'Quartz' }], rooms: [{ id: 'general' }], dbPath: ':memory:', retention: { days: 14, messages: 999 }, nova: { alias: 'Nova', contextTurns: 12, llm: { model: 'm', baseUrl: 'http://x.local/v1' }, exclude: [], facts: [] } }, 1);
+  assert.match(team, /Quartz/);
 });
 
 test('guests.nova is off unless it is turned on, and turned on it needs an engine of its own', () => {
-  const people = [{ kind: 'human', alias: 'Zeus', token: 'z'.repeat(24) }, { kind: 'companion', alias: 'Nova' }];
+  const people = [{ kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) }, { kind: 'companion', alias: 'Nova' }];
   const rooms = [{ id: 'general', title: 'General' }, { id: 'guests', title: 'Guests', kind: 'guest' }];
   const config = (nova) => parseConfig({ participants: people, rooms, guests: { room: 'guests', ...(nova === undefined ? {} : { nova }) }, dbPath: ':memory:' }, '/base');
 
@@ -233,11 +233,11 @@ test('a person of the team who asks her in the guest room is never named to the 
   const { guest } = s.admit();
   const wire = [];
   s.hub.subscribe(guest, { write: (chunk) => wire.push(chunk), close() {} }, 0); // a guest who is listening, and is given what is said from the start
-  s.ask(s.zeus, 'guests');
+  s.ask(s.quartz, 'guests');
   await s.guests.idle();
   assert.equal(s.guestLlm.calls.length, 1, 'she answers the person of the team in the guest room');
 
-  const seen = (text) => /zeus/i.test(text);
+  const seen = (text) => /quartz/i.test(text);
   assert.ok(!seen(JSON.stringify(s.guestLlm.calls[0])), 'the model for guests was told the alias');
   assert.ok(!seen(wire.join('')), 'the stream named the person');
   const history = s.store.listTurns('guests').map((t) => s.hub.seenBy(guest, t));
@@ -249,7 +249,7 @@ test('a person of the team who asks her in the guest room is never named to the 
   const g = full.admit().guest;
   const lines = [];
   full.hub.subscribe(g, { write: (chunk) => lines.push(chunk), close() {} }, 0);
-  for (let i = 0; i < 8; i += 1) full.ask(full.zeus, 'guests');
+  for (let i = 0; i < 8; i += 1) full.ask(full.quartz, 'guests');
   await full.guests.idle();
   assert.ok(!seen(lines.join('')), 'a refusal named the person');
 });

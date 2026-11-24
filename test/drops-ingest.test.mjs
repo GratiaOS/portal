@@ -54,8 +54,8 @@ function open({ drops = {}, withDrops = true, callerFromHome = true } = {}) {
   const config = parseConfig(
     {
       participants: [
-        { kind: 'human', alias: 'Zeus', token: 'z'.repeat(24) },
-        { kind: 'human', alias: 'Hera', token: 'h'.repeat(24) },
+        { kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) },
+        { kind: 'human', alias: 'Forge', token: 'h'.repeat(24) },
       ],
       rooms: [{ id: 'general', title: 'General' }],
       dbPath: ':memory:',
@@ -63,8 +63,8 @@ function open({ drops = {}, withDrops = true, callerFromHome = true } = {}) {
         ? {
             drops: {
               frequencies: [
-                { freq: '99.6', holder: 'Zeus' },
-                { freq: '36.9', holder: 'Hera' },
+                { freq: '99.6', holder: 'Quartz' },
+                { freq: '36.9', holder: 'Forge' },
               ],
               allowOrigins: [AMIGO],
               ...drops,

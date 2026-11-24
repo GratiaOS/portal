@@ -22,12 +22,12 @@ test('a drop that has faded is let go by the timer, with no read and no other dr
   try {
     const config = parseConfig(
       {
-        participants: [{ kind: 'human', alias: 'Zeus', token: 'z'.repeat(24) }],
+        participants: [{ kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) }],
         rooms: [{ id: 'general', title: 'General' }],
         port: 0,
         dbPath: 'data/room.db',
         retention: 'forever', // nothing else is let go on a pace: only the fade wakes it
-        drops: { frequencies: [{ freq: '99.6', holder: 'Zeus' }] },
+        drops: { frequencies: [{ freq: '99.6', holder: 'Quartz' }] },
       },
       dir,
     );
@@ -53,11 +53,11 @@ test('a portal that begins again lets go of what faded while it was off', async 
   try {
     const config = parseConfig(
       {
-        participants: [{ kind: 'human', alias: 'Zeus', token: 'z'.repeat(24) }],
+        participants: [{ kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) }],
         rooms: [{ id: 'general', title: 'General' }],
         port: 0,
         dbPath: 'data/room.db',
-        drops: { frequencies: [{ freq: '99.6', holder: 'Zeus' }] },
+        drops: { frequencies: [{ freq: '99.6', holder: 'Quartz' }] },
       },
       dir,
     );

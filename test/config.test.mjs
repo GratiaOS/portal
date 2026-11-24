@@ -10,8 +10,8 @@ const TOKEN_B = 'b'.repeat(24);
 
 const valid = () => ({
   participants: [
-    { kind: 'human', alias: 'Zeus', token: TOKEN_A, locale: 'ro' },
-    { kind: 'human', alias: 'Hera', token: TOKEN_B },
+    { kind: 'human', alias: 'Quartz', token: TOKEN_A, locale: 'ro' },
+    { kind: 'human', alias: 'Forge', token: TOKEN_B },
     { kind: 'companion', alias: 'Nova', capabilities: ['answer'] },
   ],
   rooms: [{ id: 'general', title: 'General' }],
@@ -45,11 +45,11 @@ test('a config gets its defaults: local only, a database in data/, sensible limi
 test('humans need a long token; companions must have none', () => {
   const noToken = valid();
   delete noToken.participants[0].token;
-  refuses(noToken, /human:Zeus needs a token of at least 24/);
+  refuses(noToken, /human:Quartz needs a token of at least 24/);
 
   const shortToken = valid();
   shortToken.participants[0].token = 'short';
-  refuses(shortToken, /human:Zeus needs a token/);
+  refuses(shortToken, /human:Quartz needs a token/);
 
   const botToken = valid();
   botToken.participants[2].token = TOKEN_A + 'x';
@@ -62,8 +62,8 @@ test('the same token, alias or channel twice is refused', () => {
   refuses(sameToken, /same token as another participant/);
 
   const sameAlias = valid();
-  sameAlias.participants[2].alias = 'zeus';
-  refuses(sameAlias, /alias "zeus" is used twice/);
+  sameAlias.participants[2].alias = 'quartz';
+  refuses(sameAlias, /alias "quartz" is used twice/);
 
   const sameChannel = valid();
   sameChannel.rooms.push({ id: 'general', title: 'Again' });
@@ -88,8 +88,8 @@ test('what is missing or malformed is named', () => {
 
 test('a token finds its participant, and nothing else does', () => {
   const authenticate = createAuthenticator(parseConfig(valid(), '/base'));
-  assert.equal(authenticate(TOKEN_A), 'human:zeus');
-  assert.equal(authenticate(TOKEN_B), 'human:hera');
+  assert.equal(authenticate(TOKEN_A), 'human:quartz');
+  assert.equal(authenticate(TOKEN_B), 'human:forge');
   assert.equal(authenticate(TOKEN_A + 'x'), undefined);
   assert.equal(authenticate(''), undefined);
   assert.equal(authenticate('Nova'), undefined);
@@ -117,7 +117,7 @@ test('the example config is a starting point, not a working config: the tokens a
     // no tokens file yet: the room says what to run, and it names a person and a file, never a token
     assert.throws(() => loadConfig(join(dir, 'portal.json')), /cannot read the tokens file .*portal\.tokens\.local\.json; make a token with: pnpm --filter portal tokens/);
     // with tokens in it the example is valid as it stands, Nova included
-    writeFileSync(join(dir, 'portal.tokens.local.json'), JSON.stringify({ Zeus: '1'.repeat(24), Hera: '2'.repeat(24) }), { mode: 0o600 });
+    writeFileSync(join(dir, 'portal.tokens.local.json'), JSON.stringify(Object.fromEntries(['quartz', 'forge', 'relay', 'pulse', 'local', 'rdm'].map((alias, i) => [alias, String(i + 1).repeat(24)]))), { mode: 0o600 });
     assert.equal(loadConfig(join(dir, 'portal.json')).nova.alias, 'Nova');
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -166,7 +166,7 @@ test('Nova: what is wrong is named, and a pasted key is never repeated', () => {
   const KEY = 'sk-live-0123456789abcdef'; // scrub-ok: a made-up key, to show it is never repeated
   refuses(withNova('yes'), /nova must be an object/);
   refuses(withNova({ ...NOVA, alias: 'Oracle' }), /nova\.alias "Oracle" must be a companion/);
-  refuses(withNova({ ...NOVA, alias: 'Zeus' }), /nova\.alias "Zeus" must be a companion/);
+  refuses(withNova({ ...NOVA, alias: 'Quartz' }), /nova\.alias "Quartz" must be a companion/);
   refuses(withNova({ ...NOVA, llm: undefined }), /nova\.llm must be an object/);
   refuses(withNova({ ...NOVA, llm: { model: 'auto' } }), /nova\.llm\.baseUrl/);
   refuses(withNova({ ...NOVA, llm: { ...NOVA.llm, baseUrl: 'not a url' } }), /must be a URL/);
@@ -180,9 +180,9 @@ test('Nova: what is wrong is named, and a pasted key is never repeated', () => {
   assert.equal(parseConfig(withNova({ ...NOVA, knowledgeDir: undefined }), '/base').nova.knowledgeDir, undefined); // she may have none yet
   refuses(withNova({ ...NOVA, contextTurns: 0 }), /nova\.contextTurns/);
   // a sign given by the config is one emoji, and only a person has one
-  refuses({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Zeus', token: 'r'.repeat(24) }, { kind: 'companion', alias: 'Nova', sign: '✨' }] }, /companion:Nova must not have a sign: a sign is for the people in the room/);
-  refuses({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Zeus', token: 'r'.repeat(24), sign: 'leu' }, { kind: 'companion', alias: 'Nova' }] }, /sign must be one emoji/);
-  assert.equal(parseConfig({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Zeus', token: 'r'.repeat(24), sign: '🦁' }, { kind: 'companion', alias: 'Nova' }] }, '/base').participants[0].sign, '🦁');
+  refuses({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24) }, { kind: 'companion', alias: 'Nova', sign: '✨' }] }, /companion:Nova must not have a sign: a sign is for the people in the room/);
+  refuses({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24), sign: 'leu' }, { kind: 'companion', alias: 'Nova' }] }, /sign must be one emoji/);
+  assert.equal(parseConfig({ ...withNova(NOVA), participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24), sign: '💠' }, { kind: 'companion', alias: 'Nova' }] }, '/base').participants[0].sign, '💠');
   refuses(withNova({ ...NOVA, maxQueue: 500 }), /nova\.maxQueue/);
 
   // the file holds the NAME of the variable that has the key; pasting the key itself is caught, and not echoed
@@ -193,8 +193,8 @@ test('Nova: what is wrong is named, and a pasted key is never repeated', () => {
 });
 
 test('nova.examples: a short list of questions in the company\'s words, trimmed', () => {
-  assert.deepEqual(parseConfig(withNova({ ...NOVA, examples: ['  cine păzește porțile Olimpului? ', 'ce e ambrozia?'] }), '/base').nova.examples, ['cine păzește porțile Olimpului?', 'ce e ambrozia?']);
-  refuses(withNova({ ...NOVA, examples: 'ce e ambrozia?' }), /nova.examples must be a list/);
+  assert.deepEqual(parseConfig(withNova({ ...NOVA, examples: ['  cine e de gardă săptămâna asta? ', 'ce e cafeaua?'] }), '/base').nova.examples, ['cine e de gardă săptămâna asta?', 'ce e cafeaua?']);
+  refuses(withNova({ ...NOVA, examples: 'ce e cafeaua?' }), /nova.examples must be a list/);
   refuses(withNova({ ...NOVA, examples: Array.from({ length: 9 }, (_, i) => `întrebarea ${i}`) }), /at most 8/);
   refuses(withNova({ ...NOVA, examples: ['ok', '   '] }), /nova.examples\[1\]/);
   refuses(withNova({ ...NOVA, examples: ['x'.repeat(121)] }), /nova.examples\[0\]/);

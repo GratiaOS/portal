@@ -10,7 +10,7 @@ const TRAIL = 15 * MIN;
 function setup() {
   const clock = { now: T0 };
   const store = new RoomStore(nodeSqlite(':memory:'), { now: () => new Date(clock.now) });
-  store.syncParticipants([{ kind: 'human', alias: 'Zeus' }]);
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz' }]);
   store.syncConversations([{ id: 'general', title: 'General' }, { id: 'guests', title: 'Guests', kind: 'guest' }]);
   const owl = store.createGuest({ alias: 'owl', room: 'guests', activeFrom: T0, expiresAt: T0 + 60 * MIN, budget: 5, keyDigest: 'd-owl' });
   const say = (id, room, text) => store.appendTurn({ conversationId: room, speakerId: id, text });
@@ -39,8 +39,8 @@ test('a room where no one writes any more empties itself', () => {
 
 test('a team room is never touched by the trail', () => {
   const { store, clock, say } = setup();
-  const zeus = store.listParticipants().find((p) => p.alias === 'Zeus');
-  say(zeus.id, 'general', 'a word of the team');
+  const quartz = store.listParticipants().find((p) => p.alias === 'Quartz');
+  say(quartz.id, 'general', 'a word of the team');
   clock.now += 24 * 60 * MIN;
   assert.equal(store.forgetGuestTrail(TRAIL), 0);
   assert.equal(store.listTurns('general').length, 1);

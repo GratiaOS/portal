@@ -42,7 +42,7 @@ function isFile(path: string): boolean {
 
 /**
  * Serves a built single-page app from a folder: its files, and `index.html` for any path that is not a file and has no
- * extension (so a reload on `/channels/olympus` lands in the app). A missing file with an extension is a plain 404.
+ * extension (so a reload on `/channels/infra` lands in the app). A missing file with an extension is a plain 404.
  */
 export function createStaticHandler(dir: string): (request: Request) => Response {
   const root = resolve(dir);

@@ -5,8 +5,8 @@ import { fakeSink } from './helpers.mjs';
 
 // RFC 002 (drop), step 3: the holder reads what is left on their frequency, and is told, with nothing in it, that something came.
 
-const ZEUS = 'z'.repeat(24);
-const HERA = 'h'.repeat(24);
+const QUARTZ = 'z'.repeat(24);
+const FORGE = 'h'.repeat(24);
 const START = Date.UTC(2026, 10, 18, 9, 0, 0);
 
 function open({ withDrops = true } = {}) {
@@ -15,8 +15,8 @@ function open({ withDrops = true } = {}) {
   const config = parseConfig(
     {
       participants: [
-        { kind: 'human', alias: 'Zeus', token: ZEUS },
-        { kind: 'human', alias: 'Hera', token: HERA },
+        { kind: 'human', alias: 'Quartz', token: QUARTZ },
+        { kind: 'human', alias: 'Forge', token: FORGE },
         { kind: 'companion', alias: 'Nova' },
       ],
       rooms: [{ id: 'general', title: 'General' }],
@@ -25,8 +25,8 @@ function open({ withDrops = true } = {}) {
         ? {
             drops: {
               frequencies: [
-                { freq: '99.6', title: '🎁 CTT', holder: 'Zeus' },
-                { freq: '36.9', holder: 'Hera' },
+                { freq: '99.6', title: '🎁 CTT', holder: 'Quartz' },
+                { freq: '36.9', holder: 'Forge' },
               ],
               capacity: 3,
             },
@@ -53,8 +53,8 @@ function open({ withDrops = true } = {}) {
     clock,
     store,
     hub,
-    zeus: (path, more) => call('GET', path, { token: ZEUS, ...more }),
-    hera: (path, more) => call('GET', path, { token: HERA, ...more }),
+    quartz: (path, more) => call('GET', path, { token: QUARTZ, ...more }),
+    forge: (path, more) => call('GET', path, { token: FORGE, ...more }),
     anonymous: (path, more) => call('GET', path, more),
     call,
     /** What anyone, with no key, leaves on a frequency. */
@@ -76,8 +76,8 @@ async function within(work, options) {
 // --- reading ---
 
 test('the holder reads what is left on their frequency, newest first, with its title, and nothing of when it was left', () =>
-  within(async ({ zeus, drop, clock }) => {
-    const empty = await zeus('/api/drops?freq=99.6');
+  within(async ({ quartz, drop, clock }) => {
+    const empty = await quartz('/api/drops?freq=99.6');
     assert.equal(empty.status, 200);
     assert.equal(empty.headers.get('cache-control'), 'no-store');
     assert.deepEqual(await empty.json(), { freq: '99.6', title: '🎁 CTT', drops: [] });
@@ -85,7 +85,7 @@ test('the holder reads what is left on their frequency, newest first, with its t
     assert.equal((await drop('99.6', 'first', { fade: '2h' })).status, 204);
     clock.t += 5000;
     assert.equal((await drop('99.6', 'second', { payload: { body: 'second', format: 'patch' } })).status, 204);
-    const { freq, title, drops } = await (await zeus('/api/drops?freq=99.6')).json();
+    const { freq, title, drops } = await (await quartz('/api/drops?freq=99.6')).json();
     assert.deepEqual([freq, title], ['99.6', '🎁 CTT']);
     assert.deepEqual(drops.map((d) => d.payload.body), ['second', 'first']);
     assert.deepEqual(drops[0].payload, { body: 'second', format: 'patch' });
@@ -96,30 +96,30 @@ test('the holder reads what is left on their frequency, newest first, with its t
   }));
 
 test('a packet sealed with a sigil says which, and one without says nothing of it', () =>
-  within(async ({ zeus, drop, clock }) => {
+  within(async ({ quartz, drop, clock }) => {
     await drop('99.6', 'plain');
     clock.t += 5000;
     await drop('99.6', 'sealed', { payload: { body: 'sealed', sigil: '🦁' } });
-    const { drops } = await (await zeus('/api/drops?freq=99.6')).json();
+    const { drops } = await (await quartz('/api/drops?freq=99.6')).json();
     assert.deepEqual(drops.map((d) => d.payload), [{ body: 'sealed', format: 'note', sigil: '🦁' }, { body: 'plain', format: 'note' }]);
   }));
 
 test('a title is the frequency unless the config says', () =>
-  within(async ({ hera }) => {
-    assert.deepEqual(await (await hera('/api/drops?freq=36.9')).json(), { freq: '36.9', title: '36.9', drops: [] });
+  within(async ({ forge }) => {
+    assert.deepEqual(await (await forge('/api/drops?freq=36.9')).json(), { freq: '36.9', title: '36.9', drops: [] });
   }));
 
 test('only the holder reads: anyone else, and a frequency nobody holds, get the same 403', () =>
-  within(async ({ zeus, hera, drop }) => {
-    await drop('99.6', 'for zeus');
-    const others = [await hera('/api/drops?freq=99.6'), await zeus('/api/drops?freq=36.9'), await zeus('/api/drops?freq=12.3'), await hera('/api/drops?freq=12.3')];
+  within(async ({ quartz, forge, drop }) => {
+    await drop('99.6', 'for quartz');
+    const others = [await forge('/api/drops?freq=99.6'), await quartz('/api/drops?freq=36.9'), await quartz('/api/drops?freq=12.3'), await forge('/api/drops?freq=12.3')];
     const bodies = [];
     for (const res of others) {
       assert.equal(res.status, 403);
       bodies.push(await res.text());
     }
     assert.equal(new Set(bodies).size, 1, 'a frequency held by another and one held by no one are told alike');
-    assert.equal(bodies[0].includes('for zeus'), false);
+    assert.equal(bodies[0].includes('for quartz'), false);
   }));
 
 test('a key is needed to read', () =>
@@ -129,36 +129,36 @@ test('a key is needed to read', () =>
   }));
 
 test('the frequency asked for must be one, and only GET is answered', () =>
-  within(async ({ zeus, call }) => {
-    for (const path of ['/api/drops', '/api/drops?freq=', '/api/drops?freq=99', '/api/drops?freq=99.66', '/api/drops?freq=1000.0']) assert.equal((await zeus(path)).status, 400, path);
-    const res = await call('POST', '/api/drops?freq=99.6', { token: ZEUS, body: {} });
+  within(async ({ quartz, call }) => {
+    for (const path of ['/api/drops', '/api/drops?freq=', '/api/drops?freq=99', '/api/drops?freq=99.66', '/api/drops?freq=1000.0']) assert.equal((await quartz(path)).status, 400, path);
+    const res = await call('POST', '/api/drops?freq=99.6', { token: QUARTZ, body: {} });
     assert.equal(res.status, 405);
     assert.equal(res.headers.get('allow'), 'GET');
   }));
 
 test('a portal with no drops block has no such route, once the key is good', () =>
   within(
-    async ({ zeus, anonymous }) => {
+    async ({ quartz, anonymous }) => {
       assert.equal((await anonymous('/api/drops?freq=99.6')).status, 401);
-      assert.equal((await zeus('/api/drops?freq=99.6')).status, 404);
+      assert.equal((await quartz('/api/drops?freq=99.6')).status, 404);
     },
     { withDrops: false },
   ));
 
 test('a read lets go of what has faded, at once, and from the file', () =>
-  within(async ({ zeus, drop, clock, store }) => {
+  within(async ({ quartz, drop, clock, store }) => {
     await drop('99.6', 'brief', { fade: '1m' });
     clock.t += 59_999;
-    assert.equal((await (await zeus('/api/drops?freq=99.6')).json()).drops.length, 1);
+    assert.equal((await (await quartz('/api/drops?freq=99.6')).json()).drops.length, 1);
     clock.t += 1;
-    assert.deepEqual((await (await zeus('/api/drops?freq=99.6')).json()).drops, []);
+    assert.deepEqual((await (await quartz('/api/drops?freq=99.6')).json()).drops, []);
     assert.equal(store.countDrops('99.6'), 0);
   }));
 
 test('a read does not take a drop away: it can be read again, until it fades', () =>
-  within(async ({ zeus, drop }) => {
+  within(async ({ quartz, drop }) => {
     await drop('99.6', 'stays');
-    for (let i = 0; i < 3; i += 1) assert.deepEqual((await (await zeus('/api/drops?freq=99.6')).json()).drops.map((d) => d.payload.body), ['stays']);
+    for (let i = 0; i < 3; i += 1) assert.deepEqual((await (await quartz('/api/drops?freq=99.6')).json()).drops.map((d) => d.payload.body), ['stays']);
   }));
 
 // --- the pulse ---
@@ -167,26 +167,26 @@ const heard = (sink) => sink.frames().filter((f) => f.event === 'drop');
 
 test('a drop taken on a held frequency is told, with only its frequency, to the holder and to no one else', () =>
   within(async ({ hub, who, drop }) => {
-    const zeus = fakeSink();
-    const hera = fakeSink();
-    hub.subscribe(who('human:zeus'), zeus);
-    hub.subscribe(who('human:hera'), hera);
+    const quartz = fakeSink();
+    const forge = fakeSink();
+    hub.subscribe(who('human:quartz'), quartz);
+    hub.subscribe(who('human:forge'), forge);
 
     assert.equal((await drop('99.6', 'secret words')).status, 204);
-    assert.deepEqual(heard(zeus).map((f) => [f.event, f.id, f.data]), [['drop', undefined, { freq: '99.6' }]]); // no id: not part of the cursor of what is said
-    assert.deepEqual(heard(hera), []);
-    assert.equal(zeus.chunks.join('').includes('secret'), false); // nothing of the text
+    assert.deepEqual(heard(quartz).map((f) => [f.event, f.id, f.data]), [['drop', undefined, { freq: '99.6' }]]); // no id: not part of the cursor of what is said
+    assert.deepEqual(heard(forge), []);
+    assert.equal(quartz.chunks.join('').includes('secret'), false); // nothing of the text
 
-    assert.equal((await drop('36.9', 'for hera')).status, 204);
-    assert.deepEqual(heard(hera).map((f) => f.data), [{ freq: '36.9' }]);
-    assert.equal(heard(zeus).length, 1); // and zeus was not told of hera's
+    assert.equal((await drop('36.9', 'for forge')).status, 204);
+    assert.deepEqual(heard(forge).map((f) => f.data), [{ freq: '36.9' }]);
+    assert.equal(heard(quartz).length, 1); // and quartz was not told of forge's
   }));
 
 test('every connection of the holder is told, and a person with the portal open in two places hears it twice', () =>
   within(async ({ hub, who, drop }) => {
     const [a, b] = [fakeSink(), fakeSink()];
-    hub.subscribe(who('human:zeus'), a);
-    hub.subscribe(who('human:zeus'), b);
+    hub.subscribe(who('human:quartz'), a);
+    hub.subscribe(who('human:quartz'), b);
     await drop('99.6', 'x');
     assert.equal(heard(a).length, 1);
     assert.equal(heard(b).length, 1);
@@ -194,27 +194,27 @@ test('every connection of the holder is told, and a person with the portal open 
 
 test('nothing is told for a frequency nobody holds, and nothing for a drop that was refused', () =>
   within(async ({ hub, who, drop }) => {
-    const zeus = fakeSink();
-    hub.subscribe(who('human:zeus'), zeus);
+    const quartz = fakeSink();
+    hub.subscribe(who('human:quartz'), quartz);
     assert.equal((await drop('12.3', 'x')).status, 204); // not held: taken and kept nowhere
     assert.equal((await drop('99', 'x')).status, 400);
     assert.equal((await drop('99.6', '')).status, 400);
     assert.equal((await drop('99.6', 'x', { fade: '7w' })).status, 400);
     assert.equal((await drop('99.6', 'a'.repeat(9000))).status, 413);
-    assert.deepEqual(heard(zeus), []);
+    assert.deepEqual(heard(quartz), []);
   }));
 
 test('a holder who comes later is not told of what came before: the view lists it, the pulse is only for now', () =>
   within(async ({ hub, who, drop }) => {
     await drop('99.6', 'before');
     const late = fakeSink();
-    hub.subscribe(who('human:zeus'), late, 0); // asking for all it missed of what is said
+    hub.subscribe(who('human:quartz'), late, 0); // asking for all it missed of what is said
     assert.deepEqual(late.events(), ['hello']);
   }));
 
 test('the pulse reaches the page over the real stream', () =>
-  within(async ({ zeus, drop }) => {
-    const res = await zeus('/api/stream');
+  within(async ({ quartz, drop }) => {
+    const res = await quartz('/api/stream');
     assert.equal(res.status, 200);
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -239,15 +239,15 @@ test('the pulse reaches the page over the real stream', () =>
 test('the hub says it to one participant and keeps nothing', () => {
   const store = new RoomStore(nodeSqlite(':memory:'));
   store.syncParticipants([
-    { kind: 'human', alias: 'Zeus' },
-    { kind: 'human', alias: 'Hera' },
+    { kind: 'human', alias: 'Quartz' },
+    { kind: 'human', alias: 'Forge' },
   ]);
   store.syncConversations([{ id: 'general', title: 'General' }]);
   const hub = new Hub(store, { graceMs: 25 });
   const [z, h] = [fakeSink(), fakeSink()];
-  hub.subscribe(store.getParticipant('human:zeus'), z);
-  hub.subscribe(store.getParticipant('human:hera'), h);
-  hub.notifyDrop('human:zeus', '99.6');
+  hub.subscribe(store.getParticipant('human:quartz'), z);
+  hub.subscribe(store.getParticipant('human:forge'), h);
+  hub.notifyDrop('human:quartz', '99.6');
   hub.notifyDrop('human:nobody', '99.6'); // a participant who is not here is not an error
   assert.deepEqual(heard(z).map((f) => f.data), [{ freq: '99.6' }]);
   assert.deepEqual(heard(h), []);

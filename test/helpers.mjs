@@ -2,13 +2,17 @@ import assert from 'node:assert/strict';
 import { RoomStore, nodeSqlite } from '../dist/index.js';
 
 export const PEOPLE = [
-  { kind: 'human', alias: 'Zeus' },
-  { kind: 'human', alias: 'Hera', locale: 'ro' },
+  { kind: 'human', alias: 'Quartz' },
+  { kind: 'human', alias: 'Forge', locale: 'ro' },
+  { kind: 'human', alias: 'Relay' },
+  { kind: 'human', alias: 'Pulse' },
+  { kind: 'human', alias: 'Local' },
+  { kind: 'human', alias: 'rdm' },
   { kind: 'companion', alias: 'Nova' },
 ];
 export const CHANNELS = [
   { id: 'general', title: 'General' },
-  { id: 'olympus', title: 'Olympus' },
+  { id: 'infra', title: 'Infra' },
 ];
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

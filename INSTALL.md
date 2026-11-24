@@ -50,8 +50,8 @@ The rooms are listed in the order `rooms` gives them, and the first one is where
 Then a token for each person, kept in a file of its own (`chmod 600`):
 
 ```bash
-pnpm --filter portal tokens portal.local.json new Zeus
-pnpm --filter portal tokens portal.local.json show Zeus | pbcopy   # hand it over in person or through a channel you trust
+pnpm --filter portal tokens portal.local.json new quartz   # and the same for forge, relay, pulse, local and rdm
+pnpm --filter portal tokens portal.local.json show quartz | pbcopy   # hand it over in person or through a channel you trust
 ```
 
 ### Languages
@@ -167,9 +167,10 @@ docker volume create portal-data
 MOUNTS="-v portal-data:/data -v $PWD/portal.json:/config/portal.json:ro"
 
 # a token for each person of the config (the file lives in the volume); the portal does not start with one missing
-docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new Zeus
-docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new Hera
-docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json show Zeus   # hand it over
+docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new quartz
+docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new forge
+docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json new rdm
+docker run --rm $MOUNTS ghcr.io/gratiaos/portal node dist/tokens.js /config/portal.json show quartz   # hand it over
 
 docker run -d --name portal --restart unless-stopped -p 127.0.0.1:3100:3100 $MOUNTS ghcr.io/gratiaos/portal
 curl -s http://127.0.0.1:3100/api/health

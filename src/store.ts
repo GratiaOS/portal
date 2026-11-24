@@ -530,7 +530,7 @@ export class RoomStore {
 
       const id = randomUUID();
       const createdAt = this.now().toISOString();
-      // a name is resolved only among those the speaker may know of: a guest who types @zeus must not learn, from what comes back, that there is one
+      // a name is resolved only among those the speaker may know of: a guest who types @quartz must not learn, from what comes back, that there is one
       const mentions = extractMentions(text, this.listParticipants().filter((other) => mayKnow(speaker, other)));
 
       const { lastInsertRowid } = this.db.run('INSERT INTO turns (id, conversation_id, speaker_id, text, mentions, created_at) VALUES (?, ?, ?, ?, ?, ?)', id, conversation.id, input.speakerId, text, JSON.stringify(mentions), createdAt);

@@ -76,7 +76,7 @@ export function inlineOf(text: string, mentioned: readonly Participant[], channe
     for (const match of segment.matchAll(MARK)) {
       const at = match.index ?? 0;
       let name = match.groups?.mention ?? match.groups?.tag ?? '';
-      // "@hera." ends a sentence, and the dot is not part of the name
+      // "@forge." ends a sentence, and the dot is not part of the name
       name = name.replace(/[_.-]+$/, '');
       const end = at + 1 + name.length;
       if (match.groups?.mention !== undefined) {

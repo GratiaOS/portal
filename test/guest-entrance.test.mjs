@@ -6,15 +6,15 @@ import { GUEST_NAMES, Hub, RoomStore, createApp, createAuthenticator, nodeSqlite
 
 const T0 = Date.parse('2026-11-06T12:00:00Z');
 const MIN = 60_000;
-const ZEUS = 'z'.repeat(24);
+const QUARTZ = 'z'.repeat(24);
 
 function setup({ guests = { room: 'guests', maxActive: 3, minutes: 30, perCaller: { count: 2, perMinutes: 10 } }, config = true, guestHints } = {}) {
   let now = T0;
   const store = new RoomStore(nodeSqlite(':memory:'), { now: () => new Date(now) });
-  store.syncParticipants([{ kind: 'human', alias: 'Zeus' }, { kind: 'companion', alias: 'Nova' }]);
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz' }, { kind: 'companion', alias: 'Nova' }]);
   store.syncConversations([{ id: 'general', title: 'General' }, { id: 'guests', title: 'Guests', kind: 'guest' }]);
   const hub = new Hub(store, { graceMs: 20, now: () => now });
-  const known = new Map([[ZEUS, 'human:zeus']]);
+  const known = new Map([[QUARTZ, 'human:quartz']]);
   const app = createApp(store, hub, {
     version: '0.0.0-test',
     authenticate: (token) => known.get(token),
@@ -101,7 +101,7 @@ test('a guest whose time is over has a key that opens nothing, not even a stream
 
   // an expired key is a known key, not a guess: however often it is tried, the same address is not locked out for it
   for (let i = 0; i < 25; i += 1) await call('/api/me', { token });
-  assert.equal((await call('/api/me', { token: ZEUS })).status, 200);
+  assert.equal((await call('/api/me', { token: QUARTZ })).status, 200);
 });
 
 test('a wrong key is still a wrong key, for a guest as for anyone', async () => {
@@ -110,7 +110,7 @@ test('a wrong key is still a wrong key, for a guest as for anyone', async () => 
 });
 
 test('the guest room of the config must exist and be of kind guest', () => {
-  const config = (guests, rooms) => parseConfig({ participants: [{ kind: 'human', alias: 'Zeus', token: ZEUS }], rooms, guests, dbPath: ':memory:' }, '/base');
+  const config = (guests, rooms) => parseConfig({ participants: [{ kind: 'human', alias: 'Quartz', token: QUARTZ }], rooms, guests, dbPath: ':memory:' }, '/base');
   const rooms = [{ id: 'general', title: 'General' }, { id: 'guests', title: 'Guests', kind: 'guest' }];
   const ok = config({ room: 'guests' }, rooms).guests;
   assert.deepEqual(ok, { room: 'guests', maxActive: 20, minutes: 60, forgetAfterMinutes: 5, trailMinutes: 15, perCaller: { count: 5, perMinutes: 10 }, nova: { enabled: false, questions: 5, perHour: 60 } });
@@ -129,7 +129,7 @@ test('the portal says it has a door only when it has one, and a guest is told of
   const { enter, call } = setup();
   assert.equal((await (await call('/api/health')).json()).guests, true);
   const { token } = await (await enter()).json();
-  assert.deepEqual(await (await call('/api/hints', { token: ZEUS })).json(), { companion: 'Nova', examples: ['what does the team earn?'] });
+  assert.deepEqual(await (await call('/api/hints', { token: QUARTZ })).json(), { companion: 'Nova', examples: ['what does the team earn?'] });
   // a guest is told of none while the companion is off for guests, and never of the team's
   assert.deepEqual(await (await call('/api/hints', { token })).json(), { companion: null, examples: [] });
 
@@ -183,7 +183,7 @@ test('a visitor who leaves ends their time: the key opens nothing, the stream cl
   assert.equal((await call('/api/me', { token: owl.token })).status, 401, 'their key opens nothing now');
   assert.equal((await leave(call, owl.token)).status, 401, 'leaving twice is a key that has done its hour');
   for (let i = 0; i < 12; i += 1) await call('/api/me', { token: owl.token }); // an ended key is a known key: no number of tries locks the address out
-  assert.equal((await call('/api/me', { token: ZEUS })).status, 200, 'and the address is not locked out');
+  assert.equal((await call('/api/me', { token: QUARTZ })).status, 200, 'and the address is not locked out');
   assert.equal((await enter('c')).status, 201, 'the slot is free for the next visitor');
 });
 
@@ -202,10 +202,10 @@ test('leaving ends the time, not the memory of the room: what was said stays unt
 
 test('only a visitor can leave: the team has no time to end, and without a key there is nothing to end', async () => {
   const { call } = setup();
-  assert.equal((await leave(call, ZEUS)).status, 404);
-  assert.equal((await call('/api/me', { token: ZEUS })).status, 200, 'and the team is as it was');
+  assert.equal((await leave(call, QUARTZ)).status, 404);
+  assert.equal((await call('/api/me', { token: QUARTZ })).status, 200, 'and the team is as it was');
   assert.equal((await call('/api/guest/leave', { method: 'POST' })).status, 401);
-  assert.equal((await call('/api/guest/leave', { method: 'GET', token: ZEUS })).status, 405);
+  assert.equal((await call('/api/guest/leave', { method: 'GET', token: QUARTZ })).status, 405);
 });
 
 test('a guest is not given what has outlived the trail, even before the portal has let it go', async () => {

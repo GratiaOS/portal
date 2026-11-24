@@ -30,9 +30,9 @@ const withStorage = (storage: Storage | undefined, run: () => void) => {
 test('drafts: one for each channel, and what is written in one is not in the other', () => {
   withStorage(fakeStorage(), () => {
     keepDraft('general', 'salut');
-    keepDraft('olympus', 'ambrozia?');
+    keepDraft('infra', 'cafeaua?');
     assert.equal(readDraft('general'), 'salut');
-    assert.equal(readDraft('olympus'), 'ambrozia?');
+    assert.equal(readDraft('infra'), 'cafeaua?');
     assert.equal(readDraft('other'), '');
   });
 });
@@ -52,10 +52,10 @@ test('drafts: signing out lets go of all of them, and of nothing else', () => {
   withStorage(storage, () => {
     storage.setItem('portal.token', 'x');
     keepDraft('general', 'a');
-    keepDraft('olympus', 'b');
+    keepDraft('infra', 'b');
     forgetDrafts();
     assert.equal(readDraft('general'), '');
-    assert.equal(readDraft('olympus'), '');
+    assert.equal(readDraft('infra'), '');
     assert.equal(storage.getItem('portal.token'), 'x');
   });
 });

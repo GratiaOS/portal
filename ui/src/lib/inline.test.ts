@@ -4,13 +4,13 @@ import { emojiOnly, inlineOf } from './inline.ts';
 import type { Participant } from './types.ts';
 
 const nova: Participant = { id: 'companion:nova', kind: 'companion', alias: 'Nova', capabilities: [] };
-const hera: Participant = { id: 'human:hera', kind: 'human', alias: 'Hera', capabilities: [] };
+const forge: Participant = { id: 'human:forge', kind: 'human', alias: 'Forge', capabilities: [] };
 const kinds = (text: string, who: Participant[] = [], channels: string[] = []) => inlineOf(text, who, channels).map((p) => `${p.kind}:${p.text}`);
 
 test('inline: a mention is someone the room says was mentioned, as it was written', () => {
   assert.deepEqual(kinds('@nova, ce zici?', [nova]), ['mention:@nova', 'text:, ce zici?']);
-  assert.deepEqual(kinds('Mulțumesc @Hera. Și @nova!', [hera, nova]), ['text:Mulțumesc ', 'mention:@Hera', 'text:. Și ', 'mention:@nova', 'text:!']); // the dot ends the sentence
-  assert.deepEqual(kinds('@zeus ești aici?', [nova]), ['text:@zeus ești aici?']); // nobody the room knows
+  assert.deepEqual(kinds('Mulțumesc @Forge. Și @nova!', [forge, nova]), ['text:Mulțumesc ', 'mention:@Forge', 'text:. Și ', 'mention:@nova', 'text:!']); // the dot ends the sentence
+  assert.deepEqual(kinds('@quartz ești aici?', [nova]), ['text:@quartz ești aici?']); // nobody the room knows
   assert.deepEqual(kinds('scrie la nova@example.com', [nova]), ['text:scrie la nova@example.com']); // an address is not a mention
 });
 
@@ -33,8 +33,8 @@ test('inline: a code span is taken as written, and nothing inside it is a mentio
 });
 
 test('inline: it is all there, in order, and nothing is lost', () => {
-  const text = 'salut @Hera, `x` #bun și @nova 🙂 &amp; mai mult';
-  const back = inlineOf(text, [hera, nova]).map((p) => (p.kind === 'code' ? `\`${p.text}\`` : p.text)).join('');
+  const text = 'salut @Forge, `x` #bun și @nova 🙂 &amp; mai mult';
+  const back = inlineOf(text, [forge, nova]).map((p) => (p.kind === 'code' ? `\`${p.text}\`` : p.text)).join('');
   assert.equal(back, text);
 });
 

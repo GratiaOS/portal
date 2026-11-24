@@ -44,7 +44,7 @@ test('the manifest takes no other method than GET', async () => {
 });
 
 test('the config names the portal, in one line', () => {
-  const base = { participants: [{ kind: 'human', alias: 'Zeus', token: 'z'.repeat(24) }], rooms: [{ id: 'g', title: 'G' }], dbPath: ':memory:' };
+  const base = { participants: [{ kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) }], rooms: [{ id: 'g', title: 'G' }], dbPath: ':memory:' };
   assert.equal(parseConfig({ ...base, name: 'Firegate' }, '/').name, 'Firegate');
   assert.equal(parseConfig(base, '/').name, undefined);
   assert.throws(() => parseConfig({ ...base, name: 'x'.repeat(41) }, '/'), /name/);

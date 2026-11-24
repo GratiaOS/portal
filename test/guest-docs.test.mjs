@@ -16,12 +16,12 @@ test('the starter folder holds a few short documents, and nothing of a team, a c
   assert.deepEqual([...files.keys()].sort(), ['about-nova.md', 'for-visitors.md', 'run-your-own.md', 'what-a-portal-keeps.md', 'what-is-el-portal.md']);
   for (const [path, content] of files) assert.ok(content.trim().length > 200 && content.length < 4000, `${path} is short and not empty`);
   assert.ok(text.length < 12_000, 'all of it is small enough to go in every prompt');
-  for (const word of ['Zeus', 'Hera', 'firegate', 'gratiaos.dev', 'Idalion', '/Users/', 'localhost', 'password:']) assert.ok(!text.includes(word), `the folder names "${word}"`);
+  for (const word of ['Quartz', 'Forge', 'firegate', 'gratiaos.dev', 'Idalion', '/Users/', 'localhost', 'password:']) assert.ok(!text.includes(word), `the folder names "${word}"`);
 });
 
 test('the figures the documents give are the defaults the portal has, so they cannot drift apart', () => {
   const config = parseConfig(
-    { participants: [{ kind: 'human', alias: 'Zeus', token: 'z'.repeat(24) }], rooms: [{ id: 'g', title: 'G', kind: 'guest' }], guests: { room: 'g' }, dbPath: ':memory:' },
+    { participants: [{ kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) }], rooms: [{ id: 'g', title: 'G', kind: 'guest' }], guests: { room: 'g' }, dbPath: ':memory:' },
     '/base',
   );
   const { files } = read();

@@ -26,7 +26,7 @@ const thinkingStream = [
   sse(delta({ role: 'assistant' })),
   sse(delta({ reasoning_content: 'Let me ' })),
   sse(delta({ reasoning_content: 'think.' })),
-  sse(delta({ content: '\n\nAmbrosia is ' })),
+  sse(delta({ content: '\n\nCoffee is ' })),
   sse(delta({ content: 'a food.\n' }, 'stop')),
   sse({
     choices: [],
@@ -49,22 +49,22 @@ const thinkingStream = [
     apiKey: 'k-secret',
     maxTokens: 4000,
     reasoningEffort: 'low',
-    headers: { 'X-Team': 'olympus' },
+    headers: { 'X-Team': 'infra' },
     body: { chat_template_kwargs: { enable_thinking: false } },
     fetch: fetchImpl,
   });
   const events = [];
-  for await (const event of llm.stream({ system: 'Be terse.', messages: [{ role: 'user', content: 'Ambrosia?' }] })) events.push(event);
+  for await (const event of llm.stream({ system: 'Be terse.', messages: [{ role: 'user', content: 'Coffee?' }] })) events.push(event);
 
   assert.deepEqual(
     events.map((e) => e.type),
     ['reasoning', 'reasoning', 'content', 'content', 'done'],
   );
   assert.equal(events[0].text, 'Let me ');
-  assert.equal(events[2].text, '\n\nAmbrosia is '); // chunks stay raw
+  assert.equal(events[2].text, '\n\nCoffee is '); // chunks stay raw
 
   const { result } = events.at(-1);
-  assert.equal(result.content, 'Ambrosia is a food.');
+  assert.equal(result.content, 'Coffee is a food.');
   assert.equal(result.reasoning, 'Let me think.');
   assert.equal(result.finishReason, 'stop');
   assert.equal(result.model, 'm-1');
@@ -73,7 +73,7 @@ const thinkingStream = [
   const [{ url, init, body }] = calls;
   assert.equal(url, 'https://host/v1/chat/completions');
   assert.equal(init.headers.Authorization, 'Bearer k-secret');
-  assert.equal(init.headers['X-Team'], 'olympus');
+  assert.equal(init.headers['X-Team'], 'infra');
   assert.equal(body.model, 'auto');
   assert.equal(body.stream, true);
   assert.deepEqual(body.stream_options, { include_usage: true });
@@ -82,7 +82,7 @@ const thinkingStream = [
   assert.deepEqual(body.chat_template_kwargs, { enable_thinking: false });
   assert.deepEqual(body.messages, [
     { role: 'system', content: 'Be terse.' },
-    { role: 'user', content: 'Ambrosia?' },
+    { role: 'user', content: 'Coffee?' },
   ]);
 }
 
@@ -90,8 +90,8 @@ const thinkingStream = [
 {
   const { fetchImpl, calls } = fakeFetch(thinkingStream);
   const llm = createChatCompletionsProvider({ baseUrl: 'https://host/v1', model: 'auto', maxTokens: 10, fetch: fetchImpl });
-  const result = await llm.generate({ messages: [{ role: 'user', content: 'Ambrosia?' }], maxTokens: 50 });
-  assert.equal(result.content, 'Ambrosia is a food.');
+  const result = await llm.generate({ messages: [{ role: 'user', content: 'Coffee?' }], maxTokens: 50 });
+  assert.equal(result.content, 'Coffee is a food.');
   assert.equal(calls[0].body.max_tokens, 50);
 }
 

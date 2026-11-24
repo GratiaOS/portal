@@ -2,7 +2,7 @@
 // on your network too). The room lives in memory: the tokens are made at the start and printed, nothing is written to disk, and a
 // restart is a new, empty room. For a portal that is kept, see INSTALL.md.
 //
-//   node scripts/dev.mjs [--lan] [--port 3100] [--people Zeus,Hera,Athena] [--no-build]
+//   node scripts/dev.mjs [--lan] [--port 3100] [--people Quartz,Forge,Relay] [--no-build]
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
@@ -17,7 +17,7 @@ const value = (name, fallback) => (args.includes(name) ? args[args.indexOf(name)
 
 const lan = flag('--lan');
 const port = Number(value('--port', 3100));
-const people = String(value('--people', 'Zeus,Hera,Athena')).split(',').map((s) => s.trim()).filter(Boolean);
+const people = String(value('--people', 'Quartz,Forge,Relay')).split(',').map((s) => s.trim()).filter(Boolean);
 if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('--port must be a number from 0 to 65535');
 if (!people.length) throw new Error('--people needs at least one name');
 
