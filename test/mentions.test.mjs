@@ -5,8 +5,8 @@ import { extractMentions, participantId } from '../dist/index.js';
 const people = [
   { kind: 'human', alias: 'Quartz' },
   { kind: 'human', alias: 'Forge' },
-  { kind: 'human', alias: 'Éris' },
-  { kind: 'human', alias: 'athena-maria' },
+  { kind: 'human', alias: 'Émile' },
+  { kind: 'human', alias: 'relay-maria' },
   { kind: 'companion', alias: 'Nova' },
 ].map((p) => ({ ...p, id: participantId(p.kind, p.alias), capabilities: [] }));
 
@@ -18,7 +18,7 @@ test('ids are kind:alias in lowercase', () => {
 });
 
 test('a mention names a known participant, whatever the case', () => {
-  assert.deepEqual(ids('@forge putem sari pasul cu Styx?'), ['human:forge']);
+  assert.deepEqual(ids('@forge putem sari pasul de review?'), ['human:forge']);
   assert.deepEqual(ids('hei @NOVA'), ['companion:nova']);
 });
 
@@ -30,7 +30,7 @@ test('punctuation after the name is not part of it', () => {
 });
 
 test('names with diacritics and inner dashes work', () => {
-  assert.deepEqual(ids('@éris și @athena-maria'), ['human:éris', 'human:athena-maria']);
+  assert.deepEqual(ids('@émile și @relay-maria'), ['human:émile', 'human:relay-maria']);
 });
 
 test('each participant once, in order of appearance', () => {
@@ -39,7 +39,7 @@ test('each participant once, in order of appearance', () => {
 
 test('unknown names and e-mail addresses are not mentions', () => {
   assert.deepEqual(ids('@nimeni nu e aici'), []);
-  assert.deepEqual(ids('scrie la quartz@olympus.example'), []);
+  assert.deepEqual(ids('scrie la quartz@infra.example'), []);
   assert.deepEqual(ids('nimic de văzut'), []);
   assert.deepEqual(ids('@'), []);
 });

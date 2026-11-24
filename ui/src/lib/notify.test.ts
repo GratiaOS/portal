@@ -6,7 +6,7 @@ import type { Turn } from './types.ts';
 const ME = 'human:quartz';
 
 // a turn from `speakerId`; it names the person (`ME`) unless `mentions` says otherwise
-const turn = (seq: number, speakerId = 'human:apollo', conversationId = 'general', mentions: string[] = [ME]): Turn => ({
+const turn = (seq: number, speakerId = 'human:prism', conversationId = 'general', mentions: string[] = [ME]): Turn => ({
   seq,
   id: `id-${seq}`,
   conversationId,
@@ -21,21 +21,21 @@ const say = { one: (c: string) => `mentioned in ${c}`, many: (n: number, c: stri
 
 test('news: only what names the person, oldest first, never what I said', () => {
   const turns = {
-    general: [turn(3), turn(5, ME), turn(6, 'companion:nova'), turn(7, 'human:apollo', 'general', [])],
-    ops: [turn(4, 'human:apollo', 'ops')],
+    general: [turn(3), turn(5, ME), turn(6, 'companion:nova'), turn(7, 'human:prism', 'general', [])],
+    ops: [turn(4, 'human:prism', 'ops')],
   };
   assert.deepEqual(newsAfter(turns, 3, ME).map((t) => t.seq), [4, 6]);
   assert.deepEqual(newsAfter(turns, 6, ME), []);
 });
 
 test('news: a turn that names someone else, or no one, is not news; nor is anything for a person not yet known', () => {
-  const turns = { general: [turn(4, 'human:apollo', 'general', ['human:forge']), turn(5, 'human:apollo', 'general', [])] };
+  const turns = { general: [turn(4, 'human:prism', 'general', ['human:forge']), turn(5, 'human:prism', 'general', [])] };
   assert.deepEqual(newsAfter(turns, 0, ME), []);
   assert.deepEqual(newsAfter({ general: [turn(4)] }, 0, undefined), []);
 });
 
 test('topSeq: the highest turn held, mine included, mention or not', () => {
-  assert.equal(topSeq({ general: [turn(3), turn(9, ME)], ops: [turn(4, 'human:apollo', 'ops', [])] }), 9);
+  assert.equal(topSeq({ general: [turn(3), turn(9, ME)], ops: [turn(4, 'human:prism', 'ops', [])] }), 9);
   assert.equal(topSeq({}), 0);
 });
 
@@ -57,7 +57,7 @@ test('advance: while away, each arrival counts every mention since the page was 
 });
 
 test('advance: a turn that does not name the person is no news and does not count on the badge', () => {
-  const turns = { general: [turn(5, 'human:apollo', 'general', []), turn(6, 'human:apollo', 'general', ['human:forge'])] };
+  const turns = { general: [turn(5, 'human:prism', 'general', []), turn(6, 'human:prism', 'general', ['human:forge'])] };
   const step = advance({ seen: 4, notified: 4 }, turns, ME, false);
   assert.deepEqual(step.news, []);
   assert.equal(step.waiting, 0);
@@ -91,15 +91,15 @@ test('notices: several in one channel give one notice with the count', () => {
 });
 
 test('notices: a notice per channel, each tagged by its channel; an unknown channel is named by its id', () => {
-  const list = noticesFor([turn(7), turn(8, 'human:apollo', 'ops'), turn(9, 'human:apollo', 'lost')], channels, 'El portal', say);
+  const list = noticesFor([turn(7), turn(8, 'human:prism', 'ops'), turn(9, 'human:prism', 'lost')], channels, 'El portal', say);
   assert.deepEqual(list.map((n) => n.tag), ['general', 'ops', 'lost']);
   assert.equal(list[2]!.body, 'mentioned in lost');
 });
 
 test('notices: nothing of what was written reaches the notice, neither the words nor the speaker', () => {
-  for (const notice of noticesFor([turn(7, 'human:apollo'), turn(8, 'human:apollo')], channels, 'El portal', say)) {
+  for (const notice of noticesFor([turn(7, 'human:prism'), turn(8, 'human:prism')], channels, 'El portal', say)) {
     assert.equal(JSON.stringify(notice).includes('secret'), false);
-    assert.equal(JSON.stringify(notice).includes('apollo'), false);
+    assert.equal(JSON.stringify(notice).includes('prism'), false);
   }
 });
 

@@ -94,7 +94,7 @@ test('the files of a build: their types, and the ones with a hash in the name ke
 test('a reload deep inside the app lands in the app, and a file that is not there is not found', async (t) => {
   const base = await open(t, build(t));
 
-  for (const path of ['/channels/olympus', '/login', '/a/b/c']) {
+  for (const path of ['/channels/infra', '/login', '/a/b/c']) {
     const res = await fetch(`${base}${path}`);
     assert.equal(res.status, 200, path);
     assert.equal(await res.text(), PAGE);

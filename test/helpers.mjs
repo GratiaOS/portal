@@ -8,7 +8,7 @@ export const PEOPLE = [
 ];
 export const CHANNELS = [
   { id: 'general', title: 'General' },
-  { id: 'olympus', title: 'Olympus' },
+  { id: 'infra', title: 'Infra' },
 ];
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

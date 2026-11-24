@@ -132,7 +132,7 @@ test('closing it stops everything, even the wait before the next try', async () 
 test('the API: a token on every call, the page asked for, and a refusal that says why and for how long', async () => {
   const seen: { url: string; init?: RequestInit }[] = [];
   const answers = [
-    () => new Response(JSON.stringify({ id: 'human:athena', kind: 'human', alias: 'Athena', capabilities: [] })),
+    () => new Response(JSON.stringify({ id: 'human:relay', kind: 'human', alias: 'Relay', capabilities: [] })),
     () => new Response(JSON.stringify({ turns: [] })),
     () => new Response(JSON.stringify({ turn: { seq: 3 } }), { status: 201 }),
     () => new Response(JSON.stringify({ error: 'too many messages, slow down' }), { status: 429, headers: { 'Retry-After': '7' } }),
@@ -144,10 +144,10 @@ test('the API: a token on every call, the page asked for, and a refusal that say
     return Promise.resolve((answers[n++] as () => Response)());
   }) as typeof fetch);
 
-  assert.equal((await api.me()).alias, 'Athena');
-  await api.history('olympus', { before: 12, limit: 20 });
+  assert.equal((await api.me()).alias, 'Relay');
+  await api.history('infra', { before: 12, limit: 20 });
   assert.equal((await api.say('general', 'salut')).seq, 3);
-  assert.equal(seen[1]?.url, '/api/rooms/olympus/messages?before=12&limit=20');
+  assert.equal(seen[1]?.url, '/api/rooms/infra/messages?before=12&limit=20');
   assert.equal(seen[2]?.url, '/api/rooms/general/messages');
   assert.equal(seen[2]?.init?.method, 'POST');
   assert.equal(seen[2]?.init?.body, '{"text":"salut"}');

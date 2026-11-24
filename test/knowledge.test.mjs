@@ -89,7 +89,7 @@ const CANVAS = {
     { id: 'b', type: 'text', text: 'Approve', x: 10, y: 10, width: 20, height: 20 },
     { id: 'c', type: 'text', text: 'Approve', x: 500, y: 500, width: 20, height: 20 },
     { id: 'g', type: 'group', label: 'Signup', x: -10, y: -10, width: 200, height: 200 },
-    { id: 'f', type: 'file', file: 'olympus/overview.md', x: 1000, y: 0, width: 10, height: 10 },
+    { id: 'f', type: 'file', file: 'infra/overview.md', x: 1000, y: 0, width: 10, height: 10 },
     { id: 'l', type: 'link', url: 'https://example.com' },
     { id: 'e', type: 'text', text: '' },
   ],
@@ -105,7 +105,7 @@ test('a canvas is read as its boxes, the groups they sit in, and the arrows betw
   const lines = text.split('\n');
 
   assert.match(lines[0], /^A flow diagram, as text/);
-  for (const line of ['- Register: Email and phone', '- Approve', '- Approve (2)', '- olympus/overview.md (file)', '- https://example.com (link)', '- e']) {
+  for (const line of ['- Register: Email and phone', '- Approve', '- Approve (2)', '- infra/overview.md (file)', '- https://example.com (link)', '- e']) {
     assert.ok(lines.includes(line), `missing ${line}`);
   }
   assert.ok(lines.includes('- Signup: Register, Approve')); // the second Approve is outside the group
@@ -121,7 +121,7 @@ test('what is not a canvas is not read as one', () => {
 });
 
 test('canvases sit in the knowledge next to the markdown, under their own paths, and a broken one is left out', (t) => {
-  const dir = folder(t, { 'a.md': 'Text.', 'flows/olympus.canvas': JSON.stringify(CANVAS), 'flows/broken.canvas': '{ oops' });
+  const dir = folder(t, { 'a.md': 'Text.', 'flows/infra.canvas': JSON.stringify(CANVAS), 'flows/broken.canvas': '{ oops' });
   const log = console.error;
   const logged = [];
   console.error = (...args) => logged.push(args.join(' '));
@@ -132,13 +132,13 @@ test('canvases sit in the knowledge next to the markdown, under their own paths,
     console.error = log;
   }
 
-  assert.deepEqual([...knowledge.files.keys()], ['a.md', 'flows/olympus.canvas']);
-  assert.match(knowledge.text, /### FILE: flows\/olympus\.canvas\nA flow diagram, as text/);
+  assert.deepEqual([...knowledge.files.keys()], ['a.md', 'flows/infra.canvas']);
+  assert.match(knowledge.text, /### FILE: flows\/infra\.canvas\nA flow diagram, as text/);
   assert.equal(logged.length, 1);
   assert.match(logged[0], /skipping flows\/broken\.canvas/);
 
   // a change to a flow is picked up like a change to a page
-  put(dir, 'flows/olympus.canvas', JSON.stringify({ nodes: [{ id: 'x', type: 'text', text: 'Only step' }] }), 10);
+  put(dir, 'flows/infra.canvas', JSON.stringify({ nodes: [{ id: 'x', type: 'text', text: 'Only step' }] }), 10);
   assert.equal(knowledge.refresh(), true);
   assert.match(knowledge.text, /- Only step/);
   assert.equal(knowledge.text.includes('Register'), false);

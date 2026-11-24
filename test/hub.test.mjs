@@ -25,7 +25,7 @@ test('a connection starts with hello: who it is, who is here, where to talk, whe
   assert.equal(hello.id, undefined); // not part of the resume cursor
   assert.equal(hello.data.you.id, 'human:quartz');
   assert.equal(hello.data.participants.length, 3);
-  assert.deepEqual(hello.data.conversations.map((c) => c.id), ['general', 'olympus']);
+  assert.deepEqual(hello.data.conversations.map((c) => c.id), ['general', 'infra']);
   assert.equal(hello.data.lastSeq, 1);
 
   const presence = Object.fromEntries(hello.data.presence.map((p) => [p.participantId, p]));
@@ -44,7 +44,7 @@ test('a turn reaches everyone, with its seq as the event id, and the listeners',
   const heard = [];
   hub.on('turn', (turn) => heard.push(turn));
 
-  const turn = hub.publish({ conversationId: 'olympus', speakerId: forge.id, text: '@nova putem sari pasul cu Styx?' });
+  const turn = hub.publish({ conversationId: 'infra', speakerId: forge.id, text: '@nova putem sari pasul de review?' });
 
   assert.equal(turn.seq, 1);
   assert.deepEqual(turn.mentions, ['companion:nova']);
@@ -259,21 +259,21 @@ test('activity: "thinking" is told once, to everyone, and to whoever arrives in 
   const seen = [];
   hub.on('activity', (a) => seen.push(`${a.participantId} ${a.conversationId} ${a.state}`));
 
-  hub.setActivity('companion:nova', 'olympus', 'thinking');
-  hub.setActivity('companion:nova', 'olympus', 'thinking'); // saying it again changes nothing
+  hub.setActivity('companion:nova', 'infra', 'thinking');
+  hub.setActivity('companion:nova', 'infra', 'thinking'); // saying it again changes nothing
   assert.deepEqual(watcher.events(), ['hello', 'activity']);
-  assert.deepEqual(watcher.frames()[1].data, { participantId: 'companion:nova', conversationId: 'olympus', state: 'thinking' });
+  assert.deepEqual(watcher.frames()[1].data, { participantId: 'companion:nova', conversationId: 'infra', state: 'thinking' });
   assert.equal(watcher.frames()[1].id, undefined); // not part of the resume cursor, and never stored
 
   const late = fakeSink();
   hub.subscribe(forge, late);
-  assert.deepEqual(late.frames()[0].data.activity, [{ participantId: 'companion:nova', conversationId: 'olympus', state: 'thinking' }]);
+  assert.deepEqual(late.frames()[0].data.activity, [{ participantId: 'companion:nova', conversationId: 'infra', state: 'thinking' }]);
 
   hub.setActivity('companion:nova', 'general', 'idle'); // was never thinking there: nothing to tell
-  hub.setActivity('companion:nova', 'olympus', 'idle');
-  hub.setActivity('companion:nova', 'olympus', 'idle');
+  hub.setActivity('companion:nova', 'infra', 'idle');
+  hub.setActivity('companion:nova', 'infra', 'idle');
   assert.deepEqual(watcher.frames().filter((f) => f.event === 'activity').map((f) => f.data.state), ['thinking', 'idle']);
-  assert.deepEqual(seen, ['companion:nova olympus thinking', 'companion:nova olympus idle']);
+  assert.deepEqual(seen, ['companion:nova infra thinking', 'companion:nova infra idle']);
 
   const after = fakeSink();
   hub.subscribe(quartz, after);

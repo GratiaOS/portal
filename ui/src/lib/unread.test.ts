@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readUpTo, rewound, titleWith, unreadIn } from './unread.ts';
 import type { Turn } from './types.ts';
 
-const turn = (seq: number, speakerId = 'human:apollo', conversationId = 'general'): Turn => ({
+const turn = (seq: number, speakerId = 'human:prism', conversationId = 'general'): Turn => ({
   seq,
   id: `id-${seq}`,
   conversationId,
@@ -25,7 +25,7 @@ test('unread: what was there when the page opened is history, not news', () => {
 });
 
 test('unread: counts every channel, each from its own mark', () => {
-  const turns = { general: [turn(5), turn(6)], ops: [turn(7, 'human:apollo', 'ops'), turn(8, 'human:apollo', 'ops')] };
+  const turns = { general: [turn(5), turn(6)], ops: [turn(7, 'human:prism', 'ops'), turn(8, 'human:prism', 'ops')] };
   assert.equal(unreadIn(turns, { general: 6 }, 4, 'human:quartz'), 2); // ops has no mark: from where the page opened
 });
 

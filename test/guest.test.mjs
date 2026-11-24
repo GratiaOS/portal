@@ -17,7 +17,7 @@ function setup({ bind = true, now = () => T0 + 60_000 } = {}) {
   ]);
   store.syncConversations([
     { id: 'general', title: 'General' },
-    { id: 'olympus', title: 'Olympus' },
+    { id: 'infra', title: 'Infra' },
     { id: 'guests', title: 'Guests', kind: 'guest' },
   ]);
   const owl = store.addGuest('owl');
@@ -34,7 +34,7 @@ function setup({ bind = true, now = () => T0 + 60_000 } = {}) {
 test('a guest is told of the room they are bound to, and of no other', async () => {
   const { call } = setup();
   assert.deepEqual((await (await call(TOKENS.owl, '/api/rooms')).json()).rooms.map((r) => r.id), ['guests']);
-  assert.deepEqual((await (await call(TOKENS.quartz, '/api/rooms')).json()).rooms.map((r) => r.id), ['general', 'olympus', 'guests']); // the team sees all, in the order of the config
+  assert.deepEqual((await (await call(TOKENS.quartz, '/api/rooms')).json()).rooms.map((r) => r.id), ['general', 'infra', 'guests']); // the team sees all, in the order of the config
 });
 
 test('a guest reads and writes in their room, and a team room is, to them, a room that does not exist', async () => {
@@ -107,7 +107,7 @@ test('the team is told everything, as before', () => {
   const sink = fakeSink();
   hub.subscribe(quartz, sink);
   const [hello] = sink.frames();
-  assert.deepEqual(hello.data.conversations.map((c) => c.id), ['general', 'olympus', 'guests']);
+  assert.deepEqual(hello.data.conversations.map((c) => c.id), ['general', 'infra', 'guests']);
   assert.equal(hello.data.participants.length, 4); // Quartz, Forge, Nova and the guest
   hub.publish({ conversationId: 'guests', speakerId: owl.id, text: 'a guest speaks' });
   hub.publish({ conversationId: 'general', speakerId: 'human:forge', text: 'the team speaks' });

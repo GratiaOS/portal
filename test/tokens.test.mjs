@@ -53,8 +53,8 @@ test('tokens file: what is wrong is said by name of person and file, and never w
   const missing = room(t, { tokens: { Quartz: QUARTZ } });
   never(() => loadConfig(missing.config), /human:Forge has no token in .*people\.tokens\.local\.json; make one with: pnpm --filter portal tokens .*room\.json new Forge/);
 
-  const stranger = room(t, { tokens: { Quartz: QUARTZ, Forge: FORGE, Hades: QUARTZ.replace('z', 'q') } });
-  never(() => loadConfig(stranger.config), /has a token for "Hades", who is not a human in participants/);
+  const stranger = room(t, { tokens: { Quartz: QUARTZ, Forge: FORGE, Ghost: QUARTZ.replace('z', 'q') } });
+  never(() => loadConfig(stranger.config), /has a token for "Ghost", who is not a human in participants/);
 
   const twice = room(t, { tokens: { Quartz: QUARTZ, Forge: FORGE }, config: { participants: [{ kind: 'human', alias: 'Quartz', token: 'x'.repeat(30) }, { kind: 'human', alias: 'Forge' }] } });
   never(() => loadConfig(twice.config), /human:Quartz has a token in the config and in .*: keep it in one place/);
@@ -116,7 +116,7 @@ test('tokens show: the token goes to a pipe, and not to a terminal unless asked'
   assert.throws(() => tokens([config, 'show', 'Quartz'], { isTTY: true }), /not printing a token to a terminal.*pipe it/);
   assert.equal(tokens([config, 'show', 'Quartz', '--reveal'], { isTTY: true }), `${QUARTZ}\n`);
   assert.throws(() => tokens([config, 'show']), /show needs a name/);
-  assert.throws(() => tokens([config, 'show', 'Hades']), /"Hades" is not a human in .*the humans are: Quartz, Forge/);
+  assert.throws(() => tokens([config, 'show', 'Ghost']), /"Ghost" is not a human in .*the humans are: Quartz, Forge/);
   assert.throws(() => tokens([config, 'show', 'Nova']), /not a human/);
 
   const bare = room(t, { tokens: { Quartz: QUARTZ } });
@@ -138,12 +138,12 @@ test('tokens new: a token is made for someone who has none, in a file only the o
   assert.throws(() => tokens([config, 'new', 'Forge']), /Forge already has a token; `rotate` replaces it/);
 });
 
-test('tokens new: the file is made when there is none, and Hades is not a human here', (t) => {
+test('tokens new: the file is made when there is none, and Ghost is not a human here', (t) => {
   const { config, tokensFile } = room(t);
   tokens([config, 'new', 'Quartz']);
   tokens([config, 'new', 'forge']); // in other letters: the alias of the config is kept
   assert.deepEqual(Object.keys(JSON.parse(readFileSync(tokensFile, 'utf8'))), ['Quartz', 'Forge']);
-  assert.throws(() => tokens([config, 'new', 'Hades']), /is not a human/);
+  assert.throws(() => tokens([config, 'new', 'Ghost']), /is not a human/);
   assert.throws(() => tokens([config, 'new']), /new needs a name/);
 });
 
@@ -176,7 +176,7 @@ test('tokens, as a command: the token comes out alone, so that it can be piped',
   const script = new URL('../dist/tokens.js', import.meta.url).pathname;
   const shown = await run(process.execPath, [script, config, 'show', 'Forge']);
   assert.equal(shown.stdout, `${FORGE}\n`);
-  await assert.rejects(run(process.execPath, [script, config, 'show', 'Hades']), (err) => err.code === 1 && /portal tokens: "Hades" is not a human/.test(err.stderr));
+  await assert.rejects(run(process.execPath, [script, config, 'show', 'Ghost']), (err) => err.code === 1 && /portal tokens: "Ghost" is not a human/.test(err.stderr));
 });
 
 test('in the image there is no pnpm and no clipboard, and the messages say what is there', async (t) => {

@@ -11,13 +11,13 @@ import { fakeSink, room, sleep } from './helpers.mjs';
 const test = (name, fn) => nodeTest(name, { timeout: 8000 }, fn);
 
 const FILES = {
-  'olympus/oath.md':
-    'The oath on the Styx is sworn before every pact. Whoever breaks it loses more than 25% of their ambrosia, and olympus cannot skip the oath.',
+  'infra/review.md':
+    'The review step is required before every deploy. Whoever skips it loses more than 25% of their error budget, and infra cannot skip the review.',
   'offerings/tithes.md': 'Tithes are agreed per temple. The standard tithe is 1.5% plus 0.20 drachmas per offering.',
 };
 
-const SAY_GOOD = 'Nu, jurământul pe Styx e obligatoriu pentru orice pact. Cine îl rupe pierde peste 25% din ambrozie.';
-const GOOD = `SAY: ${SAY_GOOD}\nSOURCES: olympus/oath.md`;
+const SAY_GOOD = 'Nu, pasul de review e obligatoriu pentru orice deploy. Cine îl sare pierde peste 25% din bugetul de erori.';
+const GOOD = `SAY: ${SAY_GOOD}\nSOURCES: infra/review.md`;
 
 /** A model that says whatever the test says: a text, a whole result, or a function of the request. */
 function fakeLlm(answer) {
@@ -76,8 +76,8 @@ function setup(t, { llm, nova = {}, facts }) {
   return { dir, store, hub, knowledge, nova: instance };
 }
 
-const ask = (hub, who, text, conversationId = 'olympus') => hub.publish({ conversationId, speakerId: `human:${who}`, text });
-const novaSaid = (store, conversationId = 'olympus') => store.listTurns(conversationId).filter((t) => t.speakerId === 'companion:nova').map((t) => t.text);
+const ask = (hub, who, text, conversationId = 'infra') => hub.publish({ conversationId, speakerId: `human:${who}`, text });
+const novaSaid = (store, conversationId = 'infra') => store.listTurns(conversationId).filter((t) => t.speakerId === 'companion:nova').map((t) => t.text);
 
 function quiet(work) {
   const log = console.error;
@@ -91,7 +91,7 @@ function quiet(work) {
 // --- the pieces, alone ---
 
 test('what she says is hers: the labels only pick out the files and the gap', () => {
-  assert.deepEqual(parseReply(GOOD), { say: SAY_GOOD, sources: ['olympus/oath.md'] });
+  assert.deepEqual(parseReply(GOOD), { say: SAY_GOOD, sources: ['infra/review.md'] });
 
   // no labels at all: all of it is what she says, quotes and colons and all
   assert.deepEqual(parseReply('Salut! Zici „kill switch": da, așa e.'), { say: 'Salut! Zici „kill switch": da, așa e.', sources: [] });
@@ -117,7 +117,7 @@ test('what she says is hers: the labels only pick out the files and the gap', ()
 });
 
 test('a figure must be in the files she leaned on or in the conversation, or it was made up', () => {
-  const evidence = ['Tithes: 1.5% plus 0.20 drachmas. Over 25% of the votes.', 'Athena: și 30% ?'];
+  const evidence = ['Tithes: 1.5% plus 0.20 drachmas. Over 25% of the votes.', 'Relay: și 30% ?'];
   assert.deepEqual(unsupportedFigures('Zeciuiala e 1.5% plus 0.20 drahme.', evidence), []);
   assert.deepEqual(unsupportedFigures('Zeciuiala e 1,5%.', evidence), []); // 1,5 and 1.5 are the same figure
   assert.deepEqual(unsupportedFigures('Nu, nu 30% cum zici.', evidence), []); // said in the conversation
@@ -143,11 +143,11 @@ test('a figure counts whole: a piece of another figure is not the figure', () =>
 
 test('what the room can check of her: which files exist, and which figures are nowhere', () => {
   const files = new Map(Object.entries(FILES));
-  const chat = '[Athena] și 30%?';
+  const chat = '[Relay] și 30%?';
 
-  assert.deepEqual(check(parseReply(GOOD), files, chat), { sources: ['olympus/oath.md'], figures: [] });
+  assert.deepEqual(check(parseReply(GOOD), files, chat), { sources: ['infra/review.md'], figures: [] });
   // however the path was written; a file that does not exist is not a source
-  assert.deepEqual(check({ say: 'x', sources: ['./olympus/oath.md', 'olympus\\oath.md', 'nope.md'] }, files, '').sources, ['olympus/oath.md']);
+  assert.deepEqual(check({ say: 'x', sources: ['./infra/review.md', 'infra\\review.md', 'nope.md'] }, files, '').sources, ['infra/review.md']);
   // a figure in none of it; one the asker said themselves; one that is in a file she did not lean on
   assert.deepEqual(check({ say: 'Zeciuiala e 3.7%', sources: ['offerings/tithes.md'] }, files, '').figures, ['3.7']);
   assert.deepEqual(check({ say: 'Nu, 30% nu e pragul', sources: [] }, files, chat).figures, []);
@@ -184,8 +184,8 @@ test('the system prompt says who she is and how she talks, then all she knows; t
   // with nothing written down for her, the prompt says so, instead of ending on an empty heading
   assert.ok(buildSystem('').endsWith('KNOWLEDGE\n(none yet: nothing about the company is written down for you yet)'));
 
-  const user = buildUser('#olympus', [{ alias: 'Athena', text: 'una\ndoua' }, { alias: 'Nova', text: 'ok' }], 'Athena');
-  assert.equal(user, ['Room #olympus. The latest messages, oldest first:', '<chat>', '[Athena] una\n  doua', '[Nova] ok', '</chat>', 'Reply to the last message addressed to you. It is from Athena.'].join('\n'));
+  const user = buildUser('#infra', [{ alias: 'Relay', text: 'una\ndoua' }, { alias: 'Nova', text: 'ok' }], 'Relay');
+  assert.equal(user, ['Room #infra. The latest messages, oldest first:', '<chat>', '[Relay] una\n  doua', '[Nova] ok', '</chat>', 'Reply to the last message addressed to you. It is from Relay.'].join('\n'));
 });
 
 test('what she is told about the room comes from the config, and is said to be all she knows of it', () => {
@@ -195,7 +195,7 @@ test('what she is told about the room comes from the config, and is said to be a
       { kind: 'human', alias: 'Forge' },
       { kind: 'companion', alias: 'Nova' },
     ],
-    rooms: [{ id: 'general', title: 'General' }, { id: 'olympus', title: 'Olympus' }],
+    rooms: [{ id: 'general', title: 'General' }, { id: 'infra', title: 'Infra' }],
     dbPath: 'data/room.db',
     retention: { days: 14, messages: 999 },
   };
@@ -203,7 +203,7 @@ test('what she is told about the room comes from the config, and is said to be a
   const facts = roomFacts({ ...base, nova }, 34);
 
   assert.match(facts, /2 people \(Quartz, Forge\), and you/);
-  assert.match(facts, /Rooms: general, olympus\./);
+  assert.match(facts, /Rooms: general, infra\./);
   assert.match(facts, /kept for 14 days, and each room keeps at most its last 999, whichever ends first; then it is gone for good/);
   assert.match(facts, /in one database file on the machine/);
   assert.match(facts, /Nobody can edit a message/);
@@ -252,29 +252,29 @@ test('a question gets her answer in her words, with the files she leaned on, add
   const llm = fakeLlm(GOOD);
   const { hub, store, nova } = setup(t, { llm });
 
-  ask(hub, 'forge', '@nova putem sari pasul cu Styx din Olympus?');
+  ask(hub, 'forge', '@nova putem sari pasul de review din infra?');
   await nova.idle();
 
-  const [reply] = store.listTurns('olympus').slice(-1);
+  const [reply] = store.listTurns('infra').slice(-1);
   assert.equal(reply.speakerId, 'companion:nova');
-  assert.equal(reply.text, `@Forge ${SAY_GOOD}\nSurse: olympus/oath.md`);
+  assert.equal(reply.text, `@Forge ${SAY_GOOD}\nSurse: infra/review.md`);
   assert.deepEqual(reply.mentions, ['human:forge']);
 
   assert.equal(llm.calls.length, 1);
   const [call] = llm.calls;
   assert.match(call.system, /### FILE: offerings\/tithes\.md\nTithes are agreed/);
-  assert.match(call.system, /### FILE: olympus\/oath\.md/);
-  assert.match(call.messages[0].content, /\[Forge\] @nova putem sari pasul cu Styx din Olympus\?/);
+  assert.match(call.system, /### FILE: infra\/review\.md/);
+  assert.match(call.messages[0].content, /\[Forge\] @nova putem sari pasul de review din infra\?/);
   assert.match(call.messages[0].content, /It is from Forge\.$/);
 });
 
 test('a hello is a hello: it goes to her like anything else, and what comes back is her own, with no lines from the room', async (t) => {
-  const llm = fakeLlm('SAY: Neața, Forge! Cum merge dimineața în Olympus? 🌱');
+  const llm = fakeLlm('SAY: Neața, Forge! Cum merge dimineața în Infra? 🌱');
   const { hub, store, nova } = setup(t, { llm });
 
   ask(hub, 'forge', '@nova ce zici, brother? 🫂');
   await nova.idle();
-  assert.deepEqual(novaSaid(store), ['@Forge Neața, Forge! Cum merge dimineața în Olympus? 🌱']);
+  assert.deepEqual(novaSaid(store), ['@Forge Neața, Forge! Cum merge dimineața în Infra? 🌱']);
   assert.equal(llm.calls.length, 1);
   assert.deepEqual(store.listGaps(), []); // company chat is not a hole in the knowledge
 
@@ -286,14 +286,14 @@ test('a hello is a hello: it goes to her like anything else, and what comes back
 });
 
 test('she is addressed to the person once: her own "@name" at the start is not doubled', async (t) => {
-  const llm = fakeLlm((_req, n) => (n === 1 ? 'SAY: @Forge uite ce știu eu: jurământul e obligatoriu.\nSOURCES: olympus/oath.md' : 'SAY: Păi @Forge, depinde.'));
+  const llm = fakeLlm((_req, n) => (n === 1 ? 'SAY: @Forge uite ce știu eu: pasul de review e obligatoriu.\nSOURCES: infra/review.md' : 'SAY: Păi @Forge, depinde.'));
   const { hub, store, nova } = setup(t, { llm });
 
-  ask(hub, 'forge', '@nova putem sări Styx?');
+  ask(hub, 'forge', '@nova putem sări review?');
   await nova.idle();
   ask(hub, 'forge', '@nova și altceva?');
   await nova.idle();
-  assert.deepEqual(novaSaid(store), ['@Forge uite ce știu eu: jurământul e obligatoriu.\nSurse: olympus/oath.md', '@Forge Păi @Forge, depinde.']);
+  assert.deepEqual(novaSaid(store), ['@Forge uite ce știu eu: pasul de review e obligatoriu.\nSurse: infra/review.md', '@Forge Păi @Forge, depinde.']);
 });
 
 test('the prompt stays the same between questions, and changes when the knowledge does', async (t) => {
@@ -317,11 +317,11 @@ test('she sees the last few messages of that conversation, oldest first, and not
   const llm = fakeLlm(GOOD);
   const { hub, nova } = setup(t, { llm, nova: { contextTurns: 3 } });
 
-  ask(hub, 'quartz', 'vechi', 'olympus');
+  ask(hub, 'quartz', 'vechi', 'infra');
   ask(hub, 'quartz', 'în altă parte', 'general');
-  ask(hub, 'quartz', 'unu', 'olympus');
-  ask(hub, 'forge', 'doi', 'olympus');
-  ask(hub, 'forge', '@nova trei?', 'olympus');
+  ask(hub, 'quartz', 'unu', 'infra');
+  ask(hub, 'forge', 'doi', 'infra');
+  ask(hub, 'forge', '@nova trei?', 'infra');
   await nova.idle();
 
   const content = llm.calls[0].messages[0].content;
@@ -339,14 +339,14 @@ test('"thinking" is told while she works, then the answer, then she is done', as
   const watcher = fakeSink();
   hub.subscribe(store.getParticipant('human:quartz'), watcher);
 
-  ask(hub, 'forge', '@nova putem sari Styx?');
+  ask(hub, 'forge', '@nova putem sari review?');
   const names = () => watcher.frames().slice(1).filter((f) => f.event !== 'presence').map((f) => (f.event === 'activity' ? `activity:${f.data.state}` : f.event === 'message' ? `message:${f.data.speakerId}` : f.event));
   assert.deepEqual(names(), ['message:human:forge', 'activity:thinking']);
 
   // someone who arrives in the middle of it is told too
   const late = fakeSink();
   hub.subscribe(store.getParticipant('human:forge'), late);
-  assert.deepEqual(late.frames()[0].data.activity, [{ participantId: 'companion:nova', conversationId: 'olympus', state: 'thinking' }]);
+  assert.deepEqual(late.frames()[0].data.activity, [{ participantId: 'companion:nova', conversationId: 'infra', state: 'thinking' }]);
 
   release.release();
   await nova.idle();
@@ -393,10 +393,10 @@ test('if the figures are still nowhere, she says plainly that she will not give 
 });
 
 test('a figure the person asking said themselves is not a made-up one', async (t) => {
-  const llm = fakeLlm('SAY: Nu, 30% nu e pragul: pierzi peste 25%.\nSOURCES: olympus/oath.md');
+  const llm = fakeLlm('SAY: Nu, 30% nu e pragul: pierzi peste 25%.\nSOURCES: infra/review.md');
   const { hub, store, nova } = setup(t, { llm });
 
-  ask(hub, 'forge', '@nova pragul pe Styx e 30%, nu?');
+  ask(hub, 'forge', '@nova pragul pe review e 30%, nu?');
   await nova.idle();
   assert.equal(llm.calls.length, 1);
   assert.match(novaSaid(store)[0], /^@Forge Nu, 30% nu e pragul/);
@@ -414,12 +414,12 @@ test('a file that does not exist is not shown as a source', async (t) => {
 // --- a reply cut off by the token limit is not published as if it were whole ---
 
 test('a reply cut by the token limit is not published, not even the part that came; she says plainly she lost her thread', async (t) => {
-  const cut = { content: 'SAY: Jurământul e obligatoriu pentru orice pact, iar pragul este de pest', reasoning: '', usage: {}, finishReason: 'length' };
+  const cut = { content: 'SAY: Pasul de review e obligatoriu pentru orice deploy, iar pragul este de pest', reasoning: '', usage: {}, finishReason: 'length' };
   const llm = fakeLlm(cut);
   const { hub, store, nova } = setup(t, { llm });
 
   const logged = await quiet(async () => {
-    ask(hub, 'forge', '@nova putem sări pasul cu Styx?');
+    ask(hub, 'forge', '@nova putem sări pasul de review?');
     await nova.idle();
   });
 
@@ -535,7 +535,7 @@ test('only a person naming her gets her attention: not another message, not hers
 
   ask(hub, 'forge', 'bună dimineața tuturor');
   ask(hub, 'forge', 'cineva a vorbit cu nova?'); // no @
-  hub.publish({ conversationId: 'olympus', speakerId: 'companion:nova', text: '@nova mă aud singură' });
+  hub.publish({ conversationId: 'infra', speakerId: 'companion:nova', text: '@nova mă aud singură' });
   await nova.idle();
   assert.equal(llm.calls.length, 0);
 });
@@ -562,8 +562,8 @@ test('questions wait their turn, and when too many wait she says so plainly', as
 
   const said = novaSaid(store);
   assert.equal(said.length, 3);
-  assert.match(said[1], /^@Forge Nu, jurământul/);
-  assert.match(said[2], /^@Quartz Nu, jurământul/);
+  assert.match(said[1], /^@Forge Nu, pasul/);
+  assert.match(said[2], /^@Quartz Nu, pasul/);
 });
 
 test('stopping cuts the question in flight, forgets the ones waiting, and says nothing more', async (t) => {
@@ -611,7 +611,7 @@ const configWithNova = (dir, nova = {}) =>
         { kind: 'human', alias: 'Forge', locale: 'ro', token: TOKENS.forge },
         { kind: 'companion', alias: 'Nova' },
       ],
-      rooms: [{ id: 'olympus', title: 'Olympus' }],
+      rooms: [{ id: 'infra', title: 'Infra' }],
       nova: { llm: { baseUrl: 'http://127.0.0.1:9/v1', model: 'test-model' }, knowledgeDir: dir, ...nova },
     },
     '/base',
@@ -624,20 +624,20 @@ test('a room with Nova, over HTTP: a question in, her answer with its sources ou
   assert.equal(running.knowledge.files.size, 2);
 
   const api = (path, init = {}) => fetch(`http://127.0.0.1:${running.port}${path}`, { ...init, headers: { Authorization: `Bearer ${TOKENS.forge}`, ...init.headers } });
-  const posted = await api('/api/rooms/olympus/messages', {
+  const posted = await api('/api/rooms/infra/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: '@nova putem sari pasul cu Styx din Olympus?' }),
+    body: JSON.stringify({ text: '@nova putem sari pasul de review din infra?' }),
   });
   assert.equal(posted.status, 201);
 
   let turns = [];
   for (let i = 0; i < 100 && turns.length < 2; i += 1) {
     await sleep(10);
-    turns = (await (await api('/api/rooms/olympus/messages')).json()).turns;
+    turns = (await (await api('/api/rooms/infra/messages')).json()).turns;
   }
   assert.deepEqual(turns.map((x) => x.speakerId), ['human:forge', 'companion:nova']);
-  assert.equal(turns[1].text, `@Forge ${SAY_GOOD}\nSurse: olympus/oath.md`);
+  assert.equal(turns[1].text, `@Forge ${SAY_GOOD}\nSurse: infra/review.md`);
 });
 
 test('a room with Nova and no knowledge folder yet: she still answers, and her prompt says nothing is written down for her', async (t) => {
@@ -649,11 +649,11 @@ test('a room with Nova and no knowledge folder yet: she still answers, and her p
   assert.equal(running.knowledge, undefined);
 
   const api = (path, init = {}) => fetch(`http://127.0.0.1:${running.port}${path}`, { ...init, headers: { Authorization: `Bearer ${TOKENS.forge}`, ...init.headers } });
-  await api('/api/rooms/olympus/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: '@nova salut!' }) });
+  await api('/api/rooms/infra/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: '@nova salut!' }) });
   let turns = [];
   for (let i = 0; i < 100 && turns.length < 2; i += 1) {
     await sleep(10);
-    turns = (await (await api('/api/rooms/olympus/messages')).json()).turns;
+    turns = (await (await api('/api/rooms/infra/messages')).json()).turns;
   }
   assert.deepEqual(turns.map((x) => x.speakerId), ['human:forge', 'companion:nova']);
   const system = llm.calls[0].system;

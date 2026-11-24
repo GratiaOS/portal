@@ -13,10 +13,10 @@ test('the demo plays the scene in a real room and its own claims hold', async ()
 
   for (const line of [
     /#general <Quartz> Neața tuturor/,
-    /#general <Poseidon> Salut @quartz/,
-    /#olympus <Athena> @nova putem sari pasul cu Styx din Olympus\?/,
-    /#olympus <Nova> @athena nu merge, e parte din jurământ, mai exact cel pe Styx/,
-    /\* Eirene is offline/,
+    /#general <Pulse> Salut @quartz/,
+    /#infra <Relay> @nova putem sari pasul de review din infra\?/,
+    /#infra <Nova> @relay nu merge, e parte din proces, mai exact cel de review/,
+    /\* Local is offline/,
     /✔ all 4 connections saw the same 5 turns/,
   ]) {
     assert.match(stdout, line);

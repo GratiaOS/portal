@@ -26,14 +26,14 @@ const llm = createChatCompletionsProvider({
 
 for await (const event of llm.stream({
   system: 'You are a terse colleague.',
-  messages: [{ role: 'user', content: 'What is ambrosia?' }],
+  messages: [{ role: 'user', content: 'What is coffee?' }],
 })) {
   if (event.type === 'reasoning') showThinking();
   if (event.type === 'content') append(event.text);
   if (event.type === 'done') console.log(event.result.usage, event.result.finishReason);
 }
 
-const { content } = await llm.generate({ messages: [{ role: 'user', content: 'What is ambrosia?' }] });
+const { content } = await llm.generate({ messages: [{ role: 'user', content: 'What is coffee?' }] });
 ```
 
 ## Notes

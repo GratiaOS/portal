@@ -19,7 +19,7 @@ const configFor = (extra = {}) =>
       ],
       rooms: [
         { id: 'general', title: 'General' },
-        { id: 'olympus', title: 'Olympus' },
+        { id: 'infra', title: 'Infra' },
       ],
       dbPath: ':memory:',
       ...extra,
@@ -124,17 +124,17 @@ test('me and rooms', () =>
       const { rooms } = await (await quartz('/api/rooms')).json();
       assert.deepEqual(rooms.map((c) => [c.id, c.status, c.visibility]), [
         ['general', 'open', 'private'],
-        ['olympus', 'open', 'private'],
+        ['infra', 'open', 'private'],
       ]);
     },
   }));
 
 test('hints: who can be called and with what, for the box where people write; nothing without a companion', () =>
   within({
-    options: { hints: { companion: 'Nova', examples: ['ce e ambrozia?'] } },
+    options: { hints: { companion: 'Nova', examples: ['ce e cafeaua?'] } },
     async run({ quartz, anonymous }) {
       assert.equal((await anonymous('/api/hints')).status, 401); // like the rest of /api
-      assert.deepEqual(await (await quartz('/api/hints')).json(), { companion: 'Nova', examples: ['ce e ambrozia?'] });
+      assert.deepEqual(await (await quartz('/api/hints')).json(), { companion: 'Nova', examples: ['ce e cafeaua?'] });
       assert.equal((await quartz('/api/hints', { method: 'POST' })).status, 405);
     },
   }).then(() =>
@@ -156,7 +156,7 @@ test('a message is from whoever the token says, and is read back as history, a p
       assert.equal(turn.seq, 1);
 
       for (const text of ['doi', 'trei', 'patru']) await say(forge, 'general', { text });
-      await say(forge, 'olympus', { text: 'în altă parte' });
+      await say(forge, 'infra', { text: 'în altă parte' });
 
       const all = (await (await quartz('/api/rooms/general/messages')).json()).turns;
       assert.deepEqual(all.map((t) => t.text), ['@nova hei', 'doi', 'trei', 'patru']);
@@ -211,8 +211,8 @@ test('what the knowledge could not answer can be read by whoever is signed in, a
   within({
     async run({ quartz, forge, store }) {
       assert.deepEqual(await (await quartz('/api/gaps')).json(), { gaps: [] });
-      store.recordGap({ conversationId: 'olympus', question: 'Putem sări pasul cu Styx?', why: 'model_found_nothing' });
-      store.recordGap({ conversationId: 'olympus', question: 'putem sări pasul cu Styx?', why: 'model_found_nothing' });
+      store.recordGap({ conversationId: 'infra', question: 'Putem sări pasul de review?', why: 'model_found_nothing' });
+      store.recordGap({ conversationId: 'infra', question: 'putem sări pasul de review?', why: 'model_found_nothing' });
 
       const { gaps } = await (await forge('/api/gaps?limit=5')).json();
       assert.equal(gaps.length, 1);
@@ -334,8 +334,8 @@ test('what one person posts reaches another person live', () =>
       const stream = new Collector(await forge('/api/stream', { signal: abort.signal }));
       await stream.waitFor((t) => t.includes('event: hello'));
 
-      await say(quartz, 'olympus', { text: '@forge uite pasul cu Styx' });
-      await stream.waitFor((t) => t.includes('"text":"@forge uite pasul cu Styx"'));
+      await say(quartz, 'infra', { text: '@forge uite pasul de review' });
+      await stream.waitFor((t) => t.includes('"text":"@forge uite pasul de review"'));
       assert.match(stream.text, /event: message\nid: 1\ndata: /);
       abort.abort();
     },

@@ -7,18 +7,18 @@ const ro = stringsFor('ro');
 const en = stringsFor('en-GB');
 
 test('whispers: the usual line first, then how to call her, then the company\'s questions with her name in front', () => {
-  const lines = whispersFor(ro, { companion: 'Nova', examples: ['cine păzește porțile Olimpului?'] });
+  const lines = whispersFor(ro, { companion: 'Nova', examples: ['cine e de gardă săptămâna asta?'] });
   assert.equal(lines[0], 'Scrie un mesaj…');
   assert.deepEqual(lines.slice(1, 4), ['Cheam-o pe @Nova ca pe o colegă.', '@Nova, mă ajuți cu ceva?', '@Nova, tu ce părere ai?']);
-  assert.equal(lines[4], '@Nova, cine păzește porțile Olimpului?');
+  assert.equal(lines[4], '@Nova, cine e de gardă săptămâna asta?');
   assert.equal(lines.length, 5);
 });
 
 test('whispers: in English for those whose language is English; the examples stay as the company wrote them', () => {
-  const lines = whispersFor(en, { companion: 'Nova', examples: ['what is ambrosia?'] });
+  const lines = whispersFor(en, { companion: 'Nova', examples: ['what is coffee?'] });
   assert.equal(lines[0], 'Write a message…');
   assert.equal(lines[1], 'Call @Nova like you would a colleague.');
-  assert.equal(lines.at(-1), '@Nova, what is ambrosia?');
+  assert.equal(lines.at(-1), '@Nova, what is coffee?');
 });
 
 test('whispers: without a companion, or before the room has said, only the usual line', () => {

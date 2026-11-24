@@ -107,7 +107,7 @@ test('a skin is looked at again when it changes, and one can be added while the 
 const TOKEN = 't'.repeat(24);
 
 async function room(t, dir) {
-  const config = parseConfig({ participants: [{ kind: 'human', alias: 'Athena', token: TOKEN }], rooms: [{ id: 'general', title: 'General' }], dbPath: ':memory:' }, '/base');
+  const config = parseConfig({ participants: [{ kind: 'human', alias: 'Relay', token: TOKEN }], rooms: [{ id: 'general', title: 'General' }], dbPath: ':memory:' }, '/base');
   const store = new RoomStore(nodeSqlite(':memory:'));
   store.syncParticipants(config.participants.map(({ kind, alias }) => ({ kind, alias })));
   store.syncConversations(config.rooms);
@@ -166,7 +166,7 @@ test('the list of skins needs a token, like the rest of the api', async (t) => {
 });
 
 test('without a skins folder: nothing to list, and nothing under /skins', async (t) => {
-  const config = parseConfig({ participants: [{ kind: 'human', alias: 'Athena', token: TOKEN }], rooms: [{ id: 'general', title: 'General' }], dbPath: ':memory:' }, '/base');
+  const config = parseConfig({ participants: [{ kind: 'human', alias: 'Relay', token: TOKEN }], rooms: [{ id: 'general', title: 'General' }], dbPath: ':memory:' }, '/base');
   const store = new RoomStore(nodeSqlite(':memory:'));
   store.syncParticipants(config.participants.map(({ kind, alias }) => ({ kind, alias })));
   const hub = new Hub(store, { graceMs: 25 });
@@ -183,7 +183,7 @@ test('without a skins folder: nothing to list, and nothing under /skins', async 
 });
 
 test('skinsDir in the config is a folder next to the config file', () => {
-  const base = { participants: [{ kind: 'human', alias: 'Athena', token: TOKEN }], rooms: [{ id: 'general', title: 'General' }] };
+  const base = { participants: [{ kind: 'human', alias: 'Relay', token: TOKEN }], rooms: [{ id: 'general', title: 'General' }] };
   assert.equal(parseConfig({ ...base, skinsDir: 'my-skins' }, '/base').skinsDir, '/base/my-skins');
   assert.equal(parseConfig(base, '/base').skinsDir, undefined);
   assert.throws(() => parseConfig({ ...base, skinsDir: '' }, '/base'), /skinsDir must be a non-empty string/);

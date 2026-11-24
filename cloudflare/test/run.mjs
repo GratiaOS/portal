@@ -28,8 +28,8 @@ const model = createServer((req, res) => {
     asked.push({ authorization: req.headers.authorization, body: JSON.parse(body) });
     res.writeHead(200, { 'Content-Type': 'text/event-stream' });
     const chunk = (delta, finish = null) => res.write(`data: ${JSON.stringify({ model: 'stand-in', choices: [{ delta, finish_reason: finish }] })}\n\n`);
-    chunk({ content: 'SAY: Ambrozia este hrana zeilor.\n' });
-    chunk({ content: 'SOURCES: olympus/food.md' });
+    chunk({ content: 'SAY: Cafeaua este hrana echipei.\n' });
+    chunk({ content: 'SOURCES: infra/food.md' });
     chunk({}, 'stop');
     res.end('data: [DONE]\n\n');
   });
@@ -55,9 +55,9 @@ await new Promise((r) => guestModel.listen(0, '127.0.0.1', r));
 
 // her folder: one file to read, one kept out of what she reads
 const knowledgeDir = join(state, 'knowledge');
-mkdirSync(join(knowledgeDir, 'olympus'), { recursive: true });
+mkdirSync(join(knowledgeDir, 'infra'), { recursive: true });
 mkdirSync(join(knowledgeDir, 'private'), { recursive: true });
-writeFileSync(join(knowledgeDir, 'olympus', 'food.md'), '# Food\n\nAmbrozia este hrana zeilor.\n');
+writeFileSync(join(knowledgeDir, 'infra', 'food.md'), '# Food\n\nCafeaua este hrana echipei.\n');
 writeFileSync(join(knowledgeDir, 'private', 'contract.md'), '# Contract\n\nSECRET-7f3a\n');
 
 // the folder of public documents for guests: apart from hers, and holding nothing of the team's
@@ -196,7 +196,7 @@ let dev = start();
 try {
   console.log('\n— her knowledge, bundled');
   check(refused.status !== 0 && untouched && /nova\.exclude/.test(refused.stderr), 'a config the Worker would refuse is refused before anything is bundled');
-  check(bundled.status === 0 && Object.keys(files).join() === 'olympus/food.md', `the folder is read as in Node, what is excluded left out: ${Object.keys(files).join(', ')}`);
+  check(bundled.status === 0 && Object.keys(files).join() === 'infra/food.md', `the folder is read as in Node, what is excluded left out: ${Object.keys(files).join(', ')}`);
   check(bundled.status === 0 && Object.keys(guestFiles ?? {}).join() === 'about.md', `the folder for guests is bundled apart, and holds nothing of hers: ${Object.keys(guestFiles ?? {}).join(', ')}`);
   await ready();
 
@@ -238,13 +238,13 @@ try {
   check(await until(() => heard.text.includes('salut de pe Cloudflare 🌱')), 'a message from Forge reaches Quartz');
 
   console.log('\n— Nova, from the object');
-  await say(quartz, '@Nova ce e ambrozia?');
+  await say(quartz, '@Nova ce e cafeaua?');
   check(await until(() => heard.text.includes('"speakerId":"companion:nova"'), 10_000), 'Nova answers in the room');
-  check(/Ambrozia este hrana zeilor\.[^"]*olympus\/food\.md/.test(heard.text), 'her answer, with the file she used');
+  check(/Cafeaua este hrana echipei\.[^"]*infra\/food\.md/.test(heard.text), 'her answer, with the file she used');
   const question = asked.at(-1);
   const system = question?.body.messages.find((m) => m.role === 'system')?.content ?? '';
   check(question?.authorization === 'Bearer stand-in-key', 'the model is asked with the key from its secret');
-  check(system.includes('### FILE: olympus/food.md') && !system.includes('SECRET-7f3a'), 'she reads the bundle, and not what was kept out');
+  check(system.includes('### FILE: infra/food.md') && !system.includes('SECRET-7f3a'), 'she reads the bundle, and not what was kept out');
   check(system.includes('on Cloudflare'), 'what she says of the portal is true here: what is said is kept on Cloudflare');
   heard.abort();
 
@@ -281,25 +281,25 @@ try {
   const guestSystem = forGuests?.body.messages?.[0]?.content ?? '';
   check(forGuests?.authorization === 'Bearer guests-stand-in-key', 'the guests\' engine is asked with the key of its own secret, not the team\'s');
   check(asked.length === teamAsked, 'the team\'s engine is not asked for a guest');
-  check(guestSystem.includes('### FILE: about.md') && !guestSystem.includes('olympus/food.md') && !guestSystem.includes('SECRET-7f3a'), 'she reads the folder for guests, and nothing of the team\'s');
+  check(guestSystem.includes('### FILE: about.md') && !guestSystem.includes('infra/food.md') && !guestSystem.includes('SECRET-7f3a'), 'she reads the folder for guests, and nothing of the team\'s');
   check(!guestSystem.includes('Quartz') && !guestSystem.includes('Forge'), 'and no name of the team went to the guests\' engine');
   check(!(await (await quartz('/api/gaps')).text().catch(() => '')).includes('ce este un portal'), 'what the guest asked is not among what the knowledge lacked');
 
   console.log('\n— a person renamed in the config keeps what they said (the object is started again, with the same storage)');
   await say(forge, 'a word before the new name');
   await stop(dev);
-  dev = start({ ...CONFIG, participants: CONFIG.participants.map((p) => (p.alias === 'Forge' ? { kind: 'human', alias: 'Athena', renamedFrom: 'Forge' } : p)) }, { Quartz: QUARTZ, Athena: FORGE });
+  dev = start({ ...CONFIG, participants: CONFIG.participants.map((p) => (p.alias === 'Forge' ? { kind: 'human', alias: 'Relay', renamedFrom: 'Forge' } : p)) }, { Quartz: QUARTZ, Relay: FORGE });
   await ready();
   const renamed = await (await forge('/api/me')).json();
-  check(renamed.id === 'human:athena', `the same key is now Athena: ${renamed.id}`);
+  check(renamed.id === 'human:relay', `the same key is now Relay: ${renamed.id}`);
   const hers = (await (await quartz('/api/rooms/general/messages')).json()).turns.find((t) => t.text === 'a word before the new name');
-  check(hers?.speakerId === 'human:athena', `what she said is hers under the new name, and as it was said: ${hers?.speakerId}`);
+  check(hers?.speakerId === 'human:relay', `what she said is hers under the new name, and as it was said: ${hers?.speakerId}`);
 
   console.log('\n— a room renamed in the config keeps what was said in it, and the rooms are listed as the config lists them');
   await stop(dev);
-  const renamedPeople = CONFIG.participants.map((p) => (p.alias === 'Forge' ? { kind: 'human', alias: 'Athena', renamedFrom: 'Forge' } : p));
+  const renamedPeople = CONFIG.participants.map((p) => (p.alias === 'Forge' ? { kind: 'human', alias: 'Relay', renamedFrom: 'Forge' } : p));
   const renamedRooms = [{ id: 'plaza', title: 'General', renamedFrom: 'general' }, { id: 'parking', title: 'Guests', kind: 'guest', renamedFrom: 'guests' }];
-  dev = start({ ...CONFIG, participants: renamedPeople, rooms: renamedRooms, guests: { ...CONFIG.guests, room: 'parking' } }, { Quartz: QUARTZ, Athena: FORGE });
+  dev = start({ ...CONFIG, participants: renamedPeople, rooms: renamedRooms, guests: { ...CONFIG.guests, room: 'parking' } }, { Quartz: QUARTZ, Relay: FORGE });
   await ready();
   const listed = (await (await quartz('/api/rooms')).json()).rooms.map((r) => r.id);
   check(listed.join() === 'plaza,parking', `the old ids are gone, and the plaza is first though "parking" sorts before it: ${listed.join()}`);

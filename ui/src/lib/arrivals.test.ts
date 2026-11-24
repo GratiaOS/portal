@@ -7,7 +7,7 @@ const person = (alias: string, here: boolean, kind: 'human' | 'companion' = 'hum
 
 test('arrivals: those who are here now and were not at the last look', () => {
   const before = new Set(['human:quartz', 'companion:nova']);
-  const people = [person('Quartz', true), person('Forge', true), person('Athena', false), person('Nova', true, 'companion')];
+  const people = [person('Quartz', true), person('Forge', true), person('Relay', false), person('Nova', true, 'companion')];
   assert.deepEqual(arrivalsOf(before, people), ['human:forge']);
 });
 

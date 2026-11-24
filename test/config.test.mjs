@@ -193,8 +193,8 @@ test('Nova: what is wrong is named, and a pasted key is never repeated', () => {
 });
 
 test('nova.examples: a short list of questions in the company\'s words, trimmed', () => {
-  assert.deepEqual(parseConfig(withNova({ ...NOVA, examples: ['  cine păzește porțile Olimpului? ', 'ce e ambrozia?'] }), '/base').nova.examples, ['cine păzește porțile Olimpului?', 'ce e ambrozia?']);
-  refuses(withNova({ ...NOVA, examples: 'ce e ambrozia?' }), /nova.examples must be a list/);
+  assert.deepEqual(parseConfig(withNova({ ...NOVA, examples: ['  cine e de gardă săptămâna asta? ', 'ce e cafeaua?'] }), '/base').nova.examples, ['cine e de gardă săptămâna asta?', 'ce e cafeaua?']);
+  refuses(withNova({ ...NOVA, examples: 'ce e cafeaua?' }), /nova.examples must be a list/);
   refuses(withNova({ ...NOVA, examples: Array.from({ length: 9 }, (_, i) => `întrebarea ${i}`) }), /at most 8/);
   refuses(withNova({ ...NOVA, examples: ['ok', '   '] }), /nova.examples\[1\]/);
   refuses(withNova({ ...NOVA, examples: ['x'.repeat(121)] }), /nova.examples\[0\]/);

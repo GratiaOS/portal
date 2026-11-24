@@ -15,7 +15,7 @@ if (!base || base.includes('your-llm-host') || !key) {
 const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` };
 const messages = [
   { role: 'system', content: 'You are a terse colleague in a team chat.' },
-  { role: 'user', content: 'Reply with one short sentence: what is ambrosia?' },
+  { role: 'user', content: 'Reply with one short sentence: what is coffee?' },
 ];
 const extra = effort ? { reasoning_effort: effort } : {};
 

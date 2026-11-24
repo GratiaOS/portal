@@ -10,7 +10,7 @@ import { parseConfig, startRoom } from '../dist/index.js';
 const PAUSE_MS = Number(process.env.PORTAL_DEMO_PAUSE_MS ?? 350);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const humans = ['Quartz', 'Athena', 'Poseidon', 'Eirene'];
+const humans = ['Quartz', 'Relay', 'Pulse', 'Local'];
 const tokens = Object.fromEntries(humans.map((name) => [name, randomBytes(24).toString('base64url')]));
 
 const config = parseConfig({
@@ -19,7 +19,7 @@ const config = parseConfig({
   participants: [...humans.map((alias) => ({ kind: 'human', alias, token: tokens[alias] })), { kind: 'companion', alias: 'Nova' }],
   rooms: [
     { id: 'general', title: 'General' },
-    { id: 'olympus', title: 'Olympus' },
+    { id: 'infra', title: 'Infra' },
   ],
 });
 const room = await startRoom(config, { graceMs: 500 });
@@ -118,23 +118,23 @@ quartz.onEvent = ({ event, data }) => {
 
 let novaAnswers = 0;
 room.hub.on('turn', (turn) => {
-  if (!turn.mentions.includes('companion:nova') || !/Styx/.test(turn.text)) return;
+  if (!turn.mentions.includes('companion:nova') || !/review/.test(turn.text)) return;
   novaAnswers += 1;
   setTimeout(() => {
     room.hub.publish({
       conversationId: turn.conversationId,
       speakerId: 'companion:nova',
-      text: `@${alias(turn.speakerId).toLowerCase()} nu merge, e parte din jurământ, mai exact cel pe Styx 🧭`,
+      text: `@${alias(turn.speakerId).toLowerCase()} nu merge, e parte din proces, mai exact cel de review 🧭`,
     });
   }, PAUSE_MS / 2);
 });
 
 console.log(`portal demo: ${humans.length} people and a stand-in Nova, in memory, on port ${room.port}\n`);
 
-const athena = new Client('Athena');
-const poseidon = new Client('Poseidon');
-const eirene = new Client('Eirene');
-const everyone = [quartz, athena, poseidon, eirene];
+const relay = new Client('Relay');
+const pulse = new Client('Pulse');
+const local = new Client('Local');
+const everyone = [quartz, relay, pulse, local];
 const seen = (turns) => turns.map((t) => [t.seq, alias(t.speakerId), t.text]);
 
 try {
@@ -142,29 +142,29 @@ try {
   await quartz.say('general', 'Neața tuturor 🌱☀️');
   await sleep(PAUSE_MS);
 
-  // Poseidon arrives late: with Last-Event-ID 0 he is handed what he missed
-  await poseidon.open(0);
-  await poseidon.say('general', 'Salut @quartz');
+  // Pulse arrives late: with Last-Event-ID 0 he is handed what he missed
+  await pulse.open(0);
+  await pulse.say('general', 'Salut @quartz');
   await sleep(PAUSE_MS);
 
-  await athena.open(0);
-  await athena.say('olympus', '@nova putem sari pasul cu Styx din Olympus?');
+  await relay.open(0);
+  await relay.say('infra', '@nova putem sari pasul de review din infra?');
   await quartz.until(() => quartz.turns().length >= 4); // Nova's answer
   await sleep(PAUSE_MS);
 
-  await eirene.open(0);
-  await eirene.say('general', 'Mă duc la cafea 🗝️');
+  await local.open(0);
+  await local.say('general', 'Mă duc la cafea 🗝️');
   await quartz.until(() => quartz.turns().length >= 5);
-  eirene.close();
-  await quartz.until(() => quartz.events.some((e) => e.event === 'presence' && e.data.participantId === 'human:eirene' && e.data.state === 'offline'));
+  local.close();
+  await quartz.until(() => quartz.events.some((e) => e.event === 'presence' && e.data.participantId === 'human:local' && e.data.state === 'offline'));
 
   // --- what we claim, checked ---
   const reference = JSON.stringify(seen(quartz.turns()));
   const checks = [
     [`all ${everyone.length} connections saw the same ${quartz.turns().length} turns, in the same order`, everyone.every((c) => JSON.stringify(seen(c.turns())) === reference) && quartz.turns().length === 5],
-    ['Poseidon, who came late, was handed the greeting he missed', poseidon.turns()[0]?.text === 'Neața tuturor 🌱☀️'],
+    ['Pulse, who came late, was handed the greeting he missed', pulse.turns()[0]?.text === 'Neața tuturor 🌱☀️'],
     ['Nova answered the one @mention of her, and only that', novaAnswers === 1 && quartz.turns().filter((t) => t.speakerId === 'companion:nova').length === 1],
-    ['Eirene was seen leaving, a moment after she went', quartz.events.at(-1).data.state === 'offline'],
+    ['Local was seen leaving, a moment after she went', quartz.events.at(-1).data.state === 'offline'],
   ];
   console.log('');
   for (const [claim, ok] of checks) console.log(`${ok ? '✔' : '✖'} ${claim}`);
