@@ -117,7 +117,7 @@ test('the example config is a starting point, not a working config: the tokens a
     // no tokens file yet: the room says what to run, and it names a person and a file, never a token
     assert.throws(() => loadConfig(join(dir, 'portal.json')), /cannot read the tokens file .*portal\.tokens\.local\.json; make a token with: pnpm --filter portal tokens/);
     // with tokens in it the example is valid as it stands, Nova included
-    writeFileSync(join(dir, 'portal.tokens.local.json'), JSON.stringify({ Zeus: '1'.repeat(24), Hera: '2'.repeat(24) }), { mode: 0o600 });
+    writeFileSync(join(dir, 'portal.tokens.local.json'), JSON.stringify(Object.fromEntries(['quartz', 'forge', 'relay', 'pulse', 'local'].map((alias, i) => [alias, String(i + 1).repeat(24)]))), { mode: 0o600 });
     assert.equal(loadConfig(join(dir, 'portal.json')).nova.alias, 'Nova');
   } finally {
     rmSync(dir, { recursive: true, force: true });
