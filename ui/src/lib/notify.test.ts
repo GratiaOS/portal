@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { advance, mayNotify, newsAfter, noticesFor, topSeq } from './notify.ts';
 import type { Turn } from './types.ts';
 
-const ME = 'human:zeus';
+const ME = 'human:quartz';
 
 // a turn from `speakerId`; it names the person (`ME`) unless `mentions` says otherwise
 const turn = (seq: number, speakerId = 'human:apollo', conversationId = 'general', mentions: string[] = [ME]): Turn => ({
@@ -29,7 +29,7 @@ test('news: only what names the person, oldest first, never what I said', () => 
 });
 
 test('news: a turn that names someone else, or no one, is not news; nor is anything for a person not yet known', () => {
-  const turns = { general: [turn(4, 'human:apollo', 'general', ['human:hera']), turn(5, 'human:apollo', 'general', [])] };
+  const turns = { general: [turn(4, 'human:apollo', 'general', ['human:forge']), turn(5, 'human:apollo', 'general', [])] };
   assert.deepEqual(newsAfter(turns, 0, ME), []);
   assert.deepEqual(newsAfter({ general: [turn(4)] }, 0, undefined), []);
 });
@@ -57,7 +57,7 @@ test('advance: while away, each arrival counts every mention since the page was 
 });
 
 test('advance: a turn that does not name the person is no news and does not count on the badge', () => {
-  const turns = { general: [turn(5, 'human:apollo', 'general', []), turn(6, 'human:apollo', 'general', ['human:hera'])] };
+  const turns = { general: [turn(5, 'human:apollo', 'general', []), turn(6, 'human:apollo', 'general', ['human:forge'])] };
   const step = advance({ seen: 4, notified: 4 }, turns, ME, false);
   assert.deepEqual(step.news, []);
   assert.equal(step.waiting, 0);

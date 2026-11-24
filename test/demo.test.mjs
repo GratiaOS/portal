@@ -12,8 +12,8 @@ test('the demo plays the scene in a real room and its own claims hold', async ()
   });
 
   for (const line of [
-    /#general <Zeus> Neața tuturor/,
-    /#general <Poseidon> Salut @zeus/,
+    /#general <Quartz> Neața tuturor/,
+    /#general <Poseidon> Salut @quartz/,
     /#olympus <Athena> @nova putem sari pasul cu Styx din Olympus\?/,
     /#olympus <Nova> @athena nu merge, e parte din jurământ, mai exact cel pe Styx/,
     /\* Eirene is offline/,

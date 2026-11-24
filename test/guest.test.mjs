@@ -3,16 +3,16 @@ import { test } from 'node:test';
 import { Hub, RoomStore, createApp, createAuthenticator, nodeSqlite, parseConfig } from '../dist/index.js';
 import { fakeSink, sleep } from './helpers.mjs';
 
-// A portal with a team (Zeus, Hera, Nova) in two team rooms, and one guest room: and a guest, bound to that room only, for an hour.
+// A portal with a team (Quartz, Forge, Nova) in two team rooms, and one guest room: and a guest, bound to that room only, for an hour.
 const T0 = Date.parse('2026-11-06T12:00:00Z');
 const HOUR = 3600_000;
-const TOKENS = { zeus: 'z'.repeat(24), owl: 'o'.repeat(24) };
+const TOKENS = { quartz: 'z'.repeat(24), owl: 'o'.repeat(24) };
 
 function setup({ bind = true, now = () => T0 + 60_000 } = {}) {
   const store = new RoomStore(nodeSqlite(':memory:'), { now: () => new Date(T0) });
   store.syncParticipants([
-    { kind: 'human', alias: 'Zeus' },
-    { kind: 'human', alias: 'Hera' },
+    { kind: 'human', alias: 'Quartz' },
+    { kind: 'human', alias: 'Forge' },
     { kind: 'companion', alias: 'Nova' },
   ]);
   store.syncConversations([
@@ -24,22 +24,22 @@ function setup({ bind = true, now = () => T0 + 60_000 } = {}) {
   if (bind) store.addBinding({ id: 'b1', roomId: 'guests', participantId: owl.id, roleId: 'guest', activeFrom: T0, expiresAt: T0 + HOUR, budget: 5, ledgerId: 'l1' });
   const hub = new Hub(store, { graceMs: 20, now });
   // tokens by participant id, as the home would know them
-  const byToken = new Map([[TOKENS.zeus, 'human:zeus'], [TOKENS.owl, owl.id]]);
+  const byToken = new Map([[TOKENS.quartz, 'human:quartz'], [TOKENS.owl, owl.id]]);
   const app = createApp(store, hub, { version: '0.0.0-test', authenticate: (token) => byToken.get(token), rateLimit: { messages: 1000, windowMs: 10_000 }, now });
   const call = (token, path, init = {}) => app(new Request(`http://portal.test${path}`, { ...init, headers: { Authorization: `Bearer ${token}`, ...init.headers } }));
   const say = (token, room, text) => call(token, `/api/rooms/${room}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
-  return { store, hub, owl, call, say, zeus: store.getParticipant('human:zeus'), hera: store.getParticipant('human:hera') };
+  return { store, hub, owl, call, say, quartz: store.getParticipant('human:quartz'), forge: store.getParticipant('human:forge') };
 }
 
 test('a guest is told of the room they are bound to, and of no other', async () => {
   const { call } = setup();
   assert.deepEqual((await (await call(TOKENS.owl, '/api/rooms')).json()).rooms.map((r) => r.id), ['guests']);
-  assert.deepEqual((await (await call(TOKENS.zeus, '/api/rooms')).json()).rooms.map((r) => r.id), ['general', 'olympus', 'guests']); // the team sees all, in the order of the config
+  assert.deepEqual((await (await call(TOKENS.quartz, '/api/rooms')).json()).rooms.map((r) => r.id), ['general', 'olympus', 'guests']); // the team sees all, in the order of the config
 });
 
 test('a guest reads and writes in their room, and a team room is, to them, a room that does not exist', async () => {
   const { call, say, store } = setup();
-  store.appendTurn({ conversationId: 'general', speakerId: 'human:zeus', text: 'secret of the team' });
+  store.appendTurn({ conversationId: 'general', speakerId: 'human:quartz', text: 'secret of the team' });
 
   assert.equal((await say(TOKENS.owl, 'guests', 'hello')).status, 201);
   assert.equal((await call(TOKENS.owl, '/api/rooms/guests/messages')).status, 200);
@@ -68,14 +68,14 @@ test('a guest with no binding is let in nowhere; and what ends in time is no aut
 test('what the knowledge lacked is not for a guest, and a guest has no sign', async () => {
   const { call } = setup();
   assert.equal((await call(TOKENS.owl, '/api/gaps')).status, 403);
-  assert.equal((await call(TOKENS.zeus, '/api/gaps')).status, 200);
+  assert.equal((await call(TOKENS.quartz, '/api/gaps')).status, 200);
   const sign = await call(TOKENS.owl, '/api/me/sign', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sign: '🦉' }) });
   assert.ok(sign.status >= 400);
 });
 
 test('the stream tells a guest of their own room and of no one on the team', () => {
-  const { hub, store, owl, zeus, hera } = setup();
-  store.appendTurn({ conversationId: 'general', speakerId: zeus.id, text: 'before, in the team room' });
+  const { hub, store, owl, quartz, forge } = setup();
+  store.appendTurn({ conversationId: 'general', speakerId: quartz.id, text: 'before, in the team room' });
   store.appendTurn({ conversationId: 'guests', speakerId: owl.id, text: 'before, in the guest room' });
 
   const sink = fakeSink();
@@ -83,15 +83,15 @@ test('the stream tells a guest of their own room and of no one on the team', () 
 
   const [hello, ...replayed] = sink.frames();
   assert.deepEqual(hello.data.conversations.map((c) => c.id), ['guests']);
-  assert.deepEqual(hello.data.participants.map((p) => p.id).sort(), ['companion:nova', 'guest:owl']); // no Zeus, no Hera
+  assert.deepEqual(hello.data.participants.map((p) => p.id).sort(), ['companion:nova', 'guest:owl']); // no Quartz, no Forge
   assert.deepEqual(hello.data.presence.map((p) => p.participantId).sort(), ['companion:nova', 'guest:owl']);
   assert.deepEqual(replayed.map((f) => f.data.text), ['before, in the guest room']); // what was missed, of their room only
 
   // what happens next: a turn in the team room, a turn in theirs, a team person arriving, a team person's sign
-  hub.publish({ conversationId: 'general', speakerId: zeus.id, text: 'after, in the team room' });
+  hub.publish({ conversationId: 'general', speakerId: quartz.id, text: 'after, in the team room' });
   hub.publish({ conversationId: 'guests', speakerId: owl.id, text: 'after, in the guest room' });
-  hub.subscribe(hera, fakeSink()); // Hera comes online
-  hub.participantChanged({ ...hera, sign: '🦊' });
+  hub.subscribe(forge, fakeSink()); // Forge comes online
+  hub.participantChanged({ ...forge, sign: '🦊' });
   hub.setActivity('companion:nova', 'general', 'thinking');
   hub.setActivity('companion:nova', 'guests', 'thinking');
 
@@ -103,14 +103,14 @@ test('the stream tells a guest of their own room and of no one on the team', () 
 });
 
 test('the team is told everything, as before', () => {
-  const { hub, store, owl, zeus } = setup();
+  const { hub, store, owl, quartz } = setup();
   const sink = fakeSink();
-  hub.subscribe(zeus, sink);
+  hub.subscribe(quartz, sink);
   const [hello] = sink.frames();
   assert.deepEqual(hello.data.conversations.map((c) => c.id), ['general', 'olympus', 'guests']);
-  assert.equal(hello.data.participants.length, 4); // Zeus, Hera, Nova and the guest
+  assert.equal(hello.data.participants.length, 4); // Quartz, Forge, Nova and the guest
   hub.publish({ conversationId: 'guests', speakerId: owl.id, text: 'a guest speaks' });
-  hub.publish({ conversationId: 'general', speakerId: 'human:hera', text: 'the team speaks' });
+  hub.publish({ conversationId: 'general', speakerId: 'human:forge', text: 'the team speaks' });
   assert.deepEqual(sink.frames().slice(1).map((f) => f.data.text), ['a guest speaks', 'the team speaks']);
   hub.close();
 });
@@ -119,7 +119,7 @@ test('a guest cannot be bound to a team room, and a room kind is "team" or "gues
   const { store, owl } = setup({ bind: false });
   assert.throws(() => store.addBinding({ id: 'b2', roomId: 'general', participantId: owl.id, roleId: 'guest', activeFrom: T0, expiresAt: T0 + HOUR, budget: 1, ledgerId: 'l' }), /not a guest room/);
   assert.throws(() => store.syncConversations([{ id: 'odd', title: 'Odd', kind: 'visitors' }]), /unknown room kind/);
-  const config = (kind) => parseConfig({ participants: [{ kind: 'human', alias: 'Zeus', token: 'z'.repeat(24) }], rooms: [{ id: 'g', title: 'G', kind }], dbPath: ':memory:' }, '/base');
+  const config = (kind) => parseConfig({ participants: [{ kind: 'human', alias: 'Quartz', token: 'z'.repeat(24) }], rooms: [{ id: 'g', title: 'G', kind }], dbPath: ':memory:' }, '/base');
   assert.equal(config('guest').rooms[0].kind, 'guest');
   assert.throws(() => config('visitors'), /"team" or "guest"/);
 });
@@ -143,14 +143,14 @@ test('a guest is kept to one room: a renewal is welcome, a second room is refuse
 
 test('a guest who types a name of the team learns nothing of the team from what comes back', async () => {
   const { say, store, call } = setup();
-  const turn = (await (await say(TOKENS.owl, 'guests', 'is @zeus here? and @nova? and @hera?')).json()).turn;
-  assert.deepEqual(turn.mentions, ['companion:nova']); // Nova is on their roster; Zeus and Hera are not
+  const turn = (await (await say(TOKENS.owl, 'guests', 'is @quartz here? and @nova? and @forge?')).json()).turn;
+  assert.deepEqual(turn.mentions, ['companion:nova']); // Nova is on their roster; Quartz and Forge are not
   assert.deepEqual(store.listTurns('guests').at(-1).mentions, ['companion:nova']); // nor is it kept the other way
 
   // and the team still resolves every name, as before
   store.syncConversations([{ id: 'general', title: 'General' }]);
-  const team = (await (await say(TOKENS.zeus, 'general', 'ask @hera and @nova')).json()).turn;
-  assert.deepEqual(team.mentions.sort(), ['companion:nova', 'human:hera']);
+  const team = (await (await say(TOKENS.quartz, 'general', 'ask @forge and @nova')).json()).turn;
+  assert.deepEqual(team.mentions.sort(), ['companion:nova', 'human:forge']);
   assert.ok(call);
 });
 
@@ -193,11 +193,11 @@ test('a guest is shown here while they are, and offline once they have gone, as 
 });
 
 test('those already here hear of a guest who has come in: the visitors, and the team', async () => {
-  const { hub, store, owl, zeus } = setup();
+  const { hub, store, owl, quartz } = setup();
   const sink = fakeSink();
   hub.subscribe(owl, sink);
   const team = fakeSink();
-  hub.subscribe(zeus, team);
+  hub.subscribe(quartz, team);
 
   const newcomer = store.addGuest('wren');
   hub.participantChanged(newcomer);
@@ -236,11 +236,11 @@ test('a guest\'s stream opens and ends with their time where a timer is a plain 
 
 test('a person who leaves is shown as not here, after the grace, where a timer is a plain number', async () => {
   await withNumberTimers(async () => {
-    const { hub, zeus } = setup();
-    const close = hub.subscribe(zeus, fakeSink());
-    assert.equal(hub.snapshot().find((p) => p.participantId === zeus.id).state, 'online');
+    const { hub, quartz } = setup();
+    const close = hub.subscribe(quartz, fakeSink());
+    assert.equal(hub.snapshot().find((p) => p.participantId === quartz.id).state, 'online');
     assert.doesNotThrow(() => close());
     await sleep(60); // the grace is 20 ms here
-    assert.equal(hub.snapshot().find((p) => p.participantId === zeus.id).state, 'offline');
+    assert.equal(hub.snapshot().find((p) => p.participantId === quartz.id).state, 'offline');
   });
 });

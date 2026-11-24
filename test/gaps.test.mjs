@@ -14,7 +14,7 @@ function setup(t) {
   const dir = mkdtempSync(join(tmpdir(), 'room-gaps-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const raw = {
-    participants: [{ kind: 'human', alias: 'Zeus', token: 'r'.repeat(24) }, { kind: 'companion', alias: 'Nova' }],
+    participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24) }, { kind: 'companion', alias: 'Nova' }],
     rooms: [{ id: 'olympus', title: 'Olympus' }],
   };
   const config = join(dir, 'portal.local.json');
@@ -28,7 +28,7 @@ test('the list for whoever keeps the knowledge: what was asked, how often, why, 
 
   mkdirSync(dirname(db), { recursive: true }); // the room makes this folder when it starts
   const store = new RoomStore(nodeSqlite(db));
-  store.syncParticipants([{ kind: 'human', alias: 'Zeus' }, { kind: 'companion', alias: 'Nova' }]);
+  store.syncParticipants([{ kind: 'human', alias: 'Quartz' }, { kind: 'companion', alias: 'Nova' }]);
   store.syncConversations([{ id: 'olympus', title: 'Olympus' }]);
   assert.match((await run(process.execPath, [script, config])).stdout, /Every question Nova was asked was answered/);
 
@@ -41,7 +41,7 @@ test('the list for whoever keeps the knowledge: what was asked, how often, why, 
   assert.match(stdout, /^# What the knowledge did not answer\n/);
   assert.match(stdout, /- 2× putem sări pasul cu styx\?\n  not in the knowledge; #olympus, \d{4}-\d{2}-\d{2}\n/);
   assert.match(stdout, /- Cât durează Titanomahia\?\n  figures that are in none of the sources \(cited: olympus\/titanomachy\.md\); #olympus/);
-  assert.equal(/Zeus/.test(stdout), false);
+  assert.equal(/Quartz/.test(stdout), false);
 });
 
 test('a missing config is said, not guessed at', async (t) => {

@@ -31,7 +31,7 @@ const config = (staticDir) =>
     {
       port: 0,
       dbPath: ':memory:',
-      participants: [{ kind: 'human', alias: 'Zeus', token: 'r'.repeat(24) }],
+      participants: [{ kind: 'human', alias: 'Quartz', token: 'r'.repeat(24) }],
       rooms: [{ id: 'general', title: 'General' }],
       ...(staticDir ? { staticDir } : {}),
     },

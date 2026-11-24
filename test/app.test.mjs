@@ -7,14 +7,14 @@ import { test } from 'node:test';
 import { Hub, RoomStore, nodeSqlite, SKIN_CONTRACT, VERSION, createApp, CALLER_HEADER, toNodeListener, createAuthenticator, parseConfig, startRoom } from '../dist/index.js';
 import { Collector, sleep } from './helpers.mjs';
 
-const TOKENS = { zeus: 'r'.repeat(24), hera: 'a'.repeat(24) };
+const TOKENS = { quartz: 'r'.repeat(24), forge: 'a'.repeat(24) };
 
 const configFor = (extra = {}) =>
   parseConfig(
     {
       participants: [
-        { kind: 'human', alias: 'Zeus', token: TOKENS.zeus },
-        { kind: 'human', alias: 'Hera', token: TOKENS.hera },
+        { kind: 'human', alias: 'Quartz', token: TOKENS.quartz },
+        { kind: 'human', alias: 'Forge', token: TOKENS.forge },
         { kind: 'companion', alias: 'Nova' },
       ],
       rooms: [
@@ -52,8 +52,8 @@ async function start({ hub: wrap, ...options } = {}) {
     base,
     store,
     hub,
-    zeus: as(TOKENS.zeus),
-    hera: as(TOKENS.hera),
+    quartz: as(TOKENS.quartz),
+    forge: as(TOKENS.forge),
     anonymous: (path, init) => fetch(base + path, init),
     async close() {
       hub.close();
@@ -89,11 +89,11 @@ test('health needs no token, says which room this is and the contracts it keeps,
 
 test('without a good token nothing in /api answers, and it says how to sign in', () =>
   within({
-    async run({ anonymous, zeus, base }) {
+    async run({ anonymous, quartz, base }) {
       const attempts = [
         anonymous('/api/me'),
         anonymous('/api/me', { headers: { Authorization: 'Basic cmF6dmFuOnBhc3M=' } }),
-        anonymous('/api/me', { headers: { Authorization: `Bearer ${TOKENS.zeus}x` } }),
+        anonymous('/api/me', { headers: { Authorization: `Bearer ${TOKENS.quartz}x` } }),
         anonymous('/api/me', { headers: { Authorization: 'Bearer' } }),
         anonymous('/api/rooms'),
         anonymous('/api/gaps'),
@@ -107,21 +107,21 @@ test('without a good token nothing in /api answers, and it says how to sign in',
         assert.deepEqual(await res.json(), { error: 'unauthorized' });
       }
       assert.equal((await fetch(`${base}/index.html`)).status, 404);
-      assert.equal((await zeus('/api/nothing-here')).status, 404);
+      assert.equal((await quartz('/api/nothing-here')).status, 404);
     },
   }));
 
 test('me and rooms', () =>
   within({
-    async run({ zeus, hera }) {
-      const res = await zeus('/api/me');
+    async run({ quartz, forge }) {
+      const res = await quartz('/api/me');
       assert.equal(res.status, 200);
       assert.match(res.headers.get('content-type'), /^application\/json/);
       assert.equal(res.headers.get('cache-control'), 'no-store');
-      assert.deepEqual(await res.json(), { id: 'human:zeus', kind: 'human', alias: 'Zeus', capabilities: [] });
-      assert.equal((await (await hera('/api/me')).json()).id, 'human:hera');
+      assert.deepEqual(await res.json(), { id: 'human:quartz', kind: 'human', alias: 'Quartz', capabilities: [] });
+      assert.equal((await (await forge('/api/me')).json()).id, 'human:forge');
 
-      const { rooms } = await (await zeus('/api/rooms')).json();
+      const { rooms } = await (await quartz('/api/rooms')).json();
       assert.deepEqual(rooms.map((c) => [c.id, c.status, c.visibility]), [
         ['general', 'open', 'private'],
         ['olympus', 'open', 'private'],
@@ -132,76 +132,76 @@ test('me and rooms', () =>
 test('hints: who can be called and with what, for the box where people write; nothing without a companion', () =>
   within({
     options: { hints: { companion: 'Nova', examples: ['ce e ambrozia?'] } },
-    async run({ zeus, anonymous }) {
+    async run({ quartz, anonymous }) {
       assert.equal((await anonymous('/api/hints')).status, 401); // like the rest of /api
-      assert.deepEqual(await (await zeus('/api/hints')).json(), { companion: 'Nova', examples: ['ce e ambrozia?'] });
-      assert.equal((await zeus('/api/hints', { method: 'POST' })).status, 405);
+      assert.deepEqual(await (await quartz('/api/hints')).json(), { companion: 'Nova', examples: ['ce e ambrozia?'] });
+      assert.equal((await quartz('/api/hints', { method: 'POST' })).status, 405);
     },
   }).then(() =>
     within({
-      async run({ zeus }) {
-        assert.deepEqual(await (await zeus('/api/hints')).json(), { companion: null, examples: [] });
+      async run({ quartz }) {
+        assert.deepEqual(await (await quartz('/api/hints')).json(), { companion: null, examples: [] });
       },
     }),
   ));
 
 test('a message is from whoever the token says, and is read back as history, a page at a time', () =>
   within({
-    async run({ zeus, hera }) {
-      const res = await say(zeus, 'general', { text: '@nova hei', speakerId: 'human:hera' }); // the body cannot speak for someone else
+    async run({ quartz, forge }) {
+      const res = await say(quartz, 'general', { text: '@nova hei', speakerId: 'human:forge' }); // the body cannot speak for someone else
       assert.equal(res.status, 201);
       const { turn } = await res.json();
-      assert.equal(turn.speakerId, 'human:zeus');
+      assert.equal(turn.speakerId, 'human:quartz');
       assert.deepEqual(turn.mentions, ['companion:nova']);
       assert.equal(turn.seq, 1);
 
-      for (const text of ['doi', 'trei', 'patru']) await say(hera, 'general', { text });
-      await say(hera, 'olympus', { text: 'în altă parte' });
+      for (const text of ['doi', 'trei', 'patru']) await say(forge, 'general', { text });
+      await say(forge, 'olympus', { text: 'în altă parte' });
 
-      const all = (await (await zeus('/api/rooms/general/messages')).json()).turns;
+      const all = (await (await quartz('/api/rooms/general/messages')).json()).turns;
       assert.deepEqual(all.map((t) => t.text), ['@nova hei', 'doi', 'trei', 'patru']);
 
-      const last = (await (await zeus('/api/rooms/general/messages?limit=2')).json()).turns;
+      const last = (await (await quartz('/api/rooms/general/messages?limit=2')).json()).turns;
       assert.deepEqual(last.map((t) => t.text), ['trei', 'patru']);
-      const before = (await (await zeus(`/api/rooms/general/messages?limit=2&before=${last[0].seq}`)).json()).turns;
+      const before = (await (await quartz(`/api/rooms/general/messages?limit=2&before=${last[0].seq}`)).json()).turns;
       assert.deepEqual(before.map((t) => t.text), ['@nova hei', 'doi']);
 
-      assert.equal((await zeus('/api/rooms/general/messages?before=abc')).status, 400);
-      assert.equal((await zeus('/api/rooms/general/messages?limit=-1')).status, 400);
-      assert.equal((await zeus('/api/rooms/nowhere/messages')).status, 404);
+      assert.equal((await quartz('/api/rooms/general/messages?before=abc')).status, 400);
+      assert.equal((await quartz('/api/rooms/general/messages?limit=-1')).status, 400);
+      assert.equal((await quartz('/api/rooms/nowhere/messages')).status, 404);
     },
   }));
 
 test('a message that is not right is refused with a reason', () =>
   within({
     options: { maxBodyBytes: 300 },
-    async run({ zeus, store }) {
+    async run({ quartz, store }) {
       const refused = async (status, res, pattern) => {
         assert.equal(res.status, status);
         assert.match((await res.json()).error, pattern);
       };
-      await refused(400, await say(zeus, 'general', {}), /text/);
-      await refused(400, await say(zeus, 'general', { text: 5 }), /text/);
-      await refused(400, await say(zeus, 'general', '[1, 2]'), /text/);
-      await refused(400, await say(zeus, 'general', 'not json'), /valid JSON/);
-      await refused(400, await say(zeus, 'general', { text: '   ' }), /empty/);
-      await refused(415, await say(zeus, 'general', '{"text":"salut"}', { 'Content-Type': 'text/plain' }), /application\/json/);
-      await refused(415, await say(zeus, 'general', '{"text":"salut"}', {}), /application\/json/);
-      await refused(413, await say(zeus, 'general', { text: 'x'.repeat(400) }), /too large/);
-      await refused(404, await say(zeus, 'nowhere', { text: 'salut' }), /no conversation/);
-      await refused(400, await zeus('/api/rooms/%E0%A4%A/messages'), /bad room id/);
+      await refused(400, await say(quartz, 'general', {}), /text/);
+      await refused(400, await say(quartz, 'general', { text: 5 }), /text/);
+      await refused(400, await say(quartz, 'general', '[1, 2]'), /text/);
+      await refused(400, await say(quartz, 'general', 'not json'), /valid JSON/);
+      await refused(400, await say(quartz, 'general', { text: '   ' }), /empty/);
+      await refused(415, await say(quartz, 'general', '{"text":"salut"}', { 'Content-Type': 'text/plain' }), /application\/json/);
+      await refused(415, await say(quartz, 'general', '{"text":"salut"}', {}), /application\/json/);
+      await refused(413, await say(quartz, 'general', { text: 'x'.repeat(400) }), /too large/);
+      await refused(404, await say(quartz, 'nowhere', { text: 'salut' }), /no conversation/);
+      await refused(400, await quartz('/api/rooms/%E0%A4%A/messages'), /bad room id/);
 
       store.setConversationStatus('general', 'closed');
-      await refused(409, await say(zeus, 'general', { text: 'salut' }), /closed/);
+      await refused(409, await say(quartz, 'general', { text: 'salut' }), /closed/);
       assert.equal(store.lastSeq(), 0); // nothing got in
     },
   }));
 
 test('a message may be 4000 characters, even ones that take two bytes each, and not one more', () =>
   within({
-    async run({ zeus }) {
-      assert.equal((await say(zeus, 'general', { text: 'é'.repeat(4000) })).status, 201); // 8 KB on the wire, well inside the body limit
-      const res = await say(zeus, 'general', { text: 'é'.repeat(4001) });
+    async run({ quartz }) {
+      assert.equal((await say(quartz, 'general', { text: 'é'.repeat(4000) })).status, 201); // 8 KB on the wire, well inside the body limit
+      const res = await say(quartz, 'general', { text: 'é'.repeat(4001) });
       assert.equal(res.status, 400);
       assert.match((await res.json()).error, /longer than 4000/);
     },
@@ -209,23 +209,23 @@ test('a message may be 4000 characters, even ones that take two bytes each, and 
 
 test('what the knowledge could not answer can be read by whoever is signed in, and says nothing about who asked', () =>
   within({
-    async run({ zeus, hera, store }) {
-      assert.deepEqual(await (await zeus('/api/gaps')).json(), { gaps: [] });
+    async run({ quartz, forge, store }) {
+      assert.deepEqual(await (await quartz('/api/gaps')).json(), { gaps: [] });
       store.recordGap({ conversationId: 'olympus', question: 'Putem sări pasul cu Styx?', why: 'model_found_nothing' });
       store.recordGap({ conversationId: 'olympus', question: 'putem sări pasul cu Styx?', why: 'model_found_nothing' });
 
-      const { gaps } = await (await hera('/api/gaps?limit=5')).json();
+      const { gaps } = await (await forge('/api/gaps?limit=5')).json();
       assert.equal(gaps.length, 1);
       assert.deepEqual(Object.keys(gaps[0]).sort(), ['asked', 'conversationId', 'firstDay', 'lastDay', 'question', 'sources', 'why']);
       assert.equal(gaps[0].asked, 2);
-      assert.equal((await zeus('/api/gaps?limit=abc')).status, 400);
-      assert.equal((await zeus('/api/gaps', { method: 'POST' })).status, 405);
+      assert.equal((await quartz('/api/gaps?limit=abc')).status, 400);
+      assert.equal((await quartz('/api/gaps', { method: 'POST' })).status, 405);
     },
   }));
 
 test('the wrong method says which ones are right', () =>
   within({
-    async run({ zeus }) {
+    async run({ quartz }) {
       const cases = [
         ['/api/me', 'POST', 'GET'],
         ['/api/rooms', 'DELETE', 'GET'],
@@ -233,7 +233,7 @@ test('the wrong method says which ones are right', () =>
         ['/api/stream', 'POST', 'GET'],
       ];
       for (const [path, method, allow] of cases) {
-        const res = await zeus(path, { method });
+        const res = await quartz(path, { method });
         assert.equal(res.status, 405, `${method} ${path}`);
         assert.equal(res.headers.get('allow'), allow);
       }
@@ -244,19 +244,19 @@ test('too many messages in a short time: told to wait, and only that person wait
   let now = 5_000_000;
   return within({
     options: { rateLimit: { messages: 3, windowMs: 10_000 }, now: () => now },
-    async run({ zeus, hera }) {
-      for (let i = 0; i < 3; i += 1) assert.equal((await say(zeus, 'general', { text: `m${i}` })).status, 201);
+    async run({ quartz, forge }) {
+      for (let i = 0; i < 3; i += 1) assert.equal((await say(quartz, 'general', { text: `m${i}` })).status, 201);
 
-      const refused = await say(zeus, 'general', { text: 'prea mult' });
+      const refused = await say(quartz, 'general', { text: 'prea mult' });
       assert.equal(refused.status, 429);
       assert.equal(refused.headers.get('retry-after'), '10');
       assert.match((await refused.json()).error, /slow down/);
 
-      assert.equal((await say(hera, 'general', { text: 'eu pot' })).status, 201);
-      assert.equal((await zeus('/api/rooms/general/messages')).status, 200); // reading is never limited
+      assert.equal((await say(forge, 'general', { text: 'eu pot' })).status, 201);
+      assert.equal((await quartz('/api/rooms/general/messages')).status, 200); // reading is never limited
 
       now += 10_001;
-      assert.equal((await say(zeus, 'general', { text: 'din nou' })).status, 201);
+      assert.equal((await say(quartz, 'general', { text: 'din nou' })).status, 201);
     },
   });
 });
@@ -272,11 +272,11 @@ test('what was sent before the portal began again still counts: a restart, or an
     app(new Request('http://portal.local/api/rooms/general/messages', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) }));
   try {
     const before = open();
-    for (let i = 0; i < 3; i += 1) assert.equal((await post(before, TOKENS.zeus, `m${i}`)).status, 201);
+    for (let i = 0; i < 3; i += 1) assert.equal((await post(before, TOKENS.quartz, `m${i}`)).status, 201);
 
     const after = open(); // the same store, a new handler: what a restart does
-    assert.equal((await post(after, TOKENS.zeus, 'din nou')).status, 429);
-    assert.equal((await post(after, TOKENS.hera, 'eu pot')).status, 201); // only the one who sent them waits
+    assert.equal((await post(after, TOKENS.quartz, 'din nou')).status, 429);
+    assert.equal((await post(after, TOKENS.forge, 'eu pot')).status, 201); // only the one who sent them waits
   } finally {
     hub.close();
   }
@@ -284,58 +284,58 @@ test('what was sent before the portal began again still counts: a restart, or an
 
 test('a person sets their own sign, everyone hears it live, and only theirs: the body never says whose', () =>
   within({
-    async run({ zeus, hera }) {
+    async run({ quartz, forge }) {
       const abort = new AbortController();
-      const stream = new Collector(await hera('/api/stream', { signal: abort.signal }));
+      const stream = new Collector(await forge('/api/stream', { signal: abort.signal }));
       await stream.waitFor((t) => t.includes('event: hello'));
 
       const put = (call, body) => call('/api/me/sign', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const set = await put(zeus, { sign: '🫁', participantId: 'human:hera' }); // a body that names another is not heard
+      const set = await put(quartz, { sign: '🫁', participantId: 'human:forge' }); // a body that names another is not heard
       assert.equal(set.status, 200);
       assert.equal((await set.json()).participant.sign, '🫁');
-      await stream.waitFor((t) => /event: participant\ndata: \{"id":"human:zeus"[^\n]*"sign":"🫁"/.test(t));
-      assert.equal((await (await hera('/api/me')).json()).sign, undefined); // Hera's is untouched
-      assert.equal((await (await zeus('/api/me')).json()).sign, '🫁');
+      await stream.waitFor((t) => /event: participant\ndata: \{"id":"human:quartz"[^\n]*"sign":"🫁"/.test(t));
+      assert.equal((await (await forge('/api/me')).json()).sign, undefined); // Forge's is untouched
+      assert.equal((await (await quartz('/api/me')).json()).sign, '🫁');
 
-      assert.equal((await put(zeus, { sign: null })).status, 200); // let go
-      assert.equal((await (await zeus('/api/me')).json()).sign, undefined);
-      assert.equal((await put(zeus, { sign: 'leu' })).status, 400);
-      assert.equal((await put(zeus, { mood: '🦁' })).status, 400);
-      assert.equal((await zeus('/api/me/sign', { method: 'POST' })).status, 405);
+      assert.equal((await put(quartz, { sign: null })).status, 200); // let go
+      assert.equal((await (await quartz('/api/me')).json()).sign, undefined);
+      assert.equal((await put(quartz, { sign: 'leu' })).status, 400);
+      assert.equal((await put(quartz, { mood: '🦁' })).status, 400);
+      assert.equal((await quartz('/api/me/sign', { method: 'POST' })).status, 405);
       abort.abort();
     },
   }));
 
 test('a sign changed many times in a minute is slowed down, for that person only', () =>
   within({
-    async run({ zeus, hera }) {
+    async run({ quartz, forge }) {
       const put = (call, sign) => call('/api/me/sign', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sign }) });
-      for (const sign of ['🦁', '🫁', '🧭', '🐸', '🌱', '☀️']) assert.equal((await put(zeus, sign)).status, 200);
-      const refused = await put(zeus, '🌙');
+      for (const sign of ['🦁', '🫁', '🧭', '🐸', '🌱', '☀️']) assert.equal((await put(quartz, sign)).status, 200);
+      const refused = await put(quartz, '🌙');
       assert.equal(refused.status, 429);
       assert.ok(Number(refused.headers.get('retry-after')) > 0);
-      assert.equal((await put(hera, '🌙')).status, 200);
+      assert.equal((await put(forge, '🌙')).status, 200);
     },
   }));
 
 test('a mention written with the sign after the name still finds the person', () =>
   within({
-    async run({ zeus, hera }) {
-      await zeus('/api/me/sign', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sign: '🦁' }) });
-      const posted = await say(hera, 'general', { text: 'salut @Zeus🦁, ai un minut?' });
-      assert.deepEqual((await posted.json()).turn.mentions, ['human:zeus']);
+    async run({ quartz, forge }) {
+      await quartz('/api/me/sign', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sign: '🦁' }) });
+      const posted = await say(forge, 'general', { text: 'salut @Quartz🦁, ai un minut?' });
+      assert.deepEqual((await posted.json()).turn.mentions, ['human:quartz']);
     },
   }));
 
 test('what one person posts reaches another person live', () =>
   within({
-    async run({ zeus, hera }) {
+    async run({ quartz, forge }) {
       const abort = new AbortController();
-      const stream = new Collector(await hera('/api/stream', { signal: abort.signal }));
+      const stream = new Collector(await forge('/api/stream', { signal: abort.signal }));
       await stream.waitFor((t) => t.includes('event: hello'));
 
-      await say(zeus, 'olympus', { text: '@hera uite pasul cu Styx' });
-      await stream.waitFor((t) => t.includes('"text":"@hera uite pasul cu Styx"'));
+      await say(quartz, 'olympus', { text: '@forge uite pasul cu Styx' });
+      await stream.waitFor((t) => t.includes('"text":"@forge uite pasul cu Styx"'));
       assert.match(stream.text, /event: message\nid: 1\ndata: /);
       abort.abort();
     },
@@ -344,21 +344,21 @@ test('what one person posts reaches another person live', () =>
 test('a person can have only so many streams open, and a closed one makes room', () =>
   within({
     options: { maxStreamsPerParticipant: 2 },
-    async run({ zeus, hera }) {
+    async run({ quartz, forge }) {
       const aborts = [new AbortController(), new AbortController()];
-      for (const abort of aborts) assert.equal((await zeus('/api/stream', { signal: abort.signal })).status, 200);
+      for (const abort of aborts) assert.equal((await quartz('/api/stream', { signal: abort.signal })).status, 200);
 
-      const third = await zeus('/api/stream');
+      const third = await quartz('/api/stream');
       assert.equal(third.status, 429);
       assert.match((await third.json()).error, /too many open streams/);
-      assert.equal((await hera('/api/stream', { signal: aborts[0].signal })).status, 200); // somebody else is not affected
+      assert.equal((await forge('/api/stream', { signal: aborts[0].signal })).status, 200); // somebody else is not affected
 
       aborts[1].abort();
       let status = 429;
       for (let i = 0; i < 50 && status !== 200; i += 1) {
         await sleep(10);
         const again = new AbortController();
-        status = (await zeus('/api/stream', { signal: again.signal })).status;
+        status = (await quartz('/api/stream', { signal: again.signal })).status;
         again.abort();
       }
       assert.equal(status, 200);
@@ -380,8 +380,8 @@ test('what goes wrong inside is a 500 that says nothing about the inside', async
             },
           }),
       },
-      async run({ zeus }) {
-        const res = await say(zeus, 'general', { text: 'salut' });
+      async run({ quartz }) {
+        const res = await say(quartz, 'general', { text: 'salut' });
         assert.equal(res.status, 500);
         assert.deepEqual(await res.json(), { error: 'internal error' });
       },
@@ -400,16 +400,16 @@ test('a room started from a config keeps its history across a restart, and will 
       fetch(`http://127.0.0.1:${room.port}${path}`, { ...init, headers: { Authorization: `Bearer ${token}`, ...init.headers } });
 
     const first = await startRoom(config);
-    assert.equal((await say((p, i) => call(first, TOKENS.zeus, p, i), 'general', { text: 'înainte de oprire' })).status, 201);
+    assert.equal((await say((p, i) => call(first, TOKENS.quartz, p, i), 'general', { text: 'înainte de oprire' })).status, 201);
 
     // a second room on the same port fails cleanly
     await assert.rejects(startRoom({ ...config, port: first.port, dbPath: join(dir, 'other.db') }), /EADDRINUSE/);
     await first.close();
 
     const second = await startRoom(config);
-    const { turns } = await (await call(second, TOKENS.hera, '/api/rooms/general/messages')).json();
-    assert.deepEqual(turns.map((t) => [t.seq, t.speakerId, t.text]), [[1, 'human:zeus', 'înainte de oprire']]);
-    assert.equal((await (await say((p, i) => call(second, TOKENS.hera, p, i), 'general', { text: 'după' })).json()).turn.seq, 2);
+    const { turns } = await (await call(second, TOKENS.forge, '/api/rooms/general/messages')).json();
+    assert.deepEqual(turns.map((t) => [t.seq, t.speakerId, t.text]), [[1, 'human:quartz', 'înainte de oprire']]);
+    assert.equal((await (await say((p, i) => call(second, TOKENS.forge, p, i), 'general', { text: 'după' })).json()).turn.seq, 2);
     await second.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -429,20 +429,20 @@ test('too many wrong keys from one caller: turned away, the right key too, other
   try {
     for (let i = 0; i < 3; i += 1) assert.equal((await from('1.1.1.1', `wrong${i}`)).status, 401);
 
-    const refused = await from('1.1.1.1', TOKENS.zeus);
+    const refused = await from('1.1.1.1', TOKENS.quartz);
     assert.equal(refused.status, 429);
     assert.equal(refused.headers.get('retry-after'), '60');
     assert.match((await refused.json()).error, /wrong keys/);
 
-    assert.equal((await from('2.2.2.2', TOKENS.zeus)).status, 200);
+    assert.equal((await from('2.2.2.2', TOKENS.quartz)).status, 200);
 
     // a handler whose home did not say so counts everyone as one, whatever the header holds
     const unsaid = createApp(store, hub, { version: VERSION, authenticate: createAuthenticator(config), authFailures: { attempts: 3, windowMs: 60_000 }, now: () => now });
     for (let i = 0; i < 3; i += 1) await unsaid(new Request('http://portal.test/api/me', { headers: { [CALLER_HEADER]: `x${i}`, Authorization: 'Bearer bad' } }));
-    assert.equal((await unsaid(new Request('http://portal.test/api/me', { headers: { [CALLER_HEADER]: 'fresh', Authorization: `Bearer ${TOKENS.zeus}` } }))).status, 429);
+    assert.equal((await unsaid(new Request('http://portal.test/api/me', { headers: { [CALLER_HEADER]: 'fresh', Authorization: `Bearer ${TOKENS.quartz}` } }))).status, 429);
 
     now += 60_001;
-    assert.equal((await from('1.1.1.1', TOKENS.zeus)).status, 200);
+    assert.equal((await from('1.1.1.1', TOKENS.quartz)).status, 200);
   } finally {
     hub.close();
   }
@@ -473,7 +473,7 @@ test('on Node, the caller is the socket, a header the client sends cannot make a
   // no proxy named: the socket is the caller, whatever headers say
   const direct = await open();
   for (let i = 0; i < 3; i += 1) assert.equal(await from(direct.base, { [CALLER_HEADER]: `fake${i}`, 'x-forwarded-for': `9.9.9.${i}` }, `wrong${i}`), 401);
-  assert.equal(await from(direct.base, { [CALLER_HEADER]: 'fresh', 'x-forwarded-for': '8.8.8.8' }, TOKENS.zeus), 429);
+  assert.equal(await from(direct.base, { [CALLER_HEADER]: 'fresh', 'x-forwarded-for': '8.8.8.8' }, TOKENS.quartz), 429);
   direct.hub.close();
   direct.server.closeAllConnections();
   await new Promise((r) => direct.server.close(r));
@@ -481,8 +481,8 @@ test('on Node, the caller is the socket, a header the client sends cannot make a
   // behind a proxy that says so: its header, the last entry, and one caller's wrong keys do not close the door on another
   const proxied = await open({ clientIpHeader: 'X-Forwarded-For' });
   for (let i = 0; i < 3; i += 1) assert.equal(await from(proxied.base, { 'x-forwarded-for': `6.6.6.6, 1.1.1.1` }, `wrong${i}`), 401);
-  assert.equal(await from(proxied.base, { 'x-forwarded-for': '7.7.7.7, 1.1.1.1' }, TOKENS.zeus), 429); // same last entry: same caller
-  assert.equal(await from(proxied.base, { 'x-forwarded-for': '1.1.1.1, 2.2.2.2' }, TOKENS.zeus), 200);
+  assert.equal(await from(proxied.base, { 'x-forwarded-for': '7.7.7.7, 1.1.1.1' }, TOKENS.quartz), 429); // same last entry: same caller
+  assert.equal(await from(proxied.base, { 'x-forwarded-for': '1.1.1.1, 2.2.2.2' }, TOKENS.quartz), 200);
   proxied.hub.close();
   proxied.server.closeAllConnections();
   await new Promise((r) => proxied.server.close(r));

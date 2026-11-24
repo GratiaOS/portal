@@ -5,8 +5,8 @@ import { fakeSink } from './helpers.mjs';
 
 // RFC 002 (drop), §8: the holder burns a packet of their frequency at once and for good; nobody else can, and every page of the holder drops it.
 
-const ZEUS = 'z'.repeat(24);
-const HERA = 'h'.repeat(24);
+const QUARTZ = 'z'.repeat(24);
+const FORGE = 'h'.repeat(24);
 const START = Date.UTC(2026, 10, 18, 9, 0, 0);
 
 function open({ withDrops = true } = {}) {
@@ -15,8 +15,8 @@ function open({ withDrops = true } = {}) {
   const config = parseConfig(
     {
       participants: [
-        { kind: 'human', alias: 'Zeus', token: ZEUS },
-        { kind: 'human', alias: 'Hera', token: HERA },
+        { kind: 'human', alias: 'Quartz', token: QUARTZ },
+        { kind: 'human', alias: 'Forge', token: FORGE },
         { kind: 'companion', alias: 'Nova' },
       ],
       rooms: [{ id: 'general', title: 'General' }],
@@ -25,8 +25,8 @@ function open({ withDrops = true } = {}) {
         ? {
             drops: {
               frequencies: [
-                { freq: '99.6', title: '🎁 CTT', holder: 'Zeus' },
-                { freq: '36.9', holder: 'Hera' },
+                { freq: '99.6', title: '🎁 CTT', holder: 'Quartz' },
+                { freq: '36.9', holder: 'Forge' },
               ],
               capacity: 3,
             },
@@ -53,8 +53,8 @@ function open({ withDrops = true } = {}) {
     clock,
     store,
     hub,
-    zeus: (path, more) => call('GET', path, { token: ZEUS, ...more }),
-    hera: (path, more) => call('GET', path, { token: HERA, ...more }),
+    quartz: (path, more) => call('GET', path, { token: QUARTZ, ...more }),
+    forge: (path, more) => call('GET', path, { token: FORGE, ...more }),
     anonymous: (path, more) => call('GET', path, more),
     call,
     /** What anyone, with no key, leaves on a frequency. */
@@ -75,26 +75,26 @@ async function within(work, options) {
 
 
 const idsOf = async (res) => (await res.json()).drops.map((d) => d.id);
-const burn = (room, id, freq = '99.6', token = ZEUS) => room.call('DELETE', `/api/drops/${id}${freq === null ? '' : `?freq=${freq}`}`, { token });
+const burn = (room, id, freq = '99.6', token = QUARTZ) => room.call('DELETE', `/api/drops/${id}${freq === null ? '' : `?freq=${freq}`}`, { token });
 
 test('the holder burns a packet: it is gone at once, from the read and from the file, and the answer is empty', () =>
   within(async (room) => {
     await room.drop('99.6', 'keep');
     room.clock.t += 5000;
     await room.drop('99.6', 'burn me');
-    const [newest, older] = await idsOf(await room.zeus('/api/drops?freq=99.6'));
+    const [newest, older] = await idsOf(await room.quartz('/api/drops?freq=99.6'));
     const res = await burn(room, newest);
     assert.equal(res.status, 204);
     assert.equal(await res.text(), '');
     assert.equal(res.headers.get('cache-control'), 'no-store');
-    assert.deepEqual(await idsOf(await room.zeus('/api/drops?freq=99.6')), [older]);
+    assert.deepEqual(await idsOf(await room.quartz('/api/drops?freq=99.6')), [older]);
     assert.equal(room.store.countDrops('99.6'), 1);
   }));
 
 test('burning is idempotent: a packet that is already gone is a success too, and so is one that never was', () =>
   within(async (room) => {
     await room.drop('99.6', 'x');
-    const [id] = await idsOf(await room.zeus('/api/drops?freq=99.6'));
+    const [id] = await idsOf(await room.quartz('/api/drops?freq=99.6'));
     assert.equal((await burn(room, id)).status, 204);
     assert.equal((await burn(room, id)).status, 204);
     assert.equal((await burn(room, 99999)).status, 204);
@@ -102,35 +102,35 @@ test('burning is idempotent: a packet that is already gone is a success too, and
 
 test('only the holder burns: another person, and a frequency nobody holds, get the 403 a read gets, and the packet stays', () =>
   within(async (room) => {
-    await room.drop('99.6', 'for zeus');
-    const [id] = await idsOf(await room.zeus('/api/drops?freq=99.6'));
-    const refused = [await burn(room, id, '99.6', HERA), await burn(room, id, '12.3', ZEUS), await burn(room, id, '36.9', ZEUS), await burn(room, id, '12.3', HERA)];
+    await room.drop('99.6', 'for quartz');
+    const [id] = await idsOf(await room.quartz('/api/drops?freq=99.6'));
+    const refused = [await burn(room, id, '99.6', FORGE), await burn(room, id, '12.3', QUARTZ), await burn(room, id, '36.9', QUARTZ), await burn(room, id, '12.3', FORGE)];
     const bodies = [];
     for (const res of refused) {
       assert.equal(res.status, 403);
       bodies.push(await res.text());
     }
     assert.equal(new Set(bodies).size, 1, 'held by another and held by no one are told alike');
-    assert.deepEqual(await idsOf(await room.zeus('/api/drops?freq=99.6')), [id]);
+    assert.deepEqual(await idsOf(await room.quartz('/api/drops?freq=99.6')), [id]);
     // a gone packet and a living one are not told apart to someone who does not hold the frequency
-    assert.equal((await burn(room, 99999, '99.6', HERA)).status, 403);
+    assert.equal((await burn(room, 99999, '99.6', FORGE)).status, 403);
   }));
 
 test('the id is of the frequency named: burning another frequency\'s id from one\'s own burns nothing', () =>
   within(async (room) => {
-    await room.drop('36.9', 'hera');
-    const [id] = await idsOf(await room.hera('/api/drops?freq=36.9'));
-    assert.equal((await burn(room, id, '99.6', ZEUS)).status, 204); // success for the holder of 99.6, and nothing of 36.9 touched
-    assert.deepEqual(await idsOf(await room.hera('/api/drops?freq=36.9')), [id]);
+    await room.drop('36.9', 'forge');
+    const [id] = await idsOf(await room.forge('/api/drops?freq=36.9'));
+    assert.equal((await burn(room, id, '99.6', QUARTZ)).status, 204); // success for the holder of 99.6, and nothing of 36.9 touched
+    assert.deepEqual(await idsOf(await room.forge('/api/drops?freq=36.9')), [id]);
   }));
 
 test('a key is needed, a visitor is refused, and the shape of the request is checked', () =>
   within(async (room) => {
     assert.equal((await room.call('DELETE', '/api/drops/1?freq=99.6')).status, 401);
     assert.equal((await room.call('DELETE', '/api/drops/1?freq=99.6', { token: 'x'.repeat(24) })).status, 401);
-    for (const path of ['/api/drops/1', '/api/drops/1?freq=99', '/api/drops/1?freq=1000.0']) assert.equal((await room.call('DELETE', path, { token: ZEUS })).status, 400, path);
-    assert.equal((await room.call('DELETE', '/api/drops/abc?freq=99.6', { token: ZEUS })).status, 404);
-    const wrong = await room.call('GET', '/api/drops/1?freq=99.6', { token: ZEUS });
+    for (const path of ['/api/drops/1', '/api/drops/1?freq=99', '/api/drops/1?freq=1000.0']) assert.equal((await room.call('DELETE', path, { token: QUARTZ })).status, 400, path);
+    assert.equal((await room.call('DELETE', '/api/drops/abc?freq=99.6', { token: QUARTZ })).status, 404);
+    const wrong = await room.call('GET', '/api/drops/1?freq=99.6', { token: QUARTZ });
     assert.equal(wrong.status, 405);
     assert.equal(wrong.headers.get('allow'), 'DELETE');
   }));
@@ -145,38 +145,38 @@ test('a portal with no drops block has no such route', () =>
 
 test('a burn is told to every connection of the holder, as the frequency and the id and nothing of the words, and to no one else', () =>
   within(async (room) => {
-    const [a, b, hera] = [fakeSink(), fakeSink(), fakeSink()];
-    room.hub.subscribe(room.who('human:zeus'), a);
-    room.hub.subscribe(room.who('human:zeus'), b);
-    room.hub.subscribe(room.who('human:hera'), hera);
+    const [a, b, forge] = [fakeSink(), fakeSink(), fakeSink()];
+    room.hub.subscribe(room.who('human:quartz'), a);
+    room.hub.subscribe(room.who('human:quartz'), b);
+    room.hub.subscribe(room.who('human:forge'), forge);
     await room.drop('99.6', 'secret words');
-    const [id] = await idsOf(await room.zeus('/api/drops?freq=99.6'));
+    const [id] = await idsOf(await room.quartz('/api/drops?freq=99.6'));
     assert.equal((await burn(room, id)).status, 204);
     for (const sink of [a, b]) {
       const gone = sink.frames().filter((f) => f.event === 'drop-gone');
       assert.deepEqual(gone.map((f) => [f.id, f.data]), [[undefined, { freq: '99.6', id }]]);
       assert.equal(sink.chunks.join('').includes('secret'), false);
     }
-    assert.equal(hera.frames().filter((f) => f.event === 'drop-gone').length, 0);
+    assert.equal(forge.frames().filter((f) => f.event === 'drop-gone').length, 0);
   }));
 
 test('nothing is told for a burn that was refused, or of a packet that was already gone', () =>
   within(async (room) => {
-    const zeus = fakeSink();
-    room.hub.subscribe(room.who('human:zeus'), zeus);
+    const quartz = fakeSink();
+    room.hub.subscribe(room.who('human:quartz'), quartz);
     await room.drop('99.6', 'x');
-    const [id] = await idsOf(await room.zeus('/api/drops?freq=99.6'));
-    await burn(room, id, '99.6', HERA); // refused
-    assert.equal(zeus.frames().filter((f) => f.event === 'drop-gone').length, 0);
+    const [id] = await idsOf(await room.quartz('/api/drops?freq=99.6'));
+    await burn(room, id, '99.6', FORGE); // refused
+    assert.equal(quartz.frames().filter((f) => f.event === 'drop-gone').length, 0);
     await burn(room, id);
     await burn(room, id); // already gone
-    assert.equal(zeus.frames().filter((f) => f.event === 'drop-gone').length, 1);
+    assert.equal(quartz.frames().filter((f) => f.event === 'drop-gone').length, 1);
   }));
 
 test('an id is only the way the read writes it: one with leading zeros is not a packet, and cannot be told on the stream as another string', () =>
   within(async (room) => {
     await room.drop('99.6', 'x');
-    const [id] = await idsOf(await room.zeus('/api/drops?freq=99.6'));
+    const [id] = await idsOf(await room.quartz('/api/drops?freq=99.6'));
     for (const written of [`0${id}`, `00${id}`, `${id}.0`, `+${id}`]) assert.equal((await burn(room, written)).status, 404, written);
-    assert.deepEqual(await idsOf(await room.zeus('/api/drops?freq=99.6')), [id]);
+    assert.deepEqual(await idsOf(await room.quartz('/api/drops?freq=99.6')), [id]);
   }));

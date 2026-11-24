@@ -17,8 +17,8 @@ const pkg = JSON.parse(readFileSync(join(here, '..', 'package.json'), 'utf8'));
 const page = join(here, '..', 'ui', 'dist', 'index.html');
 let failures = 0;
 
-const ZEUS = 'z'.repeat(24);
-const HERA = 'h'.repeat(24);
+const QUARTZ = 'z'.repeat(24);
+const FORGE = 'h'.repeat(24);
 // A stand-in for the model, on this machine: it answers every question the same way, and remembers what it was asked.
 const asked = [];
 const model = createServer((req, res) => {
@@ -68,8 +68,8 @@ writeFileSync(join(guestDir, 'about.md'), '# About\n\nUn portal este un chat de 
 const CONFIG = {
   name: 'Stand-in',
   participants: [
-    { kind: 'human', alias: 'Zeus' },
-    { kind: 'human', alias: 'Hera' },
+    { kind: 'human', alias: 'Quartz' },
+    { kind: 'human', alias: 'Forge' },
     { kind: 'companion', alias: 'Nova' },
   ],
   rooms: [
@@ -99,7 +99,7 @@ const check = (ok, line) => {
   console.log(`${ok ? '✓' : '✗'} ${line}`);
 };
 
-function start(config = CONFIG, tokens = { Zeus: ZEUS, Hera: HERA }) {
+function start(config = CONFIG, tokens = { Quartz: QUARTZ, Forge: FORGE }) {
   const [command, ...pre] = process.env.WRANGLER ? [process.env.WRANGLER] : ['npx', '--yes', 'wrangler@4.136.2'];
   const vars = { PORTAL_CONFIG: JSON.stringify(config), PORTAL_TOKENS: JSON.stringify(tokens), PORTAL_FORGET_EVERY_MS: '1000', PORTAL_LLM_API_KEY: 'stand-in-key', PORTAL_GUESTS_LLM_API_KEY: 'guests-stand-in-key' };
   const args = [...pre, 'dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', state, '--log-level', 'error', '--show-interactive-dev-session=false'];
@@ -155,8 +155,8 @@ async function until(predicate, ms = 3000) {
 }
 
 const as = (token) => (path, init = {}) => fetch(base + path, { ...init, headers: { Authorization: `Bearer ${token}`, ...init.headers } });
-const zeus = as(ZEUS);
-const hera = as(HERA);
+const quartz = as(QUARTZ);
+const forge = as(FORGE);
 const say = (call, text) => call('/api/rooms/general/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
 
 function listen(token) {
@@ -228,17 +228,17 @@ try {
   const health = await (await fetch(`${base}/api/health`)).json();
   check(health.ok && health.version === pkg.version, `health, version ${health.version}`);
   check((await fetch(`${base}/api/rooms`)).status === 401, 'without a token, no answer');
-  const me = await (await zeus('/api/me')).json();
-  check(me.id === 'human:zeus', 'a token from PORTAL_TOKENS signs in');
-  check((await zeus('/skins/any/skin.css')).status === 404, 'no skins from a folder: a calm 404');
+  const me = await (await quartz('/api/me')).json();
+  check(me.id === 'human:quartz', 'a token from PORTAL_TOKENS signs in');
+  check((await quartz('/skins/any/skin.css')).status === 404, 'no skins from a folder: a calm 404');
 
-  const heard = listen(ZEUS);
+  const heard = listen(QUARTZ);
   check(await until(() => heard.text.includes('event: hello')), 'the stream says hello');
-  await say(hera, 'salut de pe Cloudflare 🌱');
-  check(await until(() => heard.text.includes('salut de pe Cloudflare 🌱')), 'a message from Hera reaches Zeus');
+  await say(forge, 'salut de pe Cloudflare 🌱');
+  check(await until(() => heard.text.includes('salut de pe Cloudflare 🌱')), 'a message from Forge reaches Quartz');
 
   console.log('\n— Nova, from the object');
-  await say(zeus, '@Nova ce e ambrozia?');
+  await say(quartz, '@Nova ce e ambrozia?');
   check(await until(() => heard.text.includes('"speakerId":"companion:nova"'), 10_000), 'Nova answers in the room');
   check(/Ambrozia este hrana zeilor\.[^"]*olympus\/food\.md/.test(heard.text), 'her answer, with the file she used');
   const question = asked.at(-1);
@@ -249,8 +249,8 @@ try {
   heard.abort();
 
   console.log('\n— forgetting, at the object\'s alarm (every second here, ten minutes by default)');
-  for (let i = 1; i <= 55; i += 1) await say(zeus, `m${i}`);
-  const kept = async () => (await (await zeus('/api/rooms/general/messages?limit=200')).json()).turns.map((t) => t.text);
+  for (let i = 1; i <= 55; i += 1) await say(quartz, `m${i}`);
+  const kept = async () => (await (await quartz('/api/rooms/general/messages?limit=200')).json()).turns.map((t) => t.text);
   check(await until(async () => (await kept()).length === 50, 5000), 'the room keeps its last 50, and lets go of the rest at the alarm');
   const left = await kept();
   check(left[0] === 'm6' && left.at(-1) === 'm55', `what is left is the last 50: ${left[0]} … ${left.at(-1)}`);
@@ -282,30 +282,30 @@ try {
   check(forGuests?.authorization === 'Bearer guests-stand-in-key', 'the guests\' engine is asked with the key of its own secret, not the team\'s');
   check(asked.length === teamAsked, 'the team\'s engine is not asked for a guest');
   check(guestSystem.includes('### FILE: about.md') && !guestSystem.includes('olympus/food.md') && !guestSystem.includes('SECRET-7f3a'), 'she reads the folder for guests, and nothing of the team\'s');
-  check(!guestSystem.includes('Zeus') && !guestSystem.includes('Hera'), 'and no name of the team went to the guests\' engine');
-  check(!(await (await zeus('/api/gaps')).text().catch(() => '')).includes('ce este un portal'), 'what the guest asked is not among what the knowledge lacked');
+  check(!guestSystem.includes('Quartz') && !guestSystem.includes('Forge'), 'and no name of the team went to the guests\' engine');
+  check(!(await (await quartz('/api/gaps')).text().catch(() => '')).includes('ce este un portal'), 'what the guest asked is not among what the knowledge lacked');
 
   console.log('\n— a person renamed in the config keeps what they said (the object is started again, with the same storage)');
-  await say(hera, 'a word before the new name');
+  await say(forge, 'a word before the new name');
   await stop(dev);
-  dev = start({ ...CONFIG, participants: CONFIG.participants.map((p) => (p.alias === 'Hera' ? { kind: 'human', alias: 'Athena', renamedFrom: 'Hera' } : p)) }, { Zeus: ZEUS, Athena: HERA });
+  dev = start({ ...CONFIG, participants: CONFIG.participants.map((p) => (p.alias === 'Forge' ? { kind: 'human', alias: 'Athena', renamedFrom: 'Forge' } : p)) }, { Quartz: QUARTZ, Athena: FORGE });
   await ready();
-  const renamed = await (await hera('/api/me')).json();
+  const renamed = await (await forge('/api/me')).json();
   check(renamed.id === 'human:athena', `the same key is now Athena: ${renamed.id}`);
-  const hers = (await (await zeus('/api/rooms/general/messages')).json()).turns.find((t) => t.text === 'a word before the new name');
+  const hers = (await (await quartz('/api/rooms/general/messages')).json()).turns.find((t) => t.text === 'a word before the new name');
   check(hers?.speakerId === 'human:athena', `what she said is hers under the new name, and as it was said: ${hers?.speakerId}`);
 
   console.log('\n— a room renamed in the config keeps what was said in it, and the rooms are listed as the config lists them');
   await stop(dev);
-  const renamedPeople = CONFIG.participants.map((p) => (p.alias === 'Hera' ? { kind: 'human', alias: 'Athena', renamedFrom: 'Hera' } : p));
+  const renamedPeople = CONFIG.participants.map((p) => (p.alias === 'Forge' ? { kind: 'human', alias: 'Athena', renamedFrom: 'Forge' } : p));
   const renamedRooms = [{ id: 'plaza', title: 'General', renamedFrom: 'general' }, { id: 'parking', title: 'Guests', kind: 'guest', renamedFrom: 'guests' }];
-  dev = start({ ...CONFIG, participants: renamedPeople, rooms: renamedRooms, guests: { ...CONFIG.guests, room: 'parking' } }, { Zeus: ZEUS, Athena: HERA });
+  dev = start({ ...CONFIG, participants: renamedPeople, rooms: renamedRooms, guests: { ...CONFIG.guests, room: 'parking' } }, { Quartz: QUARTZ, Athena: FORGE });
   await ready();
-  const listed = (await (await zeus('/api/rooms')).json()).rooms.map((r) => r.id);
+  const listed = (await (await quartz('/api/rooms')).json()).rooms.map((r) => r.id);
   check(listed.join() === 'plaza,parking', `the old ids are gone, and the plaza is first though "parking" sorts before it: ${listed.join()}`);
-  const moved = (await (await zeus('/api/rooms/plaza/messages?limit=200')).json()).turns.some((t) => t.text === 'a word before the new name');
+  const moved = (await (await quartz('/api/rooms/plaza/messages?limit=200')).json()).turns.some((t) => t.text === 'a word before the new name');
   check(moved, 'what was said in the room is there under its new id');
-  check((await zeus('/api/rooms/general/messages')).status === 404, 'and the old id opens nothing');
+  check((await quartz('/api/rooms/general/messages')).status === 404, 'and the old id opens nothing');
 
   console.log('\n— wrong keys, counted in the object (last: it turns this caller away)');
   const wrong = [];
@@ -313,7 +313,7 @@ try {
   // a wrong key was already counted above (no token at all), so the wait comes at the tenth, not the eleventh
   const waits = wrong.indexOf(429);
   check(wrong[0] === 401 && waits >= 9 && waits <= 10 && wrong.slice(waits).every((s) => s === 429), `ten wrong keys are told no, then it waits: ${wrong.join(' ')}`);
-  check((await fetch(`${base}/api/me`, { headers: { Authorization: `Bearer ${ZEUS}`, 'x-portal-caller': 'someone-else' } })).status === 429, 'a caller cannot name itself to start over: the header it sends is replaced');
+  check((await fetch(`${base}/api/me`, { headers: { Authorization: `Bearer ${QUARTZ}`, 'x-portal-caller': 'someone-else' } })).status === 429, 'a caller cannot name itself to start over: the header it sends is replaced');
 } catch (err) {
   failures += 1;
   console.error(err);

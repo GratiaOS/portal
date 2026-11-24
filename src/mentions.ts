@@ -10,7 +10,7 @@ export function extractMentions(text: string, participants: Iterable<Participant
 
   const found: string[] = [];
   for (const match of text.matchAll(MENTION)) {
-    // "@hera." ends a sentence, the dot is not part of the name
+    // "@forge." ends a sentence, the dot is not part of the name
     const alias = match[1].replace(/[_.-]+$/, '').toLowerCase();
     const id = byAlias.get(alias);
     if (id && !found.includes(id)) found.push(id);

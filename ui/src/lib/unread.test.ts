@@ -14,19 +14,19 @@ const turn = (seq: number, speakerId = 'human:apollo', conversationId = 'general
 });
 
 test('unread: only what others said after the last one seen', () => {
-  const turns = { general: [turn(1), turn(2), turn(3, 'human:zeus'), turn(4), turn(5, 'companion:nova')] };
-  assert.equal(unreadIn(turns, { general: 2 }, 0, 'human:zeus'), 2); // 4 and 5; 3 is mine
-  assert.equal(unreadIn(turns, { general: 5 }, 0, 'human:zeus'), 0);
+  const turns = { general: [turn(1), turn(2), turn(3, 'human:quartz'), turn(4), turn(5, 'companion:nova')] };
+  assert.equal(unreadIn(turns, { general: 2 }, 0, 'human:quartz'), 2); // 4 and 5; 3 is mine
+  assert.equal(unreadIn(turns, { general: 5 }, 0, 'human:quartz'), 0);
 });
 
 test('unread: what was there when the page opened is history, not news', () => {
   const turns = { general: [turn(1), turn(2), turn(3), turn(4)] };
-  assert.equal(unreadIn(turns, {}, 3, 'human:zeus'), 1); // only 4 came after the page opened
+  assert.equal(unreadIn(turns, {}, 3, 'human:quartz'), 1); // only 4 came after the page opened
 });
 
 test('unread: counts every channel, each from its own mark', () => {
   const turns = { general: [turn(5), turn(6)], ops: [turn(7, 'human:apollo', 'ops'), turn(8, 'human:apollo', 'ops')] };
-  assert.equal(unreadIn(turns, { general: 6 }, 4, 'human:zeus'), 2); // ops has no mark: from where the page opened
+  assert.equal(unreadIn(turns, { general: 6 }, 4, 'human:quartz'), 2); // ops has no mark: from where the page opened
 });
 
 test('readUpTo: moves forward only, and returns the same object when nothing changes', () => {

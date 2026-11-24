@@ -11,8 +11,8 @@ const TOKEN_B = 'b'.repeat(24);
 
 const valid = (drops) => ({
   participants: [
-    { kind: 'human', alias: 'Zeus', token: TOKEN_A },
-    { kind: 'human', alias: 'Hera', token: TOKEN_B },
+    { kind: 'human', alias: 'Quartz', token: TOKEN_A },
+    { kind: 'human', alias: 'Forge', token: TOKEN_B },
     { kind: 'companion', alias: 'Nova' },
   ],
   rooms: [{ id: 'general', title: 'General' }],
@@ -30,7 +30,7 @@ const refuses = (raw, pattern) =>
     },
   );
 
-const one = { frequencies: [{ freq: '99.6', holder: 'Zeus' }] };
+const one = { frequencies: [{ freq: '99.6', holder: 'Quartz' }] };
 
 // --- the frequency and the fade, as words ---
 
@@ -71,7 +71,7 @@ test('a config with no drops block has no drops', () => {
 
 test('a drops block gets its defaults: the numbers agreed in RFC 002', () => {
   const { drops } = parseConfig(valid(one), '/base');
-  assert.deepEqual(drops.frequencies, [{ freq: '99.6', title: '99.6', holder: 'Zeus' }]); // a title is the frequency unless said
+  assert.deepEqual(drops.frequencies, [{ freq: '99.6', title: '99.6', holder: 'Quartz' }]); // a title is the frequency unless said
   assert.deepEqual(drops.allowOrigins, []); // empty: no CORS at all
   assert.equal(drops.maxBytes, 8192);
   assert.deepEqual(drops.perAddress, { perMinute: 15, burst: 3 });
@@ -84,8 +84,8 @@ test('a drops block says what it wants, and the holder is named as the participa
   const { drops } = parseConfig(
     valid({
       frequencies: [
-        { freq: '99.6', title: '🎁 CTT', holder: 'zeus' },
-        { freq: '36.9', holder: 'HERA' },
+        { freq: '99.6', title: '🎁 CTT', holder: 'quartz' },
+        { freq: '36.9', holder: 'FORGE' },
       ],
       allowOrigins: ['https://amigo.sh', 'http://localhost:3000'],
       maxBytes: 4096,
@@ -97,8 +97,8 @@ test('a drops block says what it wants, and the holder is named as the participa
     '/base',
   );
   assert.deepEqual(drops.frequencies, [
-    { freq: '99.6', title: '🎁 CTT', holder: 'Zeus' }, // the alias as the config spells it for the person, not as it was typed
-    { freq: '36.9', title: '36.9', holder: 'Hera' },
+    { freq: '99.6', title: '🎁 CTT', holder: 'Quartz' }, // the alias as the config spells it for the person, not as it was typed
+    { freq: '36.9', title: '36.9', holder: 'Forge' },
   ]);
   assert.deepEqual(drops.allowOrigins, ['https://amigo.sh', 'http://localhost:3000']);
   assert.equal(drops.maxBytes, 4096);
@@ -117,15 +117,15 @@ test('a drops block that is not a block, or holds no frequency, is refused', () 
 });
 
 test('a frequency must be written as one, held by a person, once each way', () => {
-  for (const freq of ['99', '99.66', '1000.0', '', 99.6, undefined]) refuses(valid({ frequencies: [{ freq, holder: 'Zeus' }] }), /drops\.frequencies\[0\]\.freq/);
+  for (const freq of ['99', '99.66', '1000.0', '', 99.6, undefined]) refuses(valid({ frequencies: [{ freq, holder: 'Quartz' }] }), /drops\.frequencies\[0\]\.freq/);
   refuses(valid({ frequencies: [{ freq: '99.6' }] }), /drops\.frequencies\[0\]\.holder/);
   refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Nova' }] }), /drops\.frequencies\[0\]: "Nova" must be a human/); // a companion holds nothing
   refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Ares' }] }), /drops\.frequencies\[0\]: "Ares" is not a participant/);
-  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Zeus' }, { freq: '99.6', holder: 'Hera' }] }), /the frequency "99\.6" is used twice/);
-  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Zeus' }, { freq: '36.9', holder: 'zeus' }] }), /"Zeus" holds two frequencies/); // one each way, in v1
-  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Zeus', title: '' }] }), /drops\.frequencies\[0\]\.title/);
-  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Zeus', title: 'x'.repeat(41) }] }), /drops\.frequencies\[0\]\.title/);
-  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Zeus', title: 'a<b' }] }), /drops\.frequencies\[0\]\.title/);
+  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Quartz' }, { freq: '99.6', holder: 'Forge' }] }), /the frequency "99\.6" is used twice/);
+  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Quartz' }, { freq: '36.9', holder: 'quartz' }] }), /"Quartz" holds two frequencies/); // one each way, in v1
+  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Quartz', title: '' }] }), /drops\.frequencies\[0\]\.title/);
+  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Quartz', title: 'x'.repeat(41) }] }), /drops\.frequencies\[0\]\.title/);
+  refuses(valid({ frequencies: [{ freq: '99.6', holder: 'Quartz', title: 'a<b' }] }), /drops\.frequencies\[0\]\.title/);
 });
 
 test('allowOrigins are exact origins: no wildcard, no path, no other scheme', () => {
@@ -193,7 +193,7 @@ for (const [where, make] of Object.entries(HOMES)) {
   const open = (home) => {
     const now = clock();
     const store = new RoomStore(home.open(), { now });
-    store.syncParticipants([{ kind: 'human', alias: 'Zeus' }]);
+    store.syncParticipants([{ kind: 'human', alias: 'Quartz' }]);
     store.syncConversations([{ id: 'general', title: 'General' }]);
     return { store, now };
   };

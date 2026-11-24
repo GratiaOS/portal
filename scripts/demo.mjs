@@ -10,7 +10,7 @@ import { parseConfig, startRoom } from '../dist/index.js';
 const PAUSE_MS = Number(process.env.PORTAL_DEMO_PAUSE_MS ?? 350);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const humans = ['Zeus', 'Athena', 'Poseidon', 'Eirene'];
+const humans = ['Quartz', 'Athena', 'Poseidon', 'Eirene'];
 const tokens = Object.fromEntries(humans.map((name) => [name, randomBytes(24).toString('base64url')]));
 
 const config = parseConfig({
@@ -104,11 +104,11 @@ class Client {
   }
 }
 
-// --- the wall: what Zeus's screen shows, in the manner of a LAN chat ---
+// --- the wall: what Quartz's screen shows, in the manner of a LAN chat ---
 
 const alias = (id) => room.store.getParticipant(id)?.alias ?? id;
-const zeus = new Client('Zeus');
-zeus.onEvent = ({ event, data }) => {
+const quartz = new Client('Quartz');
+quartz.onEvent = ({ event, data }) => {
   if (event === 'message') console.log(`[${hhmm(data.createdAt)}] #${data.conversationId} <${alias(data.speakerId)}> ${data.text}`);
   // presence has no time: the room does not know when anyone came or went, and the wall does not pretend to
   if (event === 'presence') console.log(`        * ${alias(data.participantId)} is ${data.state}`);
@@ -134,37 +134,37 @@ console.log(`portal demo: ${humans.length} people and a stand-in Nova, in memory
 const athena = new Client('Athena');
 const poseidon = new Client('Poseidon');
 const eirene = new Client('Eirene');
-const everyone = [zeus, athena, poseidon, eirene];
+const everyone = [quartz, athena, poseidon, eirene];
 const seen = (turns) => turns.map((t) => [t.seq, alias(t.speakerId), t.text]);
 
 try {
-  await zeus.open();
-  await zeus.say('general', 'Neața tuturor 🌱☀️');
+  await quartz.open();
+  await quartz.say('general', 'Neața tuturor 🌱☀️');
   await sleep(PAUSE_MS);
 
   // Poseidon arrives late: with Last-Event-ID 0 he is handed what he missed
   await poseidon.open(0);
-  await poseidon.say('general', 'Salut @zeus');
+  await poseidon.say('general', 'Salut @quartz');
   await sleep(PAUSE_MS);
 
   await athena.open(0);
   await athena.say('olympus', '@nova putem sari pasul cu Styx din Olympus?');
-  await zeus.until(() => zeus.turns().length >= 4); // Nova's answer
+  await quartz.until(() => quartz.turns().length >= 4); // Nova's answer
   await sleep(PAUSE_MS);
 
   await eirene.open(0);
   await eirene.say('general', 'Mă duc la cafea 🗝️');
-  await zeus.until(() => zeus.turns().length >= 5);
+  await quartz.until(() => quartz.turns().length >= 5);
   eirene.close();
-  await zeus.until(() => zeus.events.some((e) => e.event === 'presence' && e.data.participantId === 'human:eirene' && e.data.state === 'offline'));
+  await quartz.until(() => quartz.events.some((e) => e.event === 'presence' && e.data.participantId === 'human:eirene' && e.data.state === 'offline'));
 
   // --- what we claim, checked ---
-  const reference = JSON.stringify(seen(zeus.turns()));
+  const reference = JSON.stringify(seen(quartz.turns()));
   const checks = [
-    [`all ${everyone.length} connections saw the same ${zeus.turns().length} turns, in the same order`, everyone.every((c) => JSON.stringify(seen(c.turns())) === reference) && zeus.turns().length === 5],
+    [`all ${everyone.length} connections saw the same ${quartz.turns().length} turns, in the same order`, everyone.every((c) => JSON.stringify(seen(c.turns())) === reference) && quartz.turns().length === 5],
     ['Poseidon, who came late, was handed the greeting he missed', poseidon.turns()[0]?.text === 'Neața tuturor 🌱☀️'],
-    ['Nova answered the one @mention of her, and only that', novaAnswers === 1 && zeus.turns().filter((t) => t.speakerId === 'companion:nova').length === 1],
-    ['Eirene was seen leaving, a moment after she went', zeus.events.at(-1).data.state === 'offline'],
+    ['Nova answered the one @mention of her, and only that', novaAnswers === 1 && quartz.turns().filter((t) => t.speakerId === 'companion:nova').length === 1],
+    ['Eirene was seen leaving, a moment after she went', quartz.events.at(-1).data.state === 'offline'],
   ];
   console.log('');
   for (const [claim, ok] of checks) console.log(`${ok ? '✔' : '✖'} ${claim}`);

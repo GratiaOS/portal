@@ -7,14 +7,14 @@ import { Collector, fakeSink, parseFrames, room, sleep } from './helpers.mjs';
 test('the stream over a real server: headers, hello, what was missed, heartbeat, live turns, and leaving', async () => {
   const store = room();
   const hub = new Hub(store, { graceMs: 25 });
-  const zeus = store.getParticipant('human:zeus');
-  const hera = store.getParticipant('human:hera');
-  for (const text of ['one', 'two', 'three']) hub.publish({ conversationId: 'general', speakerId: hera.id, text });
+  const quartz = store.getParticipant('human:quartz');
+  const forge = store.getParticipant('human:forge');
+  for (const text of ['one', 'two', 'three']) hub.publish({ conversationId: 'general', speakerId: forge.id, text });
 
-  const server = createServer(toNodeListener(async (request) => serveStream(request, hub, zeus, { heartbeatMs: 20 })));
+  const server = createServer(toNodeListener(async (request) => serveStream(request, hub, quartz, { heartbeatMs: 20 })));
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const watcher = fakeSink(); // Hera, watching from inside
-  hub.subscribe(hera, watcher);
+  const watcher = fakeSink(); // Forge, watching from inside
+  hub.subscribe(forge, watcher);
 
   const abort = new AbortController();
   try {
@@ -34,10 +34,10 @@ test('the stream over a real server: headers, hello, what was missed, heartbeat,
     assert.deepEqual(frames.slice(1, 3).map((f) => f.data.text), ['two', 'three']);
 
     // she hears that he arrived
-    assert.deepEqual(watcher.frames().at(-1).data, { participantId: 'human:zeus', state: 'online' });
+    assert.deepEqual(watcher.frames().at(-1).data, { participantId: 'human:quartz', state: 'online' });
 
     // a live turn
-    hub.publish({ conversationId: 'general', speakerId: hera.id, text: 'four' });
+    hub.publish({ conversationId: 'general', speakerId: forge.id, text: 'four' });
     await stream.waitFor((t) => t.includes('id: 4'));
     assert.equal(parseFrames(stream.text).at(-1).data.text, 'four');
 
@@ -68,12 +68,12 @@ const asked = (headers = {}) => new Request('http://portal.local/api/stream', { 
 test('a client that reads nothing is cut off, and the rest of what it missed is not serialized for it', async () => {
   const store = room();
   const hub = new Hub(store, { graceMs: 25 });
-  const zeus = store.getParticipant('human:zeus');
-  for (let i = 0; i < 400; i += 1) store.appendTurn({ conversationId: 'general', speakerId: zeus.id, text: `mesaj ${i} `.repeat(4) });
+  const quartz = store.getParticipant('human:quartz');
+  for (let i = 0; i < 400; i += 1) store.appendTurn({ conversationId: 'general', speakerId: quartz.id, text: `mesaj ${i} `.repeat(4) });
 
   const counter = counting(hub);
   let ended = 0;
-  const response = serveStream(asked({ 'Last-Event-ID': '0' }), counter.hub, zeus, { maxBufferBytes: 3000, heartbeatMs: 60_000 }, () => (ended += 1));
+  const response = serveStream(asked({ 'Last-Event-ID': '0' }), counter.hub, quartz, { maxBufferBytes: 3000, heartbeatMs: 60_000 }, () => (ended += 1));
 
   assert.ok(counter.writes < 40, `${counter.writes} writes: it kept going after the connection was cut`);
   assert.equal(ended, 1);
@@ -81,7 +81,7 @@ test('a client that reads nothing is cut off, and the rest of what it missed is 
 
   // and it is not written to again, by anything
   const before = counter.writes;
-  hub.publish({ conversationId: 'general', speakerId: zeus.id, text: 'încă unul' });
+  hub.publish({ conversationId: 'general', speakerId: quartz.id, text: 'încă unul' });
   assert.equal(counter.writes, before);
   hub.close();
 });
@@ -89,15 +89,15 @@ test('a client that reads nothing is cut off, and the rest of what it missed is 
 test('a stream that is already gone is not written to', async () => {
   const store = room();
   const hub = new Hub(store, { graceMs: 25 });
-  const zeus = store.getParticipant('human:zeus');
+  const quartz = store.getParticipant('human:quartz');
 
   const counter = counting(hub);
   let ended = 0;
-  const response = serveStream(asked(), counter.hub, zeus, { heartbeatMs: 60_000 }, () => (ended += 1));
+  const response = serveStream(asked(), counter.hub, quartz, { heartbeatMs: 60_000 }, () => (ended += 1));
   const before = counter.writes;
   await response.body.cancel(); // the client went away
   assert.equal(ended, 1);
-  hub.publish({ conversationId: 'general', speakerId: zeus.id, text: 'nimeni nu mai ascultă' });
+  hub.publish({ conversationId: 'general', speakerId: quartz.id, text: 'nimeni nu mai ascultă' });
   assert.equal(counter.writes, before);
   hub.close();
 });

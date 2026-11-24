@@ -12,7 +12,7 @@ pnpm --filter portal test
 
 The nouns follow RFC 0000 §7:
 
-- **Participant**: id is `kind:alias` in lowercase (`human:zeus`, `companion:nova`); the alias is what people type after `@` and belongs to one participant.
+- **Participant**: id is `kind:alias` in lowercase (`human:quartz`, `companion:nova`); the alias is what people type after `@` and belongs to one participant.
 - **Conversation**: a room, with `visibility` (`private` by default, M3's vocabulary) and `status` (`open` / `closed`). Everyone configured is in every room for now.
 - **Turn**: one message, with `text` (the RFC's `input`/`output` is a request-response shape), the `mentions` it names and a global `seq` that is the cursor for history and for resuming a stream.
 - **Presence**: lives in the hub, not in the database.

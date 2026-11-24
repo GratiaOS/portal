@@ -24,7 +24,7 @@ export type ParticipantKind = 'human' | 'companion' | 'service' | 'guest';
 export const PARTICIPANT_KINDS: readonly ParticipantKind[] = ['human', 'companion', 'service'];
 
 export type Participant = {
-  /** `kind:alias`, lowercase: `human:zeus`, `companion:nova`. The same voices M3's towns use. */
+  /** `kind:alias`, lowercase: `human:quartz`, `companion:nova`. The same voices M3's towns use. */
   id: string;
   kind: ParticipantKind;
   /** What people type after `@`. Letters, digits, `_`, `.`, `-`; starts and ends with a letter or digit. */

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { RoomStore, nodeSqlite } from '../dist/index.js';
 
 export const PEOPLE = [
-  { kind: 'human', alias: 'Zeus' },
-  { kind: 'human', alias: 'Hera', locale: 'ro' },
+  { kind: 'human', alias: 'Quartz' },
+  { kind: 'human', alias: 'Forge', locale: 'ro' },
   { kind: 'companion', alias: 'Nova' },
 ];
 export const CHANNELS = [
