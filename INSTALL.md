@@ -50,7 +50,7 @@ The rooms are listed in the order `rooms` gives them, and the first one is where
 Then a token for each person, kept in a file of its own (`chmod 600`):
 
 ```bash
-pnpm --filter portal tokens portal.local.json new quartz
+pnpm --filter portal tokens portal.local.json new quartz   # and the same for forge, relay, pulse and local
 pnpm --filter portal tokens portal.local.json show quartz | pbcopy   # hand it over in person or through a channel you trust
 ```
 

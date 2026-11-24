@@ -4,7 +4,7 @@ The short way is in the [README](../README.md), and the whole way in [INSTALL.md
 
 ## Tokens
 
-A token is what a person sends to come in. The config says who is in the portal (`participants`) and where the tokens are kept (`"tokensFile": "portal.tokens.local.json"`); the tokens live in that file, `{ "Zeus": "…" }`, beside the config, so the config can be read and shared and the tokens kept to a few. If others can read the tokens file the room says so when it starts (`chmod 600`). A token may still be written inline in `participants` (`"token": "…"`), but not both for the same person.
+A token is what a person sends to come in. The config says who is in the portal (`participants`) and where the tokens are kept (`"tokensFile": "portal.tokens.local.json"`); the tokens live in that file, `{ "quartz": "…" }`, beside the config, so the config can be read and shared and the tokens kept to a few. If others can read the tokens file the room says so when it starts (`chmod 600`). A token may still be written inline in `participants` (`"token": "…"`), but not both for the same person.
 
 ```bash
 pnpm --filter portal tokens <config>                  # who has a token, never the tokens themselves

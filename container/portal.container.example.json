@@ -6,8 +6,8 @@
   "tokensFile": "/data/portal.tokens.json",
   "staticDir": "/app/ui/dist",
   "participants": [
-    { "kind": "human", "alias": "Zeus", "sign": "🦁" },
-    { "kind": "human", "alias": "Hera" }
+    { "kind": "human", "alias": "quartz", "sign": "💠" },
+    { "kind": "human", "alias": "forge", "sign": "🔩" }
   ],
   "rooms": [{ "id": "general", "title": "General" }]
 }
