@@ -7,7 +7,8 @@
   "staticDir": "/app/ui/dist",
   "participants": [
     { "kind": "human", "alias": "quartz", "sign": "💠" },
-    { "kind": "human", "alias": "forge", "sign": "🔩" }
+    { "kind": "human", "alias": "forge", "sign": "🔩" },
+    { "kind": "human", "alias": "rdm", "sign": "🔥" }
   ],
   "rooms": [{ "id": "general", "title": "General" }]
 }

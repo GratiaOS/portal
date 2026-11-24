@@ -10,6 +10,7 @@
     { "kind": "human", "alias": "relay", "sign": "📡" },
     { "kind": "human", "alias": "pulse", "sign": "⚡" },
     { "kind": "human", "alias": "local", "sign": "🔋" },
+    { "kind": "human", "alias": "rdm", "sign": "🔥" },
     { "kind": "companion", "alias": "Nova", "capabilities": ["answer"] }
   ],
   "rooms": [

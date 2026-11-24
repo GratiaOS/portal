@@ -19,7 +19,7 @@ cp "$ROOT/container/portal.container.example.json" "$WORK/portal.json"
 MOUNTS="-v $WORK/data:/data -v $WORK/portal.json:/config/portal.json:ro"
 
 # a token for each person of the example config: the portal does not start with one missing
-for person in quartz forge; do
+for person in quartz forge rdm; do
   # shellcheck disable=SC2086
   docker run --rm $MOUNTS "$IMAGE" node dist/tokens.js /config/portal.json new "$person" >/dev/null
 done

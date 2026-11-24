@@ -24,7 +24,7 @@ test('a connection starts with hello: who it is, who is here, where to talk, whe
   assert.equal(hello.event, 'hello');
   assert.equal(hello.id, undefined); // not part of the resume cursor
   assert.equal(hello.data.you.id, 'human:quartz');
-  assert.equal(hello.data.participants.length, 3);
+  assert.equal(hello.data.participants.length, 7);
   assert.deepEqual(hello.data.conversations.map((c) => c.id), ['general', 'infra']);
   assert.equal(hello.data.lastSeq, 1);
 
