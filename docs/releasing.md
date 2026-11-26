@@ -10,7 +10,7 @@ One pull request, `release/X.Y.Z`, with one commit, `release: El portal X.Y.Z`, 
 
 - the **three `package.json`** (the root, `ui/` and `packages/llm-provider/`): the versions move together;
 - **`CHANGELOG.md`**: what was under `## Unreleased` goes under `## X.Y.Z (date)`, after a line that says what the release is and whether anything must be set; `## Unreleased` becomes `Nothing yet.`. Read the unreleased entries against `git log` of the pull requests since the last tag: an entry can be missed (the path from the gate to the garden was);
-- **`SIGNAL.md`**: what the release is, and the stamp (`pnpm signal`).
+- **`SIGNAL.md`**: what the release is (`pnpm signal` tells what merged).
 
 The number: a change a person can see or must act on is a minor (`0.4.0`); a way to run it, or a fix, is a patch (`0.3.1`). Before 1.0 the config, the API and the skin contract (`contract`) are what is kept still: say in the CHANGELOG when they are.
 
@@ -56,7 +56,7 @@ gh release create vX.Y.Z --repo GratiaOS/portal --title "El portal X.Y.Z" --note
 
 ## 6. The signal
 
-`SIGNAL.md` says the release is out, what is live where, and what nobody has looked at. The release pull request already changes it, so `pnpm signal` is **current** right after a release: a pull request that touches `SIGNAL.md` has kept it true, and does not count against its stamp (the stamp cannot name the merge commit of the pull request that carries it). A pull request that leaves `SIGNAL.md` alone does count, until the signal says something about it.
+`SIGNAL.md` says the release is out, what is live where, and what nobody has looked at. The release pull request already changes it, and there is no stamp to move: what merged is told by `pnpm signal`, from git.
 
 ## If something fails
 
