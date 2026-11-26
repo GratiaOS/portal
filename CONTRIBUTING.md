@@ -35,7 +35,7 @@ A change that needs one of these will not be merged, however good it is otherwis
 
 ## Words
 
-Commits, pull request descriptions and docs are written in the words of the [GLOSSARY.md](GLOSSARY.md) (mirror, whisper, door, companion, breaths, actor, mark), for people and for the companions and mirrors that help. The code keeps the names it has.
+Commits, pull request descriptions and docs are written in the words of the [GLOSSARY.md](GLOSSARY.md) (mirror, whisper, door, companion, breaths, actor, signal), for people and for the companions and mirrors that help. The code keeps the names it has.
 
 ## Commits
 
