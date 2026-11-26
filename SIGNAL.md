@@ -2,7 +2,7 @@
 
 Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
-**Verified:** 2026-11-23, against `main@a09aca6`. `pnpm signal` fetches `main` and says how many pull requests have merged since (not counting those that touch this file: a pull request that changes the signal has kept it true). It warns, it never blocks.
+What merged lately is not written here: `pnpm signal` reads it from git when asked (the last merges, and how far `main` has moved since this file last changed). This file keeps the intention only.
 
 ## Now
 
@@ -41,6 +41,6 @@ A portal that opens a guest room needs its own config for it (and an engine, if 
 
 ## How this stays true
 
-Whoever merges something that changes what the portal does or what comes next updates this file in the same sitting, or the next session does before anything else, and moves the stamp. This file keeps three kinds of things only: where we are, what is next, what is open. History goes to the changelog, procedures to their own pages.
+This file says where we are, what is next and what is open: what cannot be read from the code. Whoever changes the direction, or what comes next, updates it in the same pull request as the work, and nobody has to at any other merge: the facts of what merged are told by `pnpm signal`, from git, so they cannot go stale. There is no stamp. History goes to the changelog, procedures to their own pages.
 
 > Say what she can see, and let the room look the way its people need it to.
