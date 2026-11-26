@@ -1,0 +1,30 @@
+# gratiaos.dev/signal (Living) and /signal.md are read from this repository: the page asks GitHub on every visit, but the plain-text twin
+# and the list the page carries at build are made when the site is built, and the site is built when ITS repository changes, not this one.
+# So when something lands in main here, this asks Cloudflare to build gratiaos.dev again (a deploy hook: one POST, nothing is sent in it).
+#
+# The hook is made once, by hand: Cloudflare, the `gratiaos-dev` Pages project, Settings, Builds, Deploy hooks (branch: main); its URL
+# is the secret GRATIAOS_DEV_DEPLOY_HOOK of this repository. The URL is a key (whoever has it can start a build), so it is only ever read
+# from the secret, never written in a file or a log. Without the secret this does nothing and says so; it never fails a merge.
+name: Living
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  rebuild:
+    name: Ask gratiaos.dev to build again
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy hook
+        env:
+          HOOK: ${{ secrets.GRATIAOS_DEV_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::GRATIAOS_DEV_DEPLOY_HOOK is not set: gratiaos.dev is not asked to build again."
+            exit 0
+          fi
+          curl --fail --silent --show-error --max-time 30 --request POST "$HOOK" > /dev/null
+          echo "gratiaos.dev was asked to build again."
