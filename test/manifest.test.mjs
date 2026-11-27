@@ -26,8 +26,8 @@ test('the manifest is the portal\'s own, with the name from its config, and need
   assert.ok(manifest.icons.some((i) => i.purpose === 'maskable'));
 });
 
-test('without a name it is El portal, and a long name is cut short for under the icon', async () => {
-  assert.equal((await (await get(app(undefined), '/manifest.webmanifest')).json()).name, 'El portal');
+test('without a name it is Portal, and a long name is cut short for under the icon', async () => {
+  assert.equal((await (await get(app(undefined), '/manifest.webmanifest')).json()).name, 'Portal');
   const long = manifestFor('Makers Mansion of the North');
   assert.equal(long.name, 'Makers Mansion of the North');
   assert.ok(long.short_name.length <= 12 && 'Makers Mansion of the North'.startsWith(long.short_name));

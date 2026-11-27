@@ -34,7 +34,7 @@ const { VERSION, parseConfig, startRoom } = await import(join(root, 'dist', 'ind
 const tokens = Object.fromEntries(people.map((name) => [name, randomBytes(24).toString('base64url')]));
 const config = parseConfig(
   {
-    name: 'El portal (try it)',
+    name: 'Portal (try it)',
     port,
     host: lan ? '0.0.0.0' : '127.0.0.1',
     dbPath: ':memory:',
@@ -58,7 +58,7 @@ const lanAddresses = Object.values(networkInterfaces())
   .map((n) => n.address);
 
 const out = [];
-out.push('', `🗺️  El portal ${VERSION}`, '');
+out.push('', `🗺️  Portal ${VERSION}`, '');
 out.push(`   This machine   http://127.0.0.1:${room.port}/`);
 if (lan) {
   for (const ip of lanAddresses) out.push(`   Your network   http://${ip}:${room.port}/   (and /guest, to walk in with no key)`);

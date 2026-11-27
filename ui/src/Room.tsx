@@ -37,7 +37,7 @@ import { useUnread } from './lib/useUnread.ts';
 import { whispersFor } from './lib/whispers.ts';
 
 const PAGE = 50;
-const TITLE = 'El portal';
+const TITLE = 'Portal';
 
 const channelFromHash = () => decodeURIComponent(location.hash.replace(/^#/, '')) || undefined;
 

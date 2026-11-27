@@ -1,5 +1,5 @@
 {
-  "name": "El portal",
+  "name": "Portal",
   "port": 3100,
   "host": "127.0.0.1",
   "dbPath": "data/portal.db",

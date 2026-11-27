@@ -107,7 +107,7 @@ export type RoomConfig = {
   host: string;
   /** A file, or `:memory:`. */
   dbPath: string;
-  /** What this portal is called where it is installed or named (`Firegate`); without it, `El portal`. */
+  /** What this portal is called where it is installed or named (`Firegate`); without it, `Portal`. */
   name?: string;
   participants: ConfigParticipant[];
   rooms: ConversationInput[];

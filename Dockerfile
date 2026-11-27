@@ -1,4 +1,4 @@
-# El portal as a container: one process, one config, one database file.
+# Portal as a container: one process, one config, one database file.
 #
 #   docker build -t portal .
 #   docker run -p 3100:3100 -v portal-data:/data -v ./portal.json:/config/portal.json:ro portal
@@ -21,7 +21,7 @@ RUN pnpm run build && pnpm --filter portal-ui build
 
 
 FROM node:22.18.0-alpine
-LABEL org.opencontainers.image.title="El portal" \
+LABEL org.opencontainers.image.title="Portal" \
       org.opencontainers.image.description="A room for a team and its companion: one process, one config, one database file." \
       org.opencontainers.image.source="https://github.com/GratiaOS/portal" \
       org.opencontainers.image.licenses="MPL-2.0"

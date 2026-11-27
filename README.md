@@ -1,4 +1,4 @@
-# El portal
+# Portal
 
 Sit under the tree: [firegate.space](https://firegate.space)
 

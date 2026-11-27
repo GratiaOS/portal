@@ -79,25 +79,25 @@ test('advance: looking resets, what was said meanwhile is not news later, and my
 });
 
 test('notices: one mention says where, in the app\'s name, and never what', () => {
-  const [one, ...rest] = noticesFor([turn(7, 'companion:nova')], channels, 'El portal', say);
-  assert.deepEqual(one, { title: 'El portal', body: 'mentioned in General', tag: 'general' });
+  const [one, ...rest] = noticesFor([turn(7, 'companion:nova')], channels, 'Portal', say);
+  assert.deepEqual(one, { title: 'Portal', body: 'mentioned in General', tag: 'general' });
   assert.equal(rest.length, 0);
 });
 
 test('notices: several in one channel give one notice with the count', () => {
-  const [one, ...rest] = noticesFor([turn(7), turn(8, 'companion:nova')], channels, 'El portal', say);
-  assert.deepEqual(one, { title: 'El portal', body: '2 mentions in General', tag: 'general' });
+  const [one, ...rest] = noticesFor([turn(7), turn(8, 'companion:nova')], channels, 'Portal', say);
+  assert.deepEqual(one, { title: 'Portal', body: '2 mentions in General', tag: 'general' });
   assert.equal(rest.length, 0);
 });
 
 test('notices: a notice per channel, each tagged by its channel; an unknown channel is named by its id', () => {
-  const list = noticesFor([turn(7), turn(8, 'human:prism', 'ops'), turn(9, 'human:prism', 'lost')], channels, 'El portal', say);
+  const list = noticesFor([turn(7), turn(8, 'human:prism', 'ops'), turn(9, 'human:prism', 'lost')], channels, 'Portal', say);
   assert.deepEqual(list.map((n) => n.tag), ['general', 'ops', 'lost']);
   assert.equal(list[2]!.body, 'mentioned in lost');
 });
 
 test('notices: nothing of what was written reaches the notice, neither the words nor the speaker', () => {
-  for (const notice of noticesFor([turn(7, 'human:prism'), turn(8, 'human:prism')], channels, 'El portal', say)) {
+  for (const notice of noticesFor([turn(7, 'human:prism'), turn(8, 'human:prism')], channels, 'Portal', say)) {
     assert.equal(JSON.stringify(notice).includes('secret'), false);
     assert.equal(JSON.stringify(notice).includes('prism'), false);
   }

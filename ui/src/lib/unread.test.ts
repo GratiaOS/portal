@@ -48,8 +48,8 @@ test('rewound: only when the sequence goes back', () => {
 });
 
 test('title: the count in front of the name, nothing when there is none', () => {
-  assert.equal(titleWith(0, 'El portal'), 'El portal');
-  assert.equal(titleWith(1, 'El portal'), '(1) El portal');
-  assert.equal(titleWith(99, 'El portal'), '(99) El portal');
-  assert.equal(titleWith(100, 'El portal'), '(99+) El portal');
+  assert.equal(titleWith(0, 'Portal'), 'Portal');
+  assert.equal(titleWith(1, 'Portal'), '(1) Portal');
+  assert.equal(titleWith(99, 'Portal'), '(99) Portal');
+  assert.equal(titleWith(100, 'Portal'), '(99+) Portal');
 });
