@@ -38,7 +38,7 @@ test('pnpm dev: a portal with nothing to set up, a key for each person printed, 
 
   const visitor = await fetch(`${base}/api/guest`, { method: 'POST' });
   assert.equal(visitor.status, 201, 'the door for visitors is open');
-  assert.equal((await (await fetch(`${base}/manifest.webmanifest`)).json()).name, 'El portal (try it)');
+  assert.equal((await (await fetch(`${base}/manifest.webmanifest`)).json()).name, 'Portal (try it)');
 });
 
 test('pnpm dev:lan says it is on the network, and that the keys travel in the clear there', async (t) => {

@@ -1,5 +1,5 @@
 // What this portal is called, said by the portal itself (`name` in its config, in its health): on the tab, and under the icon of an app
-// installed from it. Without a name the page keeps `El portal`.
+// installed from it. Without a name the page keeps `Portal`.
 
 export async function nameThePage(fetchImpl: typeof fetch = fetch, doc: Document = document): Promise<string | undefined> {
   try {

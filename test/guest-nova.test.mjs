@@ -6,7 +6,7 @@ const test = (name, fn) => nodeTest(name, { timeout: 8000 }, fn);
 
 const T0 = Date.parse('2026-11-06T12:00:00Z');
 const GUESTS = { room: 'guests', maxActive: 50, minutes: 30, perCaller: { count: 100, perMinutes: 10 } };
-const PUBLIC = { 'about.md': 'El portal is a small team chat with a companion who answers from a folder. Anyone can run one: see INSTALL.md.' };
+const PUBLIC = { 'about.md': 'Portal is a small team chat with a companion who answers from a folder. Anyone can run one: see INSTALL.md.' };
 const SECRET = { 'team/salaries.md': 'The salary of Quartz is 9000 drachmas and the team keeps a secret garden.' };
 
 function fakeLlm(answer = 'SAY: Hello, visitor.') {
@@ -60,7 +60,7 @@ test('a guest asks her in the guest room and the guests\' Nova answers from the 
 
   // what went to the model: the public document, and no one and nothing of the team
   const system = s.guestLlm.calls[0].system;
-  assert.match(system, /El portal is a small team chat/);
+  assert.match(system, /Portal is a small team chat/);
   for (const secret of ['salary', 'drachmas', 'secret garden', 'Quartz', 'Forge']) assert.ok(!system.includes(secret), `the model for guests was told "${secret}"`);
   assert.ok(!JSON.stringify(s.guestLlm.calls[0].messages).includes('Quartz'));
 });

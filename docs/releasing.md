@@ -6,7 +6,7 @@ A release is **six steps**, and it is only done when all six are. `v0.4.0` went 
 
 ## 1. The release pull request
 
-One pull request, `release/X.Y.Z`, with one commit, `release: El portal X.Y.Z`, that touches:
+One pull request, `release/X.Y.Z`, with one commit, `release: Portal X.Y.Z`, that touches:
 
 - the **three `package.json`** (the root, `ui/` and `packages/llm-provider/`): the versions move together;
 - **`CHANGELOG.md`**: what was under `## Unreleased` goes under `## X.Y.Z (date)`, after a line that says what the release is and whether anything must be set; `## Unreleased` becomes `Nothing yet.`. Read the unreleased entries against `git log` of the pull requests since the last tag: an entry can be missed (the path from the gate to the garden was);
@@ -21,7 +21,7 @@ Run the checks first: `pnpm test`, `pnpm --filter portal-ui test`, `pnpm --filte
 An **annotated** tag on the **merge commit** of the release pull request (not on the commit inside it), named `vX.Y.Z`:
 
 ```bash
-git tag -a vX.Y.Z <merge-commit> -m "El portal X.Y.Z"
+git tag -a vX.Y.Z <merge-commit> -m "Portal X.Y.Z"
 git push origin vX.Y.Z
 ```
 
@@ -46,10 +46,10 @@ After the deploy, and after those five minutes: `/api/health` says `X.Y.Z`; the 
 
 ## 5. The GitHub Release
 
-The Releases page is a separate object from the tag. Named `El portal X.Y.Z`, on `main`, not a draft and not a prerelease, with the CHANGELOG section of that version as its notes:
+The Releases page is a separate object from the tag. Named `Portal X.Y.Z`, on `main`, not a draft and not a prerelease, with the CHANGELOG section of that version as its notes:
 
 ```bash
-gh release create vX.Y.Z --repo GratiaOS/portal --title "El portal X.Y.Z" --notes-file <the section> --verify-tag --latest
+gh release create vX.Y.Z --repo GratiaOS/portal --title "Portal X.Y.Z" --notes-file <the section> --verify-tag --latest
 ```
 
 `--verify-tag` refuses to make a release for a tag that is not on GitHub.

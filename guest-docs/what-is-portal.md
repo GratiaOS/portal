@@ -1,6 +1,6 @@
-# What El portal is
+# What Portal is
 
-El portal is a small team chat that a team runs for itself, with a companion in it called Nova. It is self-hosted: one portal belongs to one team, on that team's own machine or Cloudflare account, and uses the model that team brings. There is no central service, no account to make with anyone, and nothing in it that phones home.
+Portal is a small team chat that a team runs for itself, with a companion in it called Nova. It is self-hosted: one portal belongs to one team, on that team's own machine or Cloudflare account, and uses the model that team brings. There is no central service, no account to make with anyone, and nothing in it that phones home.
 
 A portal has rooms. People come in with a token each, written to them by whoever runs the portal. They write, and the page shows what is written as it arrives. Anyone can ask Nova something by writing `@nova` in a message.
 

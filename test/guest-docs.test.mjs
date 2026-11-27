@@ -13,7 +13,7 @@ function read() {
 
 test('the starter folder holds a few short documents, and nothing of a team, a company or a machine', () => {
   const { files, text } = read();
-  assert.deepEqual([...files.keys()].sort(), ['about-nova.md', 'for-visitors.md', 'run-your-own.md', 'what-a-portal-keeps.md', 'what-is-el-portal.md']);
+  assert.deepEqual([...files.keys()].sort(), ['about-nova.md', 'for-visitors.md', 'run-your-own.md', 'what-a-portal-keeps.md', 'what-is-portal.md']);
   for (const [path, content] of files) assert.ok(content.trim().length > 200 && content.length < 4000, `${path} is short and not empty`);
   assert.ok(text.length < 12_000, 'all of it is small enough to go in every prompt');
   for (const word of ['Quartz', 'Forge', 'firegate', 'gratiaos.dev', 'Idalion', '/Users/', 'localhost', 'password:']) assert.ok(!text.includes(word), `the folder names "${word}"`);

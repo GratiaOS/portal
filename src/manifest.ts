@@ -1,7 +1,7 @@
 // The portal as an app on a home screen: what the browser reads to offer to install it. It is made when asked, from the config, so that
 // each portal has its own name and two on one phone are two apps (they are two origins, and the manifest of each says its own).
 
-export const DEFAULT_NAME = 'El portal';
+export const DEFAULT_NAME = 'Portal';
 
 /** The ground and the bar of the installed app, until the page tells the browser what the look in use is. */
 export const THEME = '#0d1b22';

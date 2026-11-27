@@ -1,6 +1,6 @@
 # 📡 Signal
 
-Where El portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
+Where the portal is, for whoever starts work on it next. Short on purpose: what changed is in [CHANGELOG.md](CHANGELOG.md), how to run one is in [INSTALL.md](INSTALL.md), where the parts come from is in [TRACES.md](TRACES.md).
 
 What merged lately is not written here: `pnpm signal` reads it from git when asked (the last merges, and how far `main` has moved since this file last changed). This file keeps the intention only.
 

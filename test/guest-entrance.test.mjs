@@ -134,9 +134,9 @@ test('the portal says it has a door only when it has one, and a guest is told of
   assert.deepEqual(await (await call('/api/hints', { token })).json(), { companion: null, examples: [] });
 
   // and of their companion's own when she is on
-  const on = setup({ guestHints: { companion: 'Nova', examples: ['what is El portal?'] } });
+  const on = setup({ guestHints: { companion: 'Nova', examples: ['what is the portal?'] } });
   const guest = await (await on.enter()).json();
-  assert.deepEqual(await (await on.call('/api/hints', { token: guest.token })).json(), { companion: 'Nova', examples: ['what is El portal?'] });
+  assert.deepEqual(await (await on.call('/api/hints', { token: guest.token })).json(), { companion: 'Nova', examples: ['what is the portal?'] });
 });
 
 test('a visitor who steps through is announced to those already in the room, so that they can say who else is here', async () => {

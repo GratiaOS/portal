@@ -5,7 +5,7 @@
  * Same idea:  a quiet card in the middle of an empty page: you cross a threshold on purpose, and the page does not rush you.
  * Different:  a token, not a hold of four and a half seconds. A refusal is a calm sentence, never a block or a countdown. Since
  *             the gate of lights, the threshold is the portal's own and the same in every look (gate.css), drawn from the
- *             photograph of the trip of El portal: a fence lit at dusk is the doorway, and the key is given inside it, with no
+ *             photograph of the trip of the portal: a fence lit at dusk is the doorway, and the key is given inside it, with no
  *             card around it. Enter in the field sends; there is no button.
  * Not copied: written new for Room (MPL-2.0); Firegate is AGPL-3.0.
  */
@@ -227,7 +227,7 @@ export default function LoginGate({ onEnter, door, ended }: { onEnter: (token: s
         <Lantern />
         <div data-gate="opening">
           <h1 id="gate-title" data-gate="title">
-            El portal
+            Portal
           </h1>
           <span data-gate="sr-only">{t.signInTitle}</span>
           {!door?.only && (
